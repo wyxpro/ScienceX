@@ -54,6 +54,7 @@ const P: Record<string, JSX.Element> = {
   gauge: <><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><path d="m14 10 3-3M3 12a9 9 0 0 1 18 0" /></>,
   key: <><circle cx="7.5" cy="15.5" r="4.5" /><path d="m11 12 9-9M17 6l3 3M14 9l2 2" /></>,
   history: <><path d="M3 3v6h6" /><path d="M3.5 9A9 9 0 1 1 3 15" /><path d="M12 7v5l3 2" /></>,
+  paperclip: <><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></>,
 };
 
 export type IconName = keyof typeof P;
