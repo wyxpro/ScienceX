@@ -1,5 +1,5 @@
 /* 文献阅读：三栏式阅读器 —— REQ-READ-01~04：阅读 / 分析（翻译·导图·七段·图谱） / Agent 对话 */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, docChatStream } from '../api/client';
 import Icon from '../components/Icon';
 import Markdown from '../components/Markdown';
@@ -29,16 +29,42 @@ export default function Reader() {
   const [chatting, setChatting] = useState(false);
   const [references, setReferences] = useState<any[]>([]);
   const chatBottom = useRef<HTMLDivElement>(null);
+  const chatAbortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => { (async () => { const r = await api<{ items: any[] }>('/documents'); setDocs(r.items); if (r.items.length) loadDoc(r.items[0].id); })(); }, []);
-  useEffect(() => { chatBottom.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMsgs]);
-
-  const loadDoc = async (id: string) => {
+  const loadDoc = useCallback(async (id: string) => {
     setDocId(id); setDoc(null); setChatMsgs([]); setReferences([]); setTranslation(null); setParaIdx(null);
-    const d = await api(`/documents/${id}`);
-    setDoc(d);
-    setMidTab(d.mindmap ? 'mindmap' : 'translate');
-  };
+    chatAbortRef.current?.abort();
+    setChatting(false);
+    try {
+      const d = await api(`/documents/${id}`);
+      setDoc(d);
+      setMidTab(d.mindmap ? 'mindmap' : 'translate');
+    } catch (error: any) {
+      toast(error?.message || '文档加载失败，请重试', 'err');
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const r = await api<{ items: any[] }>('/documents');
+        if (!active) return;
+        setDocs(r.items);
+        if (r.items.length) await loadDoc(r.items[0].id);
+      } catch (error: any) {
+        if (active) {
+          setDocs([]);
+          toast(error?.message || '文档列表加载失败，请重试', 'err');
+        }
+      }
+    })();
+    return () => {
+      active = false;
+      chatAbortRef.current?.abort();
+    };
+  }, [loadDoc, toast]);
+  useEffect(() => { chatBottom.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMsgs]);
 
   const analyze = async () => {
     const r = await api<{ task_id: string }>(`/documents/${docId}/analyze`, { method: 'POST', body: { mode: 'all' } });
@@ -53,7 +79,7 @@ export default function Reader() {
   };
 
   const saveToKB = async () => {
-    const r = await api(`/knowledge-bases/kb1/ingest`, { method: 'POST' });
+    const r = await api<{ task_id: string }>(`/knowledge-bases/kb1/ingest`, { method: 'POST', body: { document_id: docId } });
     setTask({ id: r.task_id, title: '沉淀到 RAG 知识库（MER 课题组文献库）' });
   };
 
@@ -61,14 +87,22 @@ export default function Reader() {
     const q = chatInput.trim();
     if (!q || chatting) return;
     setChatInput(''); setChatting(true);
+    chatAbortRef.current?.abort();
+    const controller = new AbortController();
+    chatAbortRef.current = controller;
     const aiMsg = { role: 'assistant', content: '', streaming: true };
     setChatMsgs((m) => [...m, { role: 'user', content: q }, aiMsg]);
-    await docChatStream(docId!, [{ role: 'user', content: q }], {
-      onDelta: (t) => setChatMsgs((m) => m.map((x, i) => (i === m.length - 1 ? { ...x, content: x.content + t } : x))),
-      onReference: (r) => setReferences((x) => [...x.filter((i: any) => i.chunk_id !== r.chunk_id), r]),
-      onDone: () => { setChatMsgs((m) => m.map((x, i) => (i === m.length - 1 ? { ...x, streaming: false } : x))); setChatting(false); },
-      onError: () => { setChatting(false); toast('对话失败，请重试', 'err'); },
-    });
+    try {
+      await docChatStream(docId!, [{ role: 'user', content: q }], {
+        onDelta: (t) => setChatMsgs((m) => m.map((x, i) => (i === m.length - 1 ? { ...x, content: x.content + t } : x))),
+        onReference: (r) => setReferences((x) => [...x.filter((i: any) => i.chunk_id !== r.chunk_id), r]),
+        onDone: () => { setChatMsgs((m) => m.map((x, i) => (i === m.length - 1 ? { ...x, streaming: false } : x))); setChatting(false); },
+        onError: () => { setChatting(false); toast('对话失败，请重试', 'err'); },
+      }, controller.signal);
+    } finally {
+      if (chatAbortRef.current === controller) chatAbortRef.current = null;
+      setChatting(false);
+    }
   };
 
   const upload = async () => {

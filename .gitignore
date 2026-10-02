@@ -1,6 +1,12 @@
 # Dependencies
 node_modules/
+backend/.data/
+backend/.port
+*.log
 */node_modules/
+.pnpm-store/
+**/pnpm-lock.yaml
+**/pnpm-workspace.yaml
 
 # Local ports and cache
 .port

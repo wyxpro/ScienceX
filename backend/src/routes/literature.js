@@ -68,7 +68,7 @@ router.post('/topic/proposal', auth, (req, res) => {
     file_name: `开题报告_${topic.slice(0, 12) || '微表情识别'}.docx`,
     outline: ['一、选题背景与意义', '二、国内外研究现状', '三、研究内容与目标', '四、研究方案与技术路线', '五、创新点', '六、进度安排', '七、参考文献'],
     content_preview: `# ${topic || '跨层 AU 交互的微表情识别研究'} 开题报告\n\n## 一、选题背景与意义\n微表情识别在测谎、临床与安全领域应用广泛……\n（演示环境生成约 3800 字结构化正文，可导出 Word/PDF）`,
-  }));
+  }), req.user.id);
   ok(res, { task_id: task.id }, '开题报告生成任务已提交');
 });
 
@@ -80,40 +80,60 @@ router.post('/literature/review', auth, (req, res) => {
     topic, papers_used: 42,
     outline: ['1. 引言', '2. 数据集与评测协议', '3. 方法演进：手工特征到 Transformer', '4. 统一协议下的对比分析', '5. 开放问题', '6. 结论'],
     content_preview: `# ${topic} 研究综述\n\n## 1. 引言\n本文系统梳理 ${range[0]}-${range[1]} 年间 ${topic} 领域的代表性工作……\n（演示环境生成约 6000 字带引用草稿）`,
-  }));
+  }), req.user.id);
   ok(res, { task_id: task.id }, '综述生成任务已提交');
 });
 
 /* ---------- 异步任务：查询与 SSE 进度（TSD §3.8 / §5.4 progress 事件） ---------- */
 router.get('/tasks/:id', auth, (req, res) => {
   const task = store.tasks.get(req.params.id);
-  if (!task) return errors.notFound(res, '任务不存在');
-  const { listeners, ...rest } = task;
+  if (!task || (task.owner_id ? task.owner_id !== req.user.id : req.user.id !== 'u1')) return errors.notFound(res, '任务不存在');
+  const { listeners, events, ...rest } = task;
   ok(res, rest);
 });
 
 router.get('/tasks/:id/stream', auth, (req, res) => {
   const task = store.tasks.get(req.params.id);
-  if (!task) return errors.notFound(res, '任务不存在');
-  res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-  const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  send('progress', { task_id: task.id, percent: task.percent, stage: task.stage });
-  if (task.status === 'done') {
-    send('done', { task_id: task.id, result: task.result });
-    return res.end();
-  }
-  const listener = (t) => {
-    send('progress', { task_id: t.id, percent: t.percent, stage: t.stage });
-    if (t.status === 'done') {
-      send('done', { task_id: t.id, result: t.result });
-      res.end();
+  if (!task || (task.owner_id ? task.owner_id !== req.user.id : req.user.id !== 'u1')) return errors.notFound(res, '任务不存在');
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.write('retry: 3000\n\n');
+  const lastEventId = Number.parseInt(req.get('Last-Event-ID') || req.query.last_event_id || '0', 10) || 0;
+  const send = (entry) => {
+    if (!res.writableEnded) res.write(`id: ${entry.id}\nevent: ${entry.event}\ndata: ${JSON.stringify(entry.data)}\n\n`);
+  };
+  const heartbeat = setInterval(() => { if (!res.writableEnded) res.write(': ping\n\n'); }, 15000);
+  let replayCutoff = task.event_seq || 0;
+  const cleanup = () => {
+    clearInterval(heartbeat);
+    const index = task.listeners.indexOf(listener);
+    if (index >= 0) task.listeners.splice(index, 1);
+  };
+  const listener = (_task, entry) => {
+    if (entry.id <= replayCutoff) return;
+    send(entry);
+    if (entry.event === 'done' || entry.event === 'error') {
+      cleanup();
+      if (!res.writableEnded) res.end();
     }
   };
   task.listeners.push(listener);
-  req.on('close', () => {
-    const i = task.listeners.indexOf(listener);
-    if (i >= 0) task.listeners.splice(i, 1);
-  });
+  const history = Array.isArray(task.events)
+    ? task.events.filter((entry) => entry.id > lastEventId && entry.id <= replayCutoff)
+    : [];
+  if (history.length) history.forEach(send);
+  else if (!['done', 'failed'].includes(task.status)) {
+    send({ id: replayCutoff || 1, event: 'progress', data: { task_id: task.id, percent: task.percent, stage: task.stage } });
+  }
+  if (['done', 'failed'].includes(task.status)) {
+    cleanup();
+    return res.end();
+  }
+  res.once('close', cleanup);
 });
 
 module.exports = { router };

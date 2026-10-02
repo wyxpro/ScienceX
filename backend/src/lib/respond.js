@@ -9,12 +9,25 @@ function genRequestId() {
   return `req_${Date.now().toString(36)}_${reqCounter.toString(36)}`;
 }
 
+function responseRequestId(res) {
+  const existing = res.getHeader?.('X-Request-Id');
+  if (existing) return String(existing);
+  const id = genRequestId();
+  res.setHeader?.('X-Request-Id', id);
+  return id;
+}
+
+// Express 4 does not forward rejected async handlers to the error middleware.
+function asyncHandler(handler) {
+  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+}
+
 function ok(res, data = {}, message = 'ok') {
   res.json({
     code: 0,
     message,
     data,
-    request_id: genRequestId(),
+    request_id: responseRequestId(res),
     timestamp: new Date().toISOString(),
   });
 }
@@ -28,7 +41,7 @@ function fail(res, httpStatus, code, message, details) {
     code,
     message,
     data: details ? { details } : {},
-    request_id: genRequestId(),
+    request_id: responseRequestId(res),
     timestamp: new Date().toISOString(),
   });
 }
@@ -42,4 +55,4 @@ const errors = {
   modelTimeout: (res, msg = '模型请求超时') => fail(res, 504, 60001, msg),
 };
 
-module.exports = { ok, fail, errors, genRequestId };
+module.exports = { ok, fail, errors, genRequestId, asyncHandler };

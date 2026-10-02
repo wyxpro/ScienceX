@@ -2,6 +2,9 @@
  * 内存数据存储 —— 演示环境（生产环境为 PostgreSQL + Redis + 向量库，见 TSD §4.4）
  * 所有数据结构与 TSD 核心表结构一一对应
  */
+const fs = require('fs');
+const path = require('path');
+
 const now = () => new Date().toISOString();
 const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
 const daysAhead = (n) => new Date(Date.now() + n * 86400000).toISOString();
@@ -10,7 +13,8 @@ const users = [
   {
     id: 'u1',
     email: 'demo@sciencex.cn',
-    password: '123456',
+    // scrypt(123456)，仅用于本地演示账号；新用户注册时始终生成独立哈希。
+    password: 'scrypt$8663751b902994fe0c07bfdb2b92f20c$7b9ca56210502020e31470d8f7179eb99811ce952681f01c32deb3cfd8f8db63b7760b1c1bd1693a4dd747f84a3452ccdb811dd5fba86a446dd212f08dcd8902',
     name: '陈墨',
     title: '博士生 · 计算机视觉方向',
     avatar: '',
@@ -606,10 +610,49 @@ const tasks = new Map();
 
 const id = (prefix) => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
+/* 开发环境 JSON 持久化：替代生产环境的 PostgreSQL/Redis，避免演示数据因重启丢失。 */
+const dataDir = path.resolve(process.env.SCIENCEX_DATA_DIR || path.join(__dirname, '../../.data'));
+const dataFile = path.join(dataDir, 'store.json');
+const persistedCollections = {
+  users, customModels, conversations, documents, projects, teams, knowledgeBases,
+  experiments, charts, submissionTracks, manuscripts, reviewReports, adviceRecords,
+  usageRecords, orders, subscription,
+};
+
+function hydrate() {
+  if (!fs.existsSync(dataFile)) return;
+  try {
+    const saved = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+    for (const [name, target] of Object.entries(persistedCollections)) {
+      if (saved[name] === undefined) continue;
+      if (Array.isArray(target) && Array.isArray(saved[name])) {
+        target.splice(0, target.length, ...saved[name]);
+      } else if (target && typeof target === 'object' && saved[name] && !Array.isArray(saved[name])) {
+        Object.assign(target, saved[name]);
+      }
+    }
+  } catch (error) {
+    console.warn('[ScienceX Store] 持久化数据读取失败，将使用内置演示数据:', error.message);
+  }
+}
+
+function persist() {
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+    const tempFile = `${dataFile}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(persistedCollections, null, 2), 'utf8');
+    fs.renameSync(tempFile, dataFile);
+  } catch (error) {
+    console.warn('[ScienceX Store] 持久化数据写入失败:', error.message);
+  }
+}
+
+hydrate();
+
 module.exports = {
   users, sessions, builtinModels, customModels, conversations, documents, literaturePool,
   projects, teams, knowledgeBases, experiments, gpuNodes, sotaLeaderboard, charts,
   chartTemplates, journals, submissionTracks, manuscripts, reviewReports, adviceRecords,
   skills, mcpServers, usageRecords, orders, subscription, plans, auditLogs, papersDaily,
-  recentOutputs, tasks, id, now, daysAgo, daysAhead,
+  recentOutputs, tasks, id, now, daysAgo, daysAhead, persist,
 };

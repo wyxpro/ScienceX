@@ -4,31 +4,34 @@ const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
 const ai = require('../lib/ai');
 const { auth } = require('./account');
+const { canAccess } = require('../lib/access');
 
 const router = express.Router();
 
 /* ---------- 实验 REQ-EXP-01 ---------- */
 router.get('/experiments', auth, (req, res) => {
-  const items = store.experiments.map((e) => ({ ...e, run_count: e.runs.length }));
+  const visibleProjects = new Set(store.projects.filter((p) => canAccess(p, req.user.id)).map((p) => p.id));
+  const items = store.experiments.filter((e) => visibleProjects.has(e.project_id)).map((e) => ({ ...e, run_count: e.runs.length }));
   ok(res, { items, total: items.length });
 });
 
 router.post('/experiments', auth, (req, res) => {
   const { project_id = 'p1', name, goal = '', params = {} } = req.body || {};
   if (!name) return errors.param(res, '实验名称不能为空');
+  if (!canAccess(store.projects.find((p) => p.id === project_id), req.user.id)) return errors.forbidden(res, '无权在该项目中创建实验');
   const exp = { id: store.id('e'), project_id, name, goal, status: 'planned', created_at: store.now(), runs: [], params };
   store.experiments.unshift(exp);
   ok(res, exp, '实验已创建');
 });
 
 router.get('/experiments/:id', auth, (req, res) => {
-  const exp = store.experiments.find((e) => e.id === req.params.id);
+  const exp = store.experiments.find((e) => e.id === req.params.id && canAccess(store.projects.find((p) => p.id === e.project_id), req.user.id));
   if (!exp) return errors.notFound(res, '实验不存在');
   ok(res, exp);
 });
 
 router.post('/experiments/:id/runs', auth, (req, res) => {
-  const exp = store.experiments.find((e) => e.id === req.params.id);
+  const exp = store.experiments.find((e) => e.id === req.params.id && canAccess(store.projects.find((p) => p.id === e.project_id), req.user.id));
   if (!exp) return errors.notFound(res, '实验不存在');
   const { params = {}, name } = req.body || {};
   const freeGpu = store.gpuNodes.find((g) => g.status === 'free');
@@ -78,16 +81,18 @@ router.get('/sota', auth, (req, res) => {
 
 /* ---------- 图表生成 REQ-ANA-01 ---------- */
 router.get('/charts', auth, (req, res) => {
-  ok(res, { items: store.charts, templates: store.chartTemplates });
+  const visibleProjects = new Set(store.projects.filter((p) => canAccess(p, req.user.id)).map((p) => p.id));
+  ok(res, { items: store.charts.filter((chart) => visibleProjects.has(chart.project_id)), templates: store.chartTemplates });
 });
 
 router.post('/charts/generate', auth, (req, res) => {
-  const { prompt = '', data = null, style = 'academic', template_id = null } = req.body || {};
+  const { prompt = '', data = null, style = 'academic', template_id = null, project_id = 'p1' } = req.body || {};
   if (!prompt && !data && !template_id) return errors.param(res, '请提供提示词、数据或模板');
+  if (!canAccess(store.projects.find((project) => project.id === project_id), req.user.id)) return errors.forbidden(res, '无权在该项目中创建图表');
   const task = ai.createTask('chart', ['解析提示词', '匹配图表模板', 'image2 生成渲染', '质量校验'], () => {
     const tpl = store.chartTemplates.find((t) => t.id === template_id) || store.chartTemplates[0];
     const chart = {
-      id: store.id('ch'), project_id: 'p1', title: prompt.slice(0, 24) || tpl.name, type: tpl.type || 'bar',
+      id: store.id('ch'), owner_id: req.user.id, project_id, title: prompt.slice(0, 24) || tpl.name, type: tpl.type || 'bar',
       prompt, created_at: store.now(), source: 'generated',
       // 演示环境：前端按 type 渲染矢量图（生产环境为 image2 生成的位图 URL）
       svg_spec: { type: tpl.tags[0] === '消融' ? 'bar' : tpl.name.includes('曲线') ? 'line' : tpl.name.includes('混淆') ? 'heatmap' : 'bar',
@@ -95,13 +100,13 @@ router.post('/charts/generate', auth, (req, res) => {
     };
     store.charts.unshift(chart);
     return { chart_id: chart.id, title: chart.title, svg_spec: chart.svg_spec };
-  });
+  }, req.user.id);
   ok(res, { task_id: task.id }, '图表生成任务已提交');
 });
 
 /* ---------- 图表解读 REQ-ANA-02 ---------- */
 router.post('/charts/:id/analyze', auth, (req, res) => {
-  const chart = store.charts.find((c) => c.id === req.params.id);
+  const chart = store.charts.find((c) => c.id === req.params.id && canAccess(store.projects.find((p) => p.id === c.project_id), req.user.id));
   if (!chart) return errors.notFound(res, '图表不存在');
   chart.analysis = chart.analysis || {
     trend: '整体呈上升趋势，最新配置优于所有历史版本',
@@ -112,34 +117,52 @@ router.post('/charts/:id/analyze', auth, (req, res) => {
 });
 
 /* ---------- 论文写作 REQ-WRT-01 ---------- */
-router.post('/writing/polish', auth, (req, res) => {
+router.post('/writing/polish', auth, async (req, res) => {
   const { text = '', style = 'academic', target = '' } = req.body || {};
   if (!text) return errors.param(res, '待润色文本不能为空');
-  ok(res, {
-    polished: text
-      .replace(/\bwe propose\b/gi, 'we introduce')
-      .replace(/\bvery good\b/gi, 'remarkable')
-      .replace(/\bcan improve\b/gi, 'yields an improvement of')
-      .replace(/\bimproving our baseline by 4.3 points\b/gi, 'yielding a 6.6% relative improvement over our baseline'),
-    changes: [
-      { type: '词汇升级', from: 'we propose', to: 'we introduce', reason: '避免连续段落重复 propose' },
-      { type: '学术表达', from: 'very good', to: 'remarkable', reason: '口语化 → 学术化' },
-      { type: '量化表述', from: 'by 4.3 points', to: '6.6% relative improvement', reason: '相对提升更规范' },
-    ],
-    style, target,
-  });
+  try {
+    const live = await ai.generateResponse([
+      { role: 'system', content: `你是学术英文编辑。按${style}风格${target ? `，面向${target}` : ''}润色用户文本，只输出润色后的正文，不添加解释。` },
+      { role: 'user', content: text },
+    ], { userId: req.user.id });
+    if (!live.fallback) return ok(res, { polished: live.text, changes: [], style, target, mode: 'live' });
+    ok(res, {
+      polished: text
+        .replace(/\bwe propose\b/gi, 'we introduce')
+        .replace(/\bvery good\b/gi, 'remarkable')
+        .replace(/\bcan improve\b/gi, 'yields an improvement of')
+        .replace(/\bimproving our baseline by 4.3 points\b/gi, 'yielding a 6.6% relative improvement over our baseline'),
+      changes: [
+        { type: '词汇升级', from: 'we propose', to: 'we introduce', reason: '避免连续段落重复 propose' },
+        { type: '学术表达', from: 'very good', to: 'remarkable', reason: '口语化 → 学术化' },
+        { type: '量化表述', from: 'by 4.3 points', to: '6.6% relative improvement', reason: '相对提升更规范' },
+      ],
+      style, target,
+    });
+  } catch {
+    errors.modelTimeout(res, '润色模型请求失败，请稍后重试');
+  }
 });
 
-router.post('/writing/translate', auth, (req, res) => {
+router.post('/writing/translate', auth, async (req, res) => {
   const { text = '', direction = 'en2zh' } = req.body || {};
   if (!text) return errors.param(res, '待翻译文本不能为空');
-  ok(res, {
-    translated: direction === 'en2zh'
-      ? '微表情识别（MER）受制于细微的面部运动与稀缺的训练数据。我们提出 CLAU-Former，通过动作单元（AU）先验与视觉 token 的跨层交互注入结构信息。'
-      : 'Micro-expression recognition (MER) is hindered by subtle facial motions and scarce training data. We propose CLAU-Former, which injects structural information through cross-layer interaction between AU priors and visual tokens.',
-    direction,
-    glossary: [{ en: 'Action Unit (AU)', zh: '动作单元' }, { en: 'LOSO', zh: '留一主体交叉验证' }],
-  });
+  try {
+    const live = await ai.generateResponse([
+      { role: 'system', content: `你是科研论文翻译助手。将文本${direction === 'en2zh' ? '翻译成中文' : '翻译成英文'}，保留术语、公式和引用，只输出译文。` },
+      { role: 'user', content: text },
+    ], { userId: req.user.id });
+    if (!live.fallback) return ok(res, { translated: live.text, direction, glossary: [], mode: 'live' });
+    ok(res, {
+      translated: direction === 'en2zh'
+        ? '微表情识别（MER）受制于细微的面部运动与稀缺的训练数据。我们提出 CLAU-Former，通过动作单元（AU）先验与视觉 token 的跨层交互注入结构信息。'
+        : 'Micro-expression recognition (MER) is hindered by subtle facial motions and scarce training data. We propose CLAU-Former, which injects structural information through cross-layer interaction between AU priors and visual tokens.',
+      direction,
+      glossary: [{ en: 'Action Unit (AU)', zh: '动作单元' }, { en: 'LOSO', zh: '留一主体交叉验证' }],
+    });
+  } catch {
+    errors.modelTimeout(res, '翻译模型请求失败，请稍后重试');
+  }
 });
 
 router.post('/writing/plagiarism', auth, (req, res) => {
@@ -174,14 +197,17 @@ router.post('/writing/paraphrase', auth, (req, res) => {
 });
 
 /* ---------- 稿件管理 REQ-WRT-01 ---------- */
-router.get('/manuscripts', auth, (req, res) => ok(res, { items: store.manuscripts }));
+router.get('/manuscripts', auth, (req, res) => {
+  const items = store.manuscripts.filter((manuscript) => canAccess(store.projects.find((project) => project.id === manuscript.project_id), req.user.id));
+  ok(res, { items });
+});
 router.get('/manuscripts/:id', auth, (req, res) => {
-  const ms = store.manuscripts.find((m) => m.id === req.params.id);
+  const ms = store.manuscripts.find((m) => m.id === req.params.id && canAccess(store.projects.find((p) => p.id === m.project_id), req.user.id));
   if (!ms) return errors.notFound(res, '稿件不存在');
   ok(res, ms);
 });
 router.put('/manuscripts/:id', auth, (req, res) => {
-  const ms = store.manuscripts.find((m) => m.id === req.params.id);
+  const ms = store.manuscripts.find((m) => m.id === req.params.id && canAccess(store.projects.find((p) => p.id === m.project_id), req.user.id));
   if (!ms) return errors.notFound(res, '稿件不存在');
   if (req.body?.content !== undefined) { ms.content = req.body.content; ms.version += 1; ms.updated_at = store.now(); }
   ok(res, ms, '稿件已保存');

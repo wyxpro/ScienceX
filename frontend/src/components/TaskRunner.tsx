@@ -8,6 +8,7 @@ export function TaskRunner({ taskId, title, onClose, onDone }: { taskId: string 
   const [percent, setPercent] = useState(0);
   const [stage, setStage] = useState('准备中');
   const [done, setDone] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [result, setResult] = useState<any>(null);
   const closedRef = useRef(false);
   const toast = useToast();
@@ -15,16 +16,21 @@ export function TaskRunner({ taskId, title, onClose, onDone }: { taskId: string 
   useEffect(() => {
     if (!taskId) return;
     closedRef.current = false;
-    setPercent(0); setStage('准备中'); setDone(false); setResult(null);
+    setPercent(0); setStage('准备中'); setDone(false); setFailed(false); setResult(null);
     const stop = taskStream(taskId, {
       onProgress: (d) => { if (!closedRef.current) { setPercent(d.percent); setStage(d.stage); } },
       onDone: (d) => {
         if (closedRef.current) return;
-        setPercent(100); setDone(true); setResult(d.result);
+        setPercent(100); setDone(true); setFailed(false); setResult(d.result);
         toast('任务完成');
         onDone?.(d.result);
       },
-      onError: (m) => toast(m || '任务失败', 'err'),
+      onError: (m) => {
+        if (closedRef.current) return;
+        setFailed(true);
+        setStage('任务失败');
+        toast(m || '任务失败', 'err');
+      },
     });
     return () => { closedRef.current = true; stop(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -32,11 +38,11 @@ export function TaskRunner({ taskId, title, onClose, onDone }: { taskId: string 
 
   return (
     <Modal open={!!taskId} onClose={onClose} title={<span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon name="zap" size={16} />{title}</span>}
-      footer={<button className="btn btn-primary" onClick={onClose} disabled={!done}>{done ? '完成' : '后台运行'}</button>}>
+      footer={<button className="btn btn-primary" onClick={onClose} disabled={!done && !failed}>{done || failed ? '关闭' : '后台运行'}</button>}>
       <div style={{ padding: '4px 0 8px' }}>
         <div className="row-between mb-2">
           <span style={{ fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-            {done ? <Icon name="check" size={16} /> : <span className="spinner spinner-dark" />}
+            {done ? <Icon name="check" size={16} /> : failed ? <Icon name="alert" size={16} /> : <span className="spinner spinner-dark" />}
             {stage}
           </span>
           <span className="mono text-muted">{percent}%</span>

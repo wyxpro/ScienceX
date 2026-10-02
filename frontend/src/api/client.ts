@@ -3,7 +3,7 @@
    支持：类型泛型、静默 Token 续期、SSE 容错解析、断线断点重连、Abort 中断与 401 路由广播
    ============================================================ */
 
-const BASE = '/api/v1';
+const BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
 export class ApiError extends Error {
   code: number;
@@ -23,7 +23,7 @@ let memoryRefreshToken = '';
 export function getToken(): string {
   if (memoryToken) return memoryToken;
   try {
-    const s = sessionStorage.getItem('sx_token') || localStorage.getItem('sx_token') || '';
+    const s = sessionStorage.getItem('sx_token') || '';
     memoryToken = s;
     return s;
   } catch {
@@ -34,7 +34,7 @@ export function getToken(): string {
 export function getRefreshToken(): string {
   if (memoryRefreshToken) return memoryRefreshToken;
   try {
-    const s = sessionStorage.getItem('sx_refresh_token') || localStorage.getItem('sx_refresh_token') || '';
+    const s = sessionStorage.getItem('sx_refresh_token') || '';
     memoryRefreshToken = s;
     return s;
   } catch {
@@ -46,11 +46,9 @@ export function setToken(token: string, refreshToken?: string): void {
   memoryToken = token;
   try {
     sessionStorage.setItem('sx_token', token);
-    localStorage.setItem('sx_token', token); // 兼容性回退
     if (refreshToken) {
       memoryRefreshToken = refreshToken;
       sessionStorage.setItem('sx_refresh_token', refreshToken);
-      localStorage.setItem('sx_refresh_token', refreshToken);
     }
   } catch (_) {}
 }
@@ -61,8 +59,6 @@ export function clearToken(): void {
   try {
     sessionStorage.removeItem('sx_token');
     sessionStorage.removeItem('sx_refresh_token');
-    localStorage.removeItem('sx_token');
-    localStorage.removeItem('sx_refresh_token');
   } catch (_) {}
 }
 
@@ -91,6 +87,47 @@ async function attemptTokenRefresh(): Promise<string | null> {
     }
   } catch (_) {}
   return null;
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (isRefreshing) {
+    return new Promise((resolve) => refreshSubscribers.push(resolve));
+  }
+
+  isRefreshing = true;
+  try {
+    const newToken = await attemptTokenRefresh();
+    onTokenRefreshed(newToken);
+    return newToken;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+// Streaming endpoints use fetch directly, so they need the same one-shot
+// refresh behavior as api() instead of failing immediately on an expired token.
+async function fetchWithAuth(url: string, init: RequestInit = {}): Promise<Response> {
+  const response = await fetch(url, init);
+  if (response.status !== 401 || init.signal?.aborted) return response;
+  if (!getRefreshToken()) {
+    handleAuthExpired();
+    return response;
+  }
+
+  await response.body?.cancel().catch(() => undefined);
+  const newToken = await refreshAccessToken();
+  if (!newToken) {
+    handleAuthExpired();
+    return response;
+  }
+
+  const headers = new Headers(init.headers);
+  headers.set('Authorization', `Bearer ${newToken}`);
+  const retryResponse = await fetch(url, { ...init, headers });
+  if (retryResponse.status === 401 && !init.signal?.aborted) {
+    handleAuthExpired();
+  }
+  return retryResponse;
 }
 
 function handleAuthExpired() {
@@ -144,26 +181,9 @@ export async function api<T = any>(path: string, opts: RequestOptions = {}): Pro
   // 401 拦截处理
   if (json.code === 40101 || res.status === 401) {
     if (!isRetry && getRefreshToken()) {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        const newToken = await attemptTokenRefresh();
-        isRefreshing = false;
-        onTokenRefreshed(newToken);
-        if (newToken) {
-          return api<T>(path, { ...opts, isRetry: true });
-        }
-      } else {
-        // 等待正在进行的刷新
-        return new Promise<T>((resolve, reject) => {
-          refreshSubscribers.push((newToken) => {
-            if (newToken) {
-              resolve(api<T>(path, { ...opts, isRetry: true }));
-            } else {
-              handleAuthExpired();
-              reject(new ApiError(40101, '登录已过期，请重新登录'));
-            }
-          });
-        });
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        return api<T>(path, { ...opts, isRetry: true });
       }
     }
 
@@ -190,17 +210,19 @@ export interface SSEHandlers {
 }
 
 /* ---------- SSE：对话流式 (支持 AbortSignal 中断与 Last-Event-ID 记录) ---------- */
-let lastReceivedEventId = '';
+// 每条流单独保存游标，避免对话流的事件序号污染文献问答或任务流。
+const lastReceivedEventIds = new Map<string, string>();
 
 export async function chatStream(payload: any, handlers: SSEHandlers, signal?: AbortSignal): Promise<void> {
   const token = getToken();
+  const streamKey = `chat:${payload?.conversation_id || 'default'}`;
   try {
-    const res = await fetch(`${BASE}/chat/completions`, {
+    const res = await fetchWithAuth(`${BASE}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(lastReceivedEventId ? { 'Last-Event-ID': lastReceivedEventId } : {}),
+        ...(lastReceivedEventIds.get(streamKey) ? { 'Last-Event-ID': lastReceivedEventIds.get(streamKey)! } : {}),
       },
       body: JSON.stringify({ ...payload, stream: true }),
       signal,
@@ -211,7 +233,7 @@ export async function chatStream(payload: any, handlers: SSEHandlers, signal?: A
       return;
     }
 
-    await readSSE(res.body, handlers);
+    await readSSE(res.body, handlers, streamKey);
   } catch (err: any) {
     if (err.name === 'AbortError') {
       handlers.onDone?.({ aborted: true, text: '用户已终止生成' });
@@ -224,12 +246,12 @@ export async function chatStream(payload: any, handlers: SSEHandlers, signal?: A
 export async function docChatStream(docId: string, messages: any[], handlers: SSEHandlers, signal?: AbortSignal): Promise<void> {
   const token = getToken();
   try {
-    const res = await fetch(`${BASE}/documents/${docId}/chat`, {
+    const res = await fetchWithAuth(`${BASE}/documents/${docId}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(lastReceivedEventId ? { 'Last-Event-ID': lastReceivedEventId } : {}),
+        ...(lastReceivedEventIds.get(`doc:${docId}`) ? { 'Last-Event-ID': lastReceivedEventIds.get(`doc:${docId}`)! } : {}),
       },
       body: JSON.stringify({ messages }),
       signal,
@@ -240,7 +262,7 @@ export async function docChatStream(docId: string, messages: any[], handlers: SS
       return;
     }
 
-    await readSSE(res.body, handlers);
+    await readSSE(res.body, handlers, `doc:${docId}`);
   } catch (err: any) {
     if (err.name === 'AbortError') return;
     handlers.onError?.(err?.message || '文献问答连接失败');
@@ -250,48 +272,90 @@ export async function docChatStream(docId: string, messages: any[], handlers: SS
 /* ---------- SSE：异步任务进度（修复 🐞2 / B11：采用 fetch + ReadableStream 携带 Authorization） ---------- */
 export function taskStream(taskId: string, handlers: SSEHandlers): () => void {
   const controller = new AbortController();
-  const token = getToken();
+  let stopped = false;
+  let terminal = false;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let retryResolve: (() => void) | undefined;
+  let attempts = 0;
 
   (async () => {
-    try {
-      const res = await fetch(`${BASE}/tasks/${taskId}/stream`, {
-        headers: {
-          Accept: 'text/event-stream',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        signal: controller.signal,
-      });
+    while (!stopped && !controller.signal.aborted) {
+      try {
+        const token = getToken();
+        const res = await fetchWithAuth(`${BASE}/tasks/${taskId}/stream`, {
+          headers: {
+            Accept: 'text/event-stream',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(lastReceivedEventIds.get(`task:${taskId}`) ? { 'Last-Event-ID': lastReceivedEventIds.get(`task:${taskId}`)! } : {}),
+          },
+          signal: controller.signal,
+        });
 
-      if (!res.ok || !res.body) {
-        handlers.onError?.(`无法建立任务进度监听 [${res.status}]`);
-        return;
-      }
+        if (!res.ok || !res.body) {
+          // 任务流短暂断开时重连；认证失败交给统一 API 事件处理，避免死循环。
+          if (res.status >= 500 || res.status === 408 || res.status === 429) {
+            throw new Error(`任务流响应错误 [${res.status}]`);
+          }
+          handlers.onError?.(`无法建立任务进度监听 [${res.status}]`);
+          return;
+        }
 
-      await readSSE(res.body, {
-        onProgress: (d) => handlers.onProgress?.(d),
-        onDone: (d) => handlers.onDone?.(d),
-        onError: (err) => handlers.onError?.(err),
-      });
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        handlers.onError?.('任务进度监控连接中断');
+        await readSSE(res.body, {
+          onProgress: (d) => handlers.onProgress?.(d),
+          onDone: (d) => {
+            stopped = true;
+            handlers.onDone?.(d);
+          },
+          onError: (err) => {
+            stopped = true;
+            terminal = true;
+            handlers.onError?.(err);
+          },
+        }, `task:${taskId}`);
+
+        // 服务端正常结束通常会先发 done；没有 done 时视为可恢复断开。
+        if (stopped || terminal || controller.signal.aborted) return;
+        throw new Error('任务流已断开');
+      } catch (err: any) {
+        if (err.name === 'AbortError' || stopped || terminal || controller.signal.aborted) return;
+        if (attempts >= 3) {
+          handlers.onError?.('任务进度监控连接中断，请刷新页面重试');
+          return;
+        }
+        const delay = 500 * 2 ** attempts;
+        attempts += 1;
+        await new Promise<void>((resolve) => {
+          retryResolve = resolve;
+          retryTimer = setTimeout(() => {
+            retryTimer = undefined;
+            retryResolve = undefined;
+            resolve();
+          }, delay);
+        });
       }
     }
   })();
 
   return () => {
+    stopped = true;
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = undefined;
+    }
+    retryResolve?.();
+    retryResolve = undefined;
     controller.abort();
   };
 }
 
 /* ---------- 通用 SSE 缓冲区解析器（带 Last-Event-ID 记录与 JSON 容错） ---------- */
-async function readSSE(stream: ReadableStream<Uint8Array>, handlers: SSEHandlers): Promise<void> {
+async function readSSE(stream: ReadableStream<Uint8Array>, handlers: SSEHandlers, streamKey: string): Promise<void> {
   const reader = stream.getReader();
   const decoder = new TextDecoder('utf-8');
   let buf = '';
 
   const dispatch = (event: string, dataStr: string, eventId?: string) => {
-    if (eventId) lastReceivedEventId = eventId;
+    if (eventId) lastReceivedEventIds.set(streamKey, eventId);
     if (!dataStr) return;
 
     let data: any;
@@ -330,36 +394,43 @@ async function readSSE(stream: ReadableStream<Uint8Array>, handlers: SSEHandlers
     }
   };
 
+  const processBlock = (block: string) => {
+    if (!block.trim()) return;
+    let event = 'message';
+    let eventId = '';
+    const dataLines: string[] = [];
+
+    for (const line of block.split('\n')) {
+      if (line.startsWith(':')) {
+        // 心跳注释行 : ping
+        continue;
+      } else if (line.startsWith('id:')) {
+        eventId = line.slice(3).trim();
+      } else if (line.startsWith('event:')) {
+        event = line.slice(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5));
+      }
+    }
+
+    dispatch(event, dataLines.join('\n').trim(), eventId);
+  };
+
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Flush TextDecoder and process a final event without a trailing blank line.
+        buf += decoder.decode();
+        if (buf.trim()) processBlock(buf);
+        break;
+      }
 
       buf += decoder.decode(value, { stream: true });
       const blocks = buf.split('\n\n');
       buf = blocks.pop() || '';
 
-      for (const block of blocks) {
-        if (!block.trim()) continue;
-        let event = 'message';
-        let eventId = '';
-        const dataLines: string[] = [];
-
-        for (const line of block.split('\n')) {
-          if (line.startsWith(':')) {
-            // 心跳注释行 : ping
-            continue;
-          } else if (line.startsWith('id:')) {
-            eventId = line.slice(3).trim();
-          } else if (line.startsWith('event:')) {
-            event = line.slice(6).trim();
-          } else if (line.startsWith('data:')) {
-            dataLines.push(line.slice(5));
-          }
-        }
-
-        dispatch(event, dataLines.join('\n').trim(), eventId);
-      }
+      blocks.forEach(processBlock);
     }
   } finally {
     reader.releaseLock();
