@@ -5,10 +5,20 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import '../styles/landing.css';
 
-// 轮播图数据
+// 轮播图与六大科研工具数据
 const CAROUSEL_SLIDES = [
   {
-    tag: '交互中枢',
+    id: 'topic',
+    tag: '1. 选题灵感与开题论证',
+    title: '💡 顶会前沿缺口洞察与开题论证引擎',
+    desc: '从海量顶会中挖掘前沿创新缺口。基于对标 SOTA 自动分析研究可行性，自动提炼跨层交互、数据增广与域适应方案，一键生成结构化开题报告与可行性评估雷达。',
+    badge: '学术热点 · 可行性雷达',
+    stats: ['秒级顶会论文关联检索', '自动论证 3 大细分缺口', '生成规范开题报告骨架'],
+    mockupType: 'topic',
+  },
+  {
+    id: 'chat',
+    tag: '2. 交互中枢',
     title: '💬 AI 对话工作台：工具即智能体',
     desc: '彻底颠覆单一窗口问答模式。以对话为神经中枢，无缝调度文献、实验、写作与评审。支持自定义接入 GPT-4o、Claude 3.5、DeepSeek 等任意兼容 OpenAI 协议的模型，支持 Skills 扩展与 MCP 外部协议。',
     badge: '模型中立 · 开放扩展',
@@ -16,23 +26,26 @@ const CAROUSEL_SLIDES = [
     mockupType: 'chat',
   },
   {
-    tag: '文献深度研读',
-    title: '📖 三栏式沉浸阅读与引用拓扑图谱',
+    id: 'reader',
+    tag: '3. 文献深度研读',
+    title: '📖 三栏沉浸精读与多层级引用图谱',
     desc: '打破传统 PDF 查看器局限。左右联动视窗，专业学术术语逐段双向互译；一键自动解构全文，生成交互式思维导图与七段式学术骨架；精准提取文献 DOI，自动绘制多层级引用网络图谱。',
     badge: '结构化解析 · 引用溯源',
     stats: ['段落级精准 RAG 召回', '公式自动 LaTeX 化', '思维导图一键导出'],
     mockupType: 'reader',
   },
   {
-    tag: '实验与算力管理',
-    title: '🧫 自动化消融实验设计与 GPU 集群看板',
+    id: 'experiment',
+    tag: '4. 实验与算力管理',
+    title: '🧫 自动化消融矩阵设计与 GPU 集群看板',
     desc: '不再为实验方案拍脑袋。输入研究目标，AI 智能体基于 SOTA 对标自动推导控制变量、自变量矩阵与多轮消融方案；直连实验室 GPU 节点，显存负载与温度秒级刷新，算力调度一目了然。',
     badge: 'SOTA 对标 · 算力监控',
     stats: ['消融矩阵一键生成', '4090/A100/H800 节点监控', '参数看板版本可追溯'],
     mockupType: 'experiment',
   },
   {
-    tag: '期刊级写作',
+    id: 'writing',
+    tag: '5. 期刊级写作与查重',
     title: '✍️ 学术精细润色 Diff 与双通道查重',
     desc: '比普通润色更懂学术期刊偏好。逐句输出前后对比 Diff，标明词汇升级与相对提升表达理由；整合自建学术库与联网双重通道 AI 相似度查重，提供高保真语义降重建议，守护学术纯洁性。',
     badge: '逐句 Diff · 保义降重',
@@ -40,8 +53,9 @@ const CAROUSEL_SLIDES = [
     mockupType: 'writing',
   },
   {
-    tag: '同行评议创新',
-    title: '🧑‍⚖️ 5角色多智能体专家评审团',
+    id: 'review',
+    tag: '6. 同行评议创新',
+    title: '🧑‍⚖️ 5角色多智能体专家盲审评议团',
     desc: '在投稿前进行残酷而真实的同行盲审！理论推导、方法创新、实验设计、写作规范与学术伦理 5 位智能体评审员并行审阅，主审主席综合仲裁，提前排查拒稿隐患，出具权威评审报告。',
     badge: '五角色并行 · 主席仲裁',
     stats: ['模拟 CCF 顶会评议标准', '自动定位冲突分歧点', '生成可执行返修清单'],
@@ -350,10 +364,10 @@ export default function Landing() {
               </button>
             </div>
 
-            {/* 轮播图右侧模拟示意视窗 */}
-            <div className="card card-pad" style={{ background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--line)' }}>
+            {/* 轮播图右侧模拟示意视窗 (全面去除纯白底，改用温润质感与柔和翠绿微光晕) */}
+            <div className="card card-pad" style={{ background: 'rgba(235, 231, 218, 0.65)', borderRadius: 16, border: '1px solid var(--line-strong)', backdropFilter: 'blur(8px)' }}>
               <div className="row-between pb-2 mb-2" style={{ borderBottom: '1px solid var(--line)' }}>
-                <span className="tag" style={{ background: 'var(--surface)', color: 'var(--brand-strong)', fontSize: 11 }}>
+                <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)', fontSize: 11, fontWeight: 'bold' }}>
                   {CAROUSEL_SLIDES[carouselIndex].badge}
                 </span>
                 <span className="text-xs text-muted">ScienceX Studio Preview</span>
@@ -363,72 +377,88 @@ export default function Landing() {
                   <div className="col g-2">
                     <div className="tilt-chat-bubble" style={{ margin: 0 }}>
                       <span className="text-xs text-muted">输入提示词：</span>
-                      <div>“帮我分析微表情领域 2026 最具创新价值的选题”</div>
+                      <div>“帮我分析微表情领域 2026 最具创新价值的选题方向与可行性论证”</div>
                     </div>
                     <div className="tilt-chat-bubble ai" style={{ margin: 0 }}>
-                      <div className="fw-bold text-xs" style={{ color: 'var(--brand-strong)' }}>✦ 技能 [选题灵感] 自动挂载</div>
-                      <div>已为您检索 42 篇顶会论文，提炼 3 个最具发表潜力的细分缺口（跨层交互 / 扩散数据增广 / 跨域域适应）...</div>
+                      <div className="fw-bold text-xs" style={{ color: 'var(--brand-strong)' }}>✦ 技能 [选题灵感与开题] 自动调度</div>
+                      <div>已为您关联检索 42 篇 CCF-A 顶会论文，提炼 3 大细分缺口（跨层频域交互 / 扩散数据增广 / 弱监督跨域域适应），已生成开题论证大纲与可行性雷达指标。</div>
                     </div>
                   </div>
                 )}
                 {carouselIndex === 1 && (
+                  <div className="col g-2">
+                    <div className="tilt-chat-bubble" style={{ margin: 0 }}>
+                      <span className="text-xs text-muted">多模型协同中枢：</span>
+                      <div className="row g-2 items-center text-xs mt-1">
+                        <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)' }}>DeepSeek-R1</span>
+                        <span className="tag" style={{ background: 'var(--bg-deep)', color: 'var(--ink)' }}>GPT-4o</span>
+                        <span className="tag" style={{ background: 'var(--bg-deep)', color: 'var(--ink)' }}>Claude 3.5</span>
+                      </div>
+                    </div>
+                    <div className="tilt-chat-bubble ai" style={{ margin: 0 }}>
+                      <div className="fw-bold text-xs" style={{ color: 'var(--brand-strong)' }}>✦ 全链路上下文实时串接</div>
+                      <div>正在调度文献库 #AUFormer 与 GPU-01 节点，已为您自动生成消融方案对比，并开启流式思维链...</div>
+                    </div>
+                  </div>
+                )}
+                {carouselIndex === 2 && (
                   <div className="col g-2">
                     <div className="row-between text-small fw-bold">
                       <span>AU-aware Transformer with Optical Flow...</span>
                       <span className="text-xs tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)' }}>ACM MM 24</span>
                     </div>
                     <div className="grid grid-2 text-xs text-muted mt-1" style={{ gap: 8 }}>
-                      <div className="card card-pad" style={{ padding: 10, background: '#fff' }}>
-                        <strong>七段式学术结构：</strong><br />已萃取研究背景、方法核心与5大局限性
+                      <div className="card card-pad" style={{ padding: 10, background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
+                        <strong style={{ color: 'var(--ink)' }}>七段式学术结构：</strong><br />已萃取研究背景、方法核心与5大局限性
                       </div>
-                      <div className="card card-pad" style={{ padding: 10, background: '#fff' }}>
-                        <strong>引用拓扑网络：</strong><br />12 个关联节点，清晰展示方法派生脉络
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {carouselIndex === 2 && (
-                  <div className="col g-2">
-                    <div className="text-small fw-bold">消融实验配置矩阵自动生成</div>
-                    <div className="text-xs text-muted">已构建 Baseline、+Cross-Attn、+Flow-Boost 方案对比</div>
-                    <div className="row g-2 mt-1">
-                      <div className="card card-pad grow text-center" style={{ padding: 8, background: '#fff' }}>
-                        <div className="text-xs text-muted">GPU-01 (4090)</div>
-                        <div className="mono fw-bold" style={{ color: 'var(--brand)' }}>78% 负载</div>
-                      </div>
-                      <div className="card card-pad grow text-center" style={{ padding: 8, background: '#fff' }}>
-                        <div className="text-xs text-muted">SOTA UF1 对标</div>
-                        <div className="mono fw-bold" style={{ color: 'var(--accent)' }}>0.829 (领先)</div>
+                      <div className="card card-pad" style={{ padding: 10, background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
+                        <strong style={{ color: 'var(--ink)' }}>引用拓扑网络：</strong><br />12 个关联节点，清晰展示方法派生脉络
                       </div>
                     </div>
                   </div>
                 )}
                 {carouselIndex === 3 && (
-                  <div className="col g-2 text-small">
-                    <div className="card card-pad" style={{ background: '#fff', padding: 10 }}>
-                      <div className="text-xs text-muted mb-1">原文句段：</div>
-                      <div style={{ textDecoration: 'line-through', color: 'var(--red)', fontSize: 12.5 }}>
-                        Micro-expressions are involuntary facial movements that reveal genuine emotions...
+                  <div className="col g-2">
+                    <div className="text-small fw-bold">消融实验配置矩阵自动生成</div>
+                    <div className="text-xs text-muted">已构建 Baseline、+Cross-Attn、+Flow-Boost 方案对比</div>
+                    <div className="row g-2 mt-1">
+                      <div className="card card-pad grow text-center" style={{ padding: 8, background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
+                        <div className="text-xs text-muted">GPU-01 (4090)</div>
+                        <div className="mono fw-bold" style={{ color: 'var(--brand)' }}>78% 负载 · 18.4GB</div>
                       </div>
-                    </div>
-                    <div className="card card-pad" style={{ background: 'var(--brand-soft)', padding: 10 }}>
-                      <div className="text-xs fw-bold mb-1" style={{ color: 'var(--brand-strong)' }}>学术级替换 (已通过查重校验)：</div>
-                      <div style={{ color: 'var(--brand-strong)', fontSize: 12.5 }}>
-                        Involuntary facial motions, referred to as micro-expressions, exhibit high fidelity in clinical diagnostics...
+                      <div className="card card-pad grow text-center" style={{ padding: 8, background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
+                        <div className="text-xs text-muted">SOTA UF1 对标</div>
+                        <div className="mono fw-bold" style={{ color: 'var(--accent)' }}>0.829 (领先 +4.3%)</div>
                       </div>
                     </div>
                   </div>
                 )}
                 {carouselIndex === 4 && (
                   <div className="col g-2 text-small">
+                    <div className="card card-pad" style={{ background: 'var(--bg-deep)', border: '1px solid var(--line-strong)', padding: 10 }}>
+                      <div className="text-xs text-muted mb-1">原文句段 (重复率与口语化标记)：</div>
+                      <div style={{ textDecoration: 'line-through', color: 'var(--red)', fontSize: 12.5 }}>
+                        Micro-expressions are involuntary facial movements that reveal genuine emotions...
+                      </div>
+                    </div>
+                    <div className="card card-pad" style={{ background: 'var(--brand-soft)', border: '1px solid rgba(27, 122, 94, 0.2)', padding: 10 }}>
+                      <div className="text-xs fw-bold mb-1" style={{ color: 'var(--brand-strong)' }}>学术级替换 (已通过查重校验 · 相似度降至 3.8%)：</div>
+                      <div style={{ color: 'var(--brand-strong)', fontSize: 12.5 }}>
+                        Involuntary facial motions, referred to as micro-expressions, exhibit high fidelity in clinical diagnostics...
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {carouselIndex === 5 && (
+                  <div className="col g-2 text-small">
                     <div className="row-between">
                       <span className="fw-bold">评审团决策报告 #rv1</span>
                       <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)' }}>Strong Accept</span>
                     </div>
                     <div className="col g-1 text-xs mt-1">
-                      <div>⚖️ 理论 Agent：公式无歧义，符号体系规范</div>
-                      <div>🧪 实验 Agent：已补充 3 个随机种子标准差，实验完备</div>
-                      <div>✍️ 写作 Agent：摘要贡献点已按 CCF 标准精炼</div>
+                      <div className="card card-pad" style={{ padding: '6px 10px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)', margin: 0 }}>⚖️ 理论 Agent：公式无歧义，符号体系规范</div>
+                      <div className="card card-pad" style={{ padding: '6px 10px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)', margin: 0 }}>🧪 实验 Agent：已补充 3 个随机种子标准差，实验完备</div>
+                      <div className="card card-pad" style={{ padding: '6px 10px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)', margin: 0 }}>✍️ 写作与伦理 Agent：摘要贡献点已按 CCF 标准精炼，数据集开源合规</div>
                     </div>
                   </div>
                 )}
@@ -446,11 +476,29 @@ export default function Landing() {
               />
             ))}
           </div>
+
+          {/* 六大科研工具快速联动导航卡片 (无白色背景，采用柔和深邃纸质色调) */}
+          <div className="features-nav-grid">
+            {CAROUSEL_SLIDES.map((slide, idx) => (
+              <div
+                key={slide.id}
+                className={`feature-nav-card ${carouselIndex === idx ? 'active' : ''}`}
+                onClick={() => setCarouselIndex(idx)}
+              >
+                <div className="feature-nav-header">
+                  <span className="feature-nav-tag">{slide.tag.split(' ')[0]}</span>
+                  <span className="feature-nav-badge">{slide.badge}</span>
+                </div>
+                <div className="feature-nav-title">{slide.title.replace(/^[^\s]+\s/, '')}</div>
+                <div className="feature-nav-stat">{slide.stats[0]}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ===== 雷达图组件与多智能体评审体系 (Radar Chart) ===== */}
-      <section id="radar" className="landing-section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+      <section id="radar" className="landing-section" style={{ borderTop: '1px solid var(--line-strong)', borderBottom: '1px solid var(--line-strong)' }}>
         <div className="section-head">
           <div className="section-badge">Multi-Agent Radar</div>
           <h2 className="section-title">多智能体专家评审：5 维严谨评估</h2>
@@ -461,7 +509,7 @@ export default function Landing() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
           {/* 左侧：矢量 SVG 雷达图 */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-deep)', padding: 24, borderRadius: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-deep)', padding: 24, borderRadius: 20, border: '1px solid var(--line-strong)' }}>
             <svg width="340" height="340" viewBox="0 0 340 340" style={{ overflow: 'visible' }}>
               {/* 背景五边形网格 */}
               {[0.2, 0.4, 0.6, 0.8, 1].map((scale, i) => {
@@ -587,28 +635,34 @@ export default function Landing() {
               多视角对抗式把关，不放过任何评审死角
             </h3>
             <div className="col g-3">
-              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg)' }}>
+              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
                 <strong style={{ color: 'var(--brand-deep)' }}>1. 理论 Agent（审严谨）</strong>
                 <p className="text-small text-muted mt-1" style={{ margin: 0 }}>
                   排查数学公式推导漏洞、符号命名冲突与定理假设边界，确保论文逻辑牢不可破。
                 </p>
               </div>
-              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg)' }}>
+              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
                 <strong style={{ color: 'var(--brand-deep)' }}>2. 方法 Agent（审创新）</strong>
                 <p className="text-small text-muted mt-1" style={{ margin: 0 }}>
                   检索全球先验文献，核验创新点是否真实成立，避免陷入现有成果的换皮套壳。
                 </p>
               </div>
-              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg)' }}>
+              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
                 <strong style={{ color: 'var(--brand-deep)' }}>3. 实验 Agent（审复现与消融）</strong>
                 <p className="text-small text-muted mt-1" style={{ margin: 0 }}>
                   严格对照标准协议（如 LOSO），检查随机种子、方差报告与消融路径是否具备统计显著性。
                 </p>
               </div>
-              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg)' }}>
+              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
                 <strong style={{ color: 'var(--brand-deep)' }}>4. 写作与伦理 Agent（审表述与合规）</strong>
                 <p className="text-small text-muted mt-1" style={{ margin: 0 }}>
                   纠正学术英语语法、格式排版以及数据集授权、开源合规隐患，出具可操作的返修清单。
+                </p>
+              </div>
+              <div className="card card-pad" style={{ padding: '12px 16px', background: 'var(--bg-deep)', border: '1px solid var(--line-strong)' }}>
+                <strong style={{ color: 'var(--brand-deep)' }}>5. 主审主席 Agent（终审仲裁与决策）</strong>
+                <p className="text-small text-muted mt-1" style={{ margin: 0 }}>
+                  权衡审稿人分歧，出具 Meta-Review 综合评定（Accept/Major/Reject）与精准返修指引。
                 </p>
               </div>
             </div>
@@ -933,21 +987,89 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ===== 底部召唤 CTA Banner ===== */}
-      <section className="landing-cta-banner">
-        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(26px, 3.2vw, 36px)', fontWeight: 800, margin: '0 0 16px' }}>
-          准备好让 AI 成为你的终身科研协同伴侣了吗？
-        </h2>
-        <p style={{ fontSize: 16, color: '#a9bcb2', maxWidth: 600, margin: '0 auto 28px' }}>
-          无需配置繁琐环境，一键登录即刻体验新一代 AI 原生科研全流程闭环生产力。
-        </p>
-        <button
-          className="btn-hero-primary"
-          style={{ padding: '14px 36px', fontSize: 16, background: '#fff', color: 'var(--brand-deep)' }}
-          onClick={() => nav('/login')}
-        >
-          立即开启科研之旅 · 免费使用 <Icon name="arrowRight" size={16} />
-        </button>
+      {/* ===== 底部召唤 CTA Banner (全景科技重构：光晕流动、微标签与高转化动作组件) ===== */}
+      <section className="landing-cta-section">
+        <div className="landing-cta-card">
+          {/* 动态光晕与网格背景 */}
+          <div className="cta-ambient-glow glow-1" />
+          <div className="cta-ambient-glow glow-2" />
+          <div className="cta-grid-pattern" />
+
+          <div className="cta-content">
+            {/* 顶部微标签 */}
+            <div className="cta-pill">
+              <span className="cta-pill-dot" />
+              <span>✦ 零配置门槛 · 浏览器一键接入 · 永久免费体验</span>
+            </div>
+
+            {/* 主标题 */}
+            <h2 className="cta-title">
+              准备好让 AI 成为你的终身科研协同伴侣了吗？
+            </h2>
+
+            {/* 副标题 */}
+            <p className="cta-sub">
+              无需配置繁琐环境，一键登录即刻体验新一代 AI 原生科研全流程闭环生产力。
+            </p>
+
+            {/* 核心操作按钮组 */}
+            <div className="cta-actions">
+              <button
+                className="cta-btn-primary"
+                onClick={() => nav('/login')}
+                id="cta-start-btn"
+              >
+                <span>立即开启科研之旅 · 免费使用</span>
+                <span className="cta-btn-icon">
+                  <Icon name="arrowRight" size={18} />
+                </span>
+              </button>
+              <button
+                className="cta-btn-secondary"
+                onClick={() => {
+                  const el = document.getElementById('features');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <Icon name="sparkles" size={16} />
+                <span>探索全部六大功能</span>
+              </button>
+            </div>
+
+            {/* 信任与特性微徽章 */}
+            <div className="cta-badges">
+              <div className="cta-badge-item">
+                <span className="cta-badge-icon">⚡</span>
+                <span>3秒极速接入，免配置复杂环境</span>
+              </div>
+              <div className="cta-badge-item">
+                <span className="cta-badge-icon">🔒</span>
+                <span>本地数据隔离，严守学术伦理隐私</span>
+              </div>
+              <div className="cta-badge-item">
+                <span className="cta-badge-icon">🌐</span>
+                <span>支持主流顶尖模型与本地 Ollama</span>
+              </div>
+              <div className="cta-badge-item">
+                <span className="cta-badge-icon">📄</span>
+                <span>一键导出 Word、LaTeX 与汇报 PPTX</span>
+              </div>
+            </div>
+
+            {/* 底部社会认同微字样 */}
+            <div className="cta-proof">
+              <div className="cta-avatars">
+                <span className="cta-avatar">清</span>
+                <span className="cta-avatar">北</span>
+                <span className="cta-avatar">科</span>
+                <span className="cta-avatar">浙</span>
+              </div>
+              <span className="cta-proof-text">
+                已有来自 <strong>200+</strong> 所顶尖高校与科研机构的学者正在使用 ScienceX 加速创新产出
+              </span>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ===== 页脚 Footer ===== */}
