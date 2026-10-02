@@ -22,7 +22,18 @@ export default defineConfig(() => {
         '/api': { target: `http://localhost:${backendPort}`, changeOrigin: true },
       },
     },
-    build: { outDir: 'dist', chunkSizeWarningLimit: 1200 },
+    build: {
+      outDir: 'dist',
+      sourcemap: process.env.NODE_ENV !== 'production',
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          },
+        },
+      },
+    },
   };
 });
 

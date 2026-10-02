@@ -1,6 +1,6 @@
 /* 路由：懒加载 + 登录守卫（页面结构与 PRD §2.0 信息架构一一对应） */
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../stores/auth';
 import { PageLoading } from '../components/ui';
 import AppLayout from '../layouts/AppLayout';
@@ -21,8 +21,12 @@ const Account = lazy(() => import('../pages/Account'));
 
 function Guard({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <PageLoading />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    const redirect = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirect}`} replace />;
+  }
   return children;
 }
 

@@ -32,24 +32,190 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 export const useToast = () => useContext(ToastCtx);
 
-/* ---------- Modal ---------- */
-export function Modal({ open, onClose, title, children, footer, width }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode; width?: string }) {
+/* ---------- Modal (F8 可访问性补齐：role/aria/focus) ---------- */
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  width,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+  width?: string;
+}) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     if (open) window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [open, onClose]);
+
   if (!open) return null;
+
   return (
-    <div className="modal-scrim" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-scrim"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label={typeof title === 'string' ? title : '弹窗对话框'}
+    >
       <div className={width === 'lg' ? 'modal modal-lg' : 'modal'}>
         <div className="modal-head">
           <div className="modal-title">{title}</div>
-          <button className="btn btn-ghost btn-icon modal-x" onClick={onClose}><Icon name="x" size={16} /></button>
+          <button
+            className="btn btn-ghost btn-icon modal-x"
+            onClick={onClose}
+            aria-label="关闭对话框"
+            title="关闭 (Esc)"
+          >
+            <Icon name="x" size={16} />
+          </button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
       </div>
+    </div>
+  );
+}
+
+/* ---------- 通用 Card 卡片容器 (F6 设计统一) ---------- */
+export function Card({
+  children,
+  className = '',
+  style,
+  pad = true,
+  hoverable = false,
+  onClick,
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  pad?: boolean;
+  hoverable?: boolean;
+  onClick?: () => void;
+}) {
+  const cls = `card ${pad ? 'card-pad' : ''} ${hoverable ? 'card-hoverable' : ''} ${className}`;
+  return (
+    <div className={cls} style={style} onClick={onClick}>
+      {children}
+    </div>
+  );
+}
+
+/* ---------- 通用 Toolbar 工具栏 (F6) ---------- */
+export function Toolbar({
+  left,
+  right,
+  className = '',
+  style,
+}: {
+  left?: ReactNode;
+  right?: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      className={`toolbar row-between items-center ${className}`}
+      style={{
+        padding: '12px 16px',
+        background: 'var(--bg-deep)',
+        border: '1px solid var(--line)',
+        borderRadius: 'var(--r-md)',
+        marginBottom: 16,
+        ...style,
+      }}
+    >
+      <div className="row g-2 items-center">{left}</div>
+      <div className="row g-2 items-center">{right}</div>
+    </div>
+  );
+}
+
+/* ---------- 通用 StatRow 指标统计行 (F6) ---------- */
+export function StatRow({
+  stats,
+  className = '',
+}: {
+  stats: Array<{ label: string; value: ReactNode; hint?: string; color?: string }>;
+  className?: string;
+}) {
+  return (
+    <div className={`grid grid-4 g-3 mb-3 ${className}`}>
+      {stats.map((s, idx) => (
+        <Card key={idx} style={{ padding: '14px 16px' }}>
+          <div className="text-xs text-muted mb-1">{s.label}</div>
+          <div className="mono fw-bold" style={{ fontSize: 22, color: s.color || 'var(--ink)' }}>
+            {s.value}
+          </div>
+          {s.hint && <div className="text-xs text-muted mt-1">{s.hint}</div>}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- 空状态展示组件 (F10) ---------- */
+export function EmptyState({
+  title = '暂无相关数据',
+  description,
+  action,
+  icon = 'inbox',
+}: {
+  title?: string;
+  description?: string;
+  action?: ReactNode;
+  icon?: IconName;
+}) {
+  return (
+    <div className="state-container" style={{ padding: '48px 24px', textAlign: 'center' }}>
+      <div style={{ color: 'var(--muted)', marginBottom: 12 }}>
+        <Icon name={icon} size={40} />
+      </div>
+      <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: '0 0 6px' }}>{title}</h4>
+      {description && <p className="text-small text-muted" style={{ maxWidth: 420, margin: '0 auto 16px' }}>{description}</p>}
+      {action && <div>{action}</div>}
+    </div>
+  );
+}
+
+/* ---------- 错误状态展示组件 (F10) ---------- */
+export function ErrorState({
+  title = '加载失败',
+  message,
+  onRetry,
+}: {
+  title?: string;
+  message?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="state-container" style={{ padding: '40px 24px', textAlign: 'center' }}>
+      <div style={{ color: 'var(--red)', marginBottom: 12 }}>
+        <Icon name="alert" size={36} />
+      </div>
+      <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)', margin: '0 0 6px' }}>{title}</h4>
+      {message && <p className="text-small text-muted" style={{ maxWidth: 420, margin: '0 auto 16px' }}>{message}</p>}
+      {onRetry && (
+        <button className="btn btn-outline btn-sm" onClick={onRetry}>
+          <Icon name="sparkles" size={14} /> 重新加载
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ---------- 局部数据加载中占位 (F10) ---------- */
+export function LoadingBlock({ text = '数据加载中...' }: { text?: string }) {
+  return (
+    <div className="state-container" style={{ padding: '36px 20px', textAlign: 'center' }}>
+      <div className="spinner mb-2" />
+      <span className="text-small text-muted">{text}</span>
     </div>
   );
 }

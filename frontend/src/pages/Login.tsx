@@ -21,7 +21,8 @@ export default function Login() {
     try {
       if (mode === 'login') { await login(email, password); toast('欢迎回来，科研工作即将开始'); }
       else { await register(name, email, password); toast('注册成功，已自动登录'); }
-      nav('/chat');
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      nav(redirect ? decodeURIComponent(redirect) : '/chat');
     } catch (err: any) {
       toast(err.message || '操作失败', 'err');
     } finally { setLoading(false); }
