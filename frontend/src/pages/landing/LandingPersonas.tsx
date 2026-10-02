@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/Icon';
 
 interface PersonaScenario {
@@ -9,12 +8,15 @@ interface PersonaScenario {
   avatarIcon: string;
   themeColor: string;
   badgeBg: string;
+  cardActiveBg: string;
+  shadowColor: string;
   sceneTitle: string;
   pains: string[];
   solves: string[];
   metrics: string[];
 }
 
+// 仅保留三大核心角色：硕博研究生、青年学者/博士后、课题组导师/PI
 const PERSONA_SCENARIOS: PersonaScenario[] = [
   {
     id: 'grad-student',
@@ -23,6 +25,8 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
     avatarIcon: 'book',
     themeColor: '#1b7a5e',
     badgeBg: 'rgba(27, 122, 94, 0.12)',
+    cardActiveBg: 'rgba(27, 122, 94, 0.05)',
+    shadowColor: 'rgba(27, 122, 94, 0.28)',
     sceneTitle: '开题破局、文献精读与基线消融实验',
     pains: [
       '开题调研面对海量外文文献茫然无措，难以精准捕捉核心创新点与研究空白；',
@@ -43,10 +47,12 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
     avatarIcon: 'pen',
     themeColor: '#c2762b',
     badgeBg: 'rgba(194, 118, 43, 0.12)',
+    cardActiveBg: 'rgba(194, 118, 43, 0.05)',
+    shadowColor: 'rgba(194, 118, 43, 0.28)',
     sceneTitle: '多线程赶 Deadline、期刊风格润色与智能选刊',
     pains: [
       '多个顶会顶刊截稿日期并轨推进，精力分散难以保证高质量交付；',
-      '论文英文表达存在思维痕迹，审稿人常因“语言生硬”给出负面评价；',
+      '论文英文表达存在中式思维，审稿人常因“语言生硬”给出负面评价；',
       '投稿选刊难以决策，不清楚审稿周期、录用偏好与影响因子变化。',
     ],
     solves: [
@@ -63,6 +69,8 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
     avatarIcon: 'users',
     themeColor: '#2563eb',
     badgeBg: 'rgba(37, 99, 235, 0.12)',
+    cardActiveBg: 'rgba(37, 99, 235, 0.05)',
+    shadowColor: 'rgba(37, 99, 235, 0.28)',
     sceneTitle: '组会汇报材料自动化、指导把控与科研资产库',
     pains: [
       '多位学生实验进展格式散乱，每周组会材料准备耗费学生与导师大量时间；',
@@ -76,50 +84,29 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
     ],
     metrics: ['组会筹备节省 80% 时间', '实验室数字资产 100% 留存', '指导沟通零损耗'],
   },
-  {
-    id: 'interdisciplinary',
-    role: '跨学科团队 / 产学研专家',
-    tag: '协同攻关 · 全维把脉',
-    avatarIcon: 'award',
-    themeColor: '#7c3aed',
-    badgeBg: 'rgba(124, 58, 237, 0.12)',
-    sceneTitle: '跨界同行模拟盲审、算力协同与 SOTA 突破验证',
-    pains: [
-      '跨界合作存在专业术语与符号壁垒，协作理解成本高昂；',
-      '提交前缺乏能从交叉视角全维审视论文的资深同行盲审把脉；',
-      '分布式算力节点利用率不均衡，缺乏统一的监控和任务流调度。',
-    ],
-    solves: [
-      '五角色专家盲审团：理论派、方法派、实验派、写作派、伦理派并行诊断；',
-      '分歧冲突对比看板：直观呈现审稿争议焦点与逐条修改清单；',
-      'GPU 集群算力监控与 SOTA 基准对标：实时追踪显存利用率与指标突破。',
-    ],
-    metrics: ['提前化解 90% 审稿争议', '算力利用率提升 45%', '全流程闭环协同'],
-  },
 ];
 
 export const LandingPersonas: React.FC = () => {
-  const nav = useNavigate();
   const [selectedId, setSelectedId] = useState<string>('grad-student');
 
   return (
-    <section id="personas" className="landing-section" style={{ maxWidth: 1280, margin: '0 auto', padding: '60px 24px' }}>
+    <section id="personas" className="landing-section" style={{ maxWidth: 1320, margin: '0 auto', padding: '60px 24px' }}>
       <div className="section-head text-center" style={{ marginBottom: 44 }}>
         <div className="section-badge">User Personas & Scenarios</div>
         <h2 className="section-title" style={{ fontSize: 'clamp(26px, 3.2vw, 36px)', marginTop: 8 }}>
           用户画像与科研场景
         </h2>
         <p className="section-sub" style={{ maxWidth: 720, margin: '10px auto 0', color: 'var(--muted)', fontSize: 15.5 }}>
-          从开题破局、多线程写作到组会统筹与专家盲审，ScienceX 量身赋能每一位科研工作者的关键决策时刻。
+          从开题破局、多线程写作到组会统筹与成果沉淀，ScienceX 量身赋能每一位科研工作者的关键决策时刻。
         </p>
       </div>
 
-      {/* 四大画像场景卡片网格 */}
+      {/* 三大画像场景卡片网格（点击有交互效果与专属配色） */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 22,
+          gap: 24,
         }}
       >
         {PERSONA_SCENARIOS.map((p) => {
@@ -129,70 +116,99 @@ export const LandingPersonas: React.FC = () => {
               key={p.id}
               onClick={() => setSelectedId(p.id)}
               style={{
-                borderRadius: 18,
-                padding: '24px 22px',
-                background: 'rgba(255, 255, 255, 0.65)',
-                backdropFilter: 'blur(12px)',
-                border: isSelected ? `2px solid ${p.themeColor}` : '1px solid var(--line)',
+                borderRadius: 20,
+                padding: '26px 24px',
+                background: isSelected ? p.cardActiveBg : 'rgba(255, 255, 255, 0.65)',
+                backdropFilter: 'blur(14px)',
+                border: isSelected ? `2.5px solid ${p.themeColor}` : '1.5px solid var(--line)',
                 boxShadow: isSelected
-                  ? `0 12px 32px -8px ${p.themeColor}33, 0 4px 12px rgba(0,0,0,0.04)`
+                  ? `0 18px 40px -8px ${p.shadowColor}, 0 4px 14px rgba(0, 0, 0, 0.05)`
                   : '0 4px 16px -6px rgba(0, 0, 0, 0.05)',
                 display: 'flex',
                 flexDirection: 'column',
                 cursor: 'pointer',
-                transition: 'all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                transform: isSelected ? 'translateY(-2px)' : 'none',
+                transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                transform: isSelected ? 'translateY(-4px)' : 'none',
+                position: 'relative',
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
-                  e.currentTarget.style.borderColor = 'var(--line-strong)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = p.themeColor;
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow = `0 10px 24px -6px ${p.shadowColor}`;
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isSelected) {
                   e.currentTarget.style.borderColor = 'var(--line)';
                   e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '0 4px 16px -6px rgba(0, 0, 0, 0.05)';
                 }
               }}
               role="button"
               tabIndex={0}
-              aria-label={`查看画像：${p.role}`}
+              aria-label={`选择画像：${p.role}`}
             >
+              {/* 顶部微高亮角标 */}
+              {isSelected && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -11,
+                    right: 22,
+                    background: p.themeColor,
+                    color: '#ffffff',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '2px 10px',
+                    borderRadius: 999,
+                    boxShadow: `0 4px 10px ${p.shadowColor}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <Icon name="check" size={11} /> 当前选中方案
+                </div>
+              )}
+
               {/* 卡片头部 */}
               <div className="row-between items-center" style={{ marginBottom: 14 }}>
                 <div className="row g-2 items-center">
                   <div
                     style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
+                      width: 44,
+                      height: 44,
+                      borderRadius: 14,
                       background: p.badgeBg,
                       color: p.themeColor,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
+                      boxShadow: isSelected ? `0 4px 12px ${p.shadowColor}` : 'none',
+                      transition: 'all 0.3s ease',
                     }}
                   >
-                    <Icon name={p.avatarIcon as any} size={20} />
+                    <Icon name={p.avatarIcon as any} size={22} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--ink)' }}>{p.role}</div>
+                    <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--ink)' }}>{p.role}</div>
                     <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{p.tag}</div>
                   </div>
                 </div>
                 <span
                   style={{
-                    padding: '3px 9px',
+                    padding: '4px 10px',
                     borderRadius: 999,
-                    fontSize: 11,
+                    fontSize: 11.5,
                     fontWeight: 700,
-                    background: p.badgeBg,
-                    color: p.themeColor,
+                    background: isSelected ? p.themeColor : p.badgeBg,
+                    color: isSelected ? '#ffffff' : p.themeColor,
+                    transition: 'all 0.25s ease',
                   }}
                 >
-                  典型场景
+                  {isSelected ? '✓ 聚焦场景' : '点击查看'}
                 </span>
               </div>
 
@@ -203,9 +219,11 @@ export const LandingPersonas: React.FC = () => {
                   fontWeight: 700,
                   color: p.themeColor,
                   marginBottom: 14,
-                  padding: '6px 10px',
-                  borderRadius: 8,
-                  background: 'var(--bg-deep)',
+                  padding: '7px 12px',
+                  borderRadius: 10,
+                  background: isSelected ? 'rgba(255, 255, 255, 0.85)' : 'var(--bg-deep)',
+                  border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid transparent',
+                  transition: 'all 0.25s ease',
                 }}
               >
                 🎯 {p.sceneTitle}
@@ -213,9 +231,9 @@ export const LandingPersonas: React.FC = () => {
 
               {/* 痛点与解法 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 16 }}>
-                <div style={{ fontSize: 12.5, color: '#8b3d36', background: 'rgba(194, 74, 66, 0.06)', padding: '10px 12px', borderRadius: 10 }}>
-                  <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Icon name="alert" size={13} /> 传统科研痛点
+                <div style={{ fontSize: 12.5, color: '#8b3d36', background: 'rgba(194, 74, 66, 0.06)', padding: '11px 13px', borderRadius: 12 }}>
+                  <div style={{ fontWeight: 700, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Icon name="alert" size={13} /> 典型科研痛点
                   </div>
                   <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.55 }}>
                     {p.pains.map((pain, idx) => (
@@ -224,9 +242,19 @@ export const LandingPersonas: React.FC = () => {
                   </ul>
                 </div>
 
-                <div style={{ fontSize: 12.5, color: 'var(--brand-deep)', background: 'var(--brand-softer)', padding: '10px 12px', borderRadius: 10 }}>
-                  <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--brand-strong)' }}>
-                    <Icon name="zap" size={13} /> ScienceX 赋能方案
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: 'var(--ink)',
+                    background: isSelected ? 'rgba(255, 255, 255, 0.95)' : 'var(--brand-softer)',
+                    border: isSelected ? `1px solid ${p.themeColor}33` : 'none',
+                    padding: '11px 13px',
+                    borderRadius: 12,
+                    transition: 'all 0.25s ease',
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5, color: p.themeColor }}>
+                    <Icon name="zap" size={13} /> ScienceX 专属解法
                   </div>
                   <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.55 }}>
                     {p.solves.map((solve, idx) => (
@@ -243,11 +271,13 @@ export const LandingPersonas: React.FC = () => {
                     key={idx}
                     style={{
                       fontSize: 11,
-                      padding: '3px 8px',
+                      padding: '3px 9px',
                       borderRadius: 6,
-                      background: 'rgba(0, 0, 0, 0.04)',
-                      color: 'var(--ink-2)',
-                      fontWeight: 600,
+                      background: isSelected ? `${p.themeColor}15` : 'rgba(0, 0, 0, 0.04)',
+                      color: isSelected ? p.themeColor : 'var(--ink-2)',
+                      fontWeight: isSelected ? 700 : 600,
+                      border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid transparent',
+                      transition: 'all 0.25s ease',
                     }}
                   >
                     ⚡ {m}
@@ -257,18 +287,6 @@ export const LandingPersonas: React.FC = () => {
             </div>
           );
         })}
-      </div>
-
-      {/* 底部行动引导 */}
-      <div style={{ textAlign: 'center', marginTop: 38 }}>
-        <button
-          className="btn btn-primary"
-          style={{ padding: '11px 28px', fontSize: 15 }}
-          onClick={() => nav('/login')}
-          aria-label="免费体验适合您的科研场景"
-        >
-          即刻体验适合您的科研方案 <Icon name="arrowRight" size={15} />
-        </button>
       </div>
     </section>
   );

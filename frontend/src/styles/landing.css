@@ -805,29 +805,23 @@
 }
 
 /* ============================================================
-   底部召唤 CTA Banner (去除绿色背景，回归温润学术纯净质感)
+   底部召唤 CTA (纯净学术极简，无背景圆方框)
    ============================================================ */
 .landing-cta-section {
-  max-width: 1280px;
-  margin: 60px auto 80px;
+  max-width: 960px;
+  margin: 70px auto 60px;
   padding: 0 24px;
+  text-align: center;
 }
 
 .landing-cta-card {
-  position: relative;
-  border-radius: 24px;
-  background: rgba(239, 236, 226, 0.5);
-  border: 1px solid var(--line-strong);
-  box-shadow: 0 10px 32px -12px rgba(31, 42, 36, 0.08);
-  overflow: hidden;
-  padding: 64px 32px;
-  text-align: center;
+  display: contents;
 }
 
 .cta-content {
   position: relative;
   z-index: 2;
-  max-width: 780px;
+  max-width: 820px;
   margin: 0 auto;
 }
 
