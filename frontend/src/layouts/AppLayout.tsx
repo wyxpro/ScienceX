@@ -85,7 +85,7 @@ export default function AppLayout() {
           <div className="sb-user-name ellipsis">{user?.name || '未登录'}</div>
           <div className="sb-user-plan">{user?.plan === 'pro' ? 'Pro 专业版' : user?.plan === 'team' ? 'Team 团队版' : 'Free 免费版'}</div>
         </div>
-        <button className="btn btn-ghost btn-icon" style={{ borderColor: 'rgba(255,255,255,.14)', color: '#a9bcb2', padding: 5 }}
+        <button className="btn btn-ghost btn-icon" style={{ borderColor: 'var(--sb-border)', color: 'var(--sb-text-dim)', padding: 5, background: 'transparent' }}
           onClick={(e) => { e.stopPropagation(); logout(); }} title="退出登录">
           <Icon name="logout" size={14} />
         </button>
