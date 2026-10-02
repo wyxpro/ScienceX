@@ -13,11 +13,11 @@ router.post('/chat/completions', auth, express.json({ limit: '2mb' }), async (re
   const { messages, model, stream = true, skills = [] } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) return errors.param(res, 'messages 不能为空');
   if (!stream) {
-    const result = await ai.generateResponse(messages, { model });
+    const result = await ai.generateResponse(messages, { model, userId: req.user.id });
     return ok(res, { content: result.text, model: result.model || model, usage: result.usage || {} });
   }
   // SSE：start → (tool) → delta* → done  —— 遵循 TSD §5.4
-  const result = await ai.generateResponse(messages, { model });
+  const result = await ai.generateResponse(messages, { model, userId: req.user.id });
   const text = result.text;
   const usedSkill = skills[0] ? store.skills.find((s) => s.id === skills[0]) : null;
   await ai.streamText(res, text, {

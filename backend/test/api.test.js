@@ -75,3 +75,44 @@ test('未授权请求被拒绝', { concurrency: false }, async () => {
   assert.equal(response.status, 401);
   assert.equal(body.code, 40101);
 });
+
+test('新用户只能看到自己的资源', { concurrency: false }, async () => {
+  const email = `isolation-${Date.now()}@example.com`;
+  const registered = await request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password: 'a-strong-password', name: '隔离测试用户' }),
+  });
+  assert.equal(registered.body.code, 0);
+  const userToken = registered.body.data.token;
+  const headers = { Authorization: `Bearer ${userToken}` };
+
+  const [projects, conversations, documents, reports, teams, models, orders, advice] = await Promise.all([
+    request('/projects', { headers }),
+    request('/conversations', { headers }),
+    request('/documents', { headers }),
+    request('/review/reports', { headers }),
+    request('/teams', { headers }),
+    request('/models', { headers }),
+    request('/billing/orders', { headers }),
+    request('/advice', { headers }),
+  ]);
+
+  assert.deepEqual(projects.body.data.items, []);
+  assert.deepEqual(conversations.body.data.items, []);
+  assert.deepEqual(documents.body.data.items, []);
+  assert.deepEqual(reports.body.data.items, []);
+  assert.deepEqual(teams.body.data.items, []);
+  assert.deepEqual(models.body.data.custom, []);
+  assert.deepEqual(orders.body.data, []);
+  assert.deepEqual(advice.body.data.items, []);
+});
+
+test('SSE 查询参数 token 不能用于写请求', { concurrency: false }, async () => {
+  const response = await fetch(`${baseUrl}/auth/logout?token=${encodeURIComponent(await ensureToken())}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const body = await response.json();
+  assert.equal(response.status, 401);
+  assert.equal(body.code, 40101);
+});

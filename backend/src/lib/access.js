@@ -5,4 +5,15 @@ function canAccess(resource, userId) {
   return ownerId ? ownerId === userId : userId === 'u1';
 }
 
-module.exports = { canAccess };
+function canAccessTeam(team, userId) {
+  if (!team || !userId) return false;
+  return team.owner === userId || team.members?.some((member) => member.user_id === userId);
+}
+
+function canManageTeam(team, userId) {
+  if (!team || !userId) return false;
+  if (team.owner === userId) return true;
+  return team.members?.some((member) => member.user_id === userId && ['owner', 'admin'].includes(member.role));
+}
+
+module.exports = { canAccess, canAccessTeam, canManageTeam };

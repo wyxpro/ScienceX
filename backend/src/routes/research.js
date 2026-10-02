@@ -86,12 +86,13 @@ router.get('/charts', auth, (req, res) => {
 });
 
 router.post('/charts/generate', auth, (req, res) => {
-  const { prompt = '', data = null, style = 'academic', template_id = null } = req.body || {};
+  const { prompt = '', data = null, style = 'academic', template_id = null, project_id = 'p1' } = req.body || {};
   if (!prompt && !data && !template_id) return errors.param(res, '请提供提示词、数据或模板');
+  if (!canAccess(store.projects.find((project) => project.id === project_id), req.user.id)) return errors.forbidden(res, '无权在该项目中创建图表');
   const task = ai.createTask('chart', ['解析提示词', '匹配图表模板', 'image2 生成渲染', '质量校验'], () => {
     const tpl = store.chartTemplates.find((t) => t.id === template_id) || store.chartTemplates[0];
     const chart = {
-      id: store.id('ch'), project_id: 'p1', title: prompt.slice(0, 24) || tpl.name, type: tpl.type || 'bar',
+      id: store.id('ch'), owner_id: req.user.id, project_id, title: prompt.slice(0, 24) || tpl.name, type: tpl.type || 'bar',
       prompt, created_at: store.now(), source: 'generated',
       // 演示环境：前端按 type 渲染矢量图（生产环境为 image2 生成的位图 URL）
       svg_spec: { type: tpl.tags[0] === '消融' ? 'bar' : tpl.name.includes('曲线') ? 'line' : tpl.name.includes('混淆') ? 'heatmap' : 'bar',
@@ -122,7 +123,7 @@ router.post('/writing/polish', auth, async (req, res) => {
   const live = await ai.generateResponse([
     { role: 'system', content: `你是学术英文编辑。按${style}风格${target ? `，面向${target}` : ''}润色用户文本，只输出润色后的正文，不添加解释。` },
     { role: 'user', content: text },
-  ]);
+  ], { userId: req.user.id });
   if (!live.fallback) return ok(res, { polished: live.text, changes: [], style, target, mode: 'live' });
   ok(res, {
     polished: text
@@ -145,7 +146,7 @@ router.post('/writing/translate', auth, async (req, res) => {
   const live = await ai.generateResponse([
     { role: 'system', content: `你是科研论文翻译助手。将文本${direction === 'en2zh' ? '翻译成中文' : '翻译成英文'}，保留术语、公式和引用，只输出译文。` },
     { role: 'user', content: text },
-  ]);
+  ], { userId: req.user.id });
   if (!live.fallback) return ok(res, { translated: live.text, direction, glossary: [], mode: 'live' });
   ok(res, {
     translated: direction === 'en2zh'
@@ -188,7 +189,10 @@ router.post('/writing/paraphrase', auth, (req, res) => {
 });
 
 /* ---------- 稿件管理 REQ-WRT-01 ---------- */
-router.get('/manuscripts', auth, (req, res) => ok(res, { items: store.manuscripts }));
+router.get('/manuscripts', auth, (req, res) => {
+  const items = store.manuscripts.filter((manuscript) => canAccess(store.projects.find((project) => project.id === manuscript.project_id), req.user.id));
+  ok(res, { items });
+});
 router.get('/manuscripts/:id', auth, (req, res) => {
   const ms = store.manuscripts.find((m) => m.id === req.params.id && canAccess(store.projects.find((p) => p.id === m.project_id), req.user.id));
   if (!ms) return errors.notFound(res, '稿件不存在');

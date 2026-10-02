@@ -4,7 +4,7 @@ const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
 const ai = require('../lib/ai');
 const { auth } = require('./account');
-const { canAccess } = require('../lib/access');
+const { canAccess, canAccessTeam, canManageTeam } = require('../lib/access');
 
 const router = express.Router();
 
@@ -90,7 +90,7 @@ router.post('/deck/generate', auth, (req, res) => {
 });
 
 /* ---------- 导师建议记录 REQ-SPC-01 ---------- */
-router.get('/advice', auth, (req, res) => ok(res, { items: store.adviceRecords }));
+router.get('/advice', auth, (req, res) => ok(res, { items: store.adviceRecords.filter((item) => canAccess(item, req.user.id)) }));
 
 router.post('/advice/extract', auth, (req, res) => {
   const { text = '', audio = false } = req.body || {};
@@ -118,12 +118,16 @@ router.patch('/advice/:id', auth, (req, res) => {
 
 /* ---------- 多智能体评审团 REQ-SPC-02 ---------- */
 router.get('/review/reports', auth, (req, res) => {
-  ok(res, { items: store.reviewReports });
+  const items = store.reviewReports.filter((report) => {
+    const manuscript = store.manuscripts.find((item) => item.id === report.manuscript_id);
+    return canAccess(store.projects.find((project) => project.id === manuscript?.project_id), req.user.id);
+  });
+  ok(res, { items });
 });
 
 router.post('/review/council', auth, (req, res) => {
   const { manuscript_id, roles = ['theory', 'method', 'experiment', 'writing', 'ethics'] } = req.body || {};
-  const ms = store.manuscripts.find((m) => m.id === manuscript_id);
+  const ms = store.manuscripts.find((m) => m.id === manuscript_id && canAccess(store.projects.find((project) => project.id === m.project_id), req.user.id));
   if (!ms) return errors.notFound(res, '稿件不存在');
   const task = ai.createTask('review', ['论文全文解析', '理论 Agent 评审', '方法 Agent 评审', '实验 Agent 评审', '写作/伦理 Agent 评审', '主席 Agent 汇总'], () => {
     const report = store.reviewReports.find((r) => r.manuscript_id === ms.id) || store.reviewReports[0];
@@ -133,7 +137,11 @@ router.post('/review/council', auth, (req, res) => {
 });
 
 router.get('/review/reports/:id', auth, (req, res) => {
-  const report = store.reviewReports.find((r) => r.id === req.params.id);
+  const report = store.reviewReports.find((r) => {
+    if (r.id !== req.params.id) return false;
+    const manuscript = store.manuscripts.find((item) => item.id === r.manuscript_id);
+    return canAccess(store.projects.find((project) => project.id === manuscript?.project_id), req.user.id);
+  });
   if (!report) return errors.notFound(res, '报告不存在');
   ok(res, report);
 });
@@ -168,11 +176,14 @@ router.get('/projects/:id', auth, (req, res) => {
 
 /* ---------- 课题组 REQ-PRJ-01 ---------- */
 router.get('/teams', auth, (req, res) => {
-  ok(res, { items: store.teams.map((t) => ({ ...t, members: t.members.map(({ email, ...m }) => m) })) });
+  const items = store.teams
+    .filter((team) => canAccessTeam(team, req.user.id))
+    .map((team) => ({ ...team, members: team.members.map(({ email, ...member }) => member) }));
+  ok(res, { items });
 });
 
 router.post('/teams/:id/members', auth, (req, res) => {
-  const team = store.teams.find((t) => t.id === req.params.id);
+  const team = store.teams.find((t) => t.id === req.params.id && canManageTeam(t, req.user.id));
   if (!team) return errors.notFound(res, '课题组不存在');
   const { email, role = 'member' } = req.body || {};
   if (!email) return errors.param(res, '成员邮箱不能为空');
@@ -183,7 +194,7 @@ router.post('/teams/:id/members', auth, (req, res) => {
 });
 
 router.delete('/teams/:id/members/:uid', auth, (req, res) => {
-  const team = store.teams.find((t) => t.id === req.params.id);
+  const team = store.teams.find((t) => t.id === req.params.id && canManageTeam(t, req.user.id));
   if (!team) return errors.notFound(res, '课题组不存在');
   const idx = team.members.findIndex((m) => m.user_id === req.params.uid);
   if (idx >= 0) team.members.splice(idx, 1);

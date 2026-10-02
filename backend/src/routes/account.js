@@ -4,12 +4,14 @@ const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
 const { ACCESS_TTL_MS, REFRESH_TTL_MS, createToken, hashPassword, verifyPassword, parseBearer, encryptSecret } = require('../lib/security');
 const gateway = require('../lib/model-gateway');
+const { canAccess } = require('../lib/access');
 
 const router = express.Router();
 
 /* ---------- 鉴权中间件 ---------- */
 function auth(req, res, next) {
-  const token = parseBearer(req) || String(req.query.token || '');
+  // EventSource cannot set Authorization, so query tokens are accepted only for GET streams.
+  const token = parseBearer(req) || (req.method === 'GET' && req.path.endsWith('/stream') ? String(req.query.token || '') : '');
   const session = store.sessions.get(token);
   if (!session || session.expires_at <= Date.now()) {
     if (token) store.sessions.delete(token);
@@ -58,7 +60,7 @@ router.post('/auth/refresh', (req, res) => {
   ok(res, { token: newToken, refresh_token: newRefreshToken });
 });
 
-router.post('/auth/logout', (req, res) => {
+router.post('/auth/logout', auth, (req, res) => {
   store.sessions.delete(req.authToken || parseBearer(req));
   ok(res, {}, '已退出登录');
 });
@@ -80,7 +82,9 @@ router.put('/user/profile', auth, (req, res) => {
 
 /* ---------- 模型管理 REQ-USER-02 / REQ-CHAT-02 ---------- */
 router.get('/models', auth, (req, res) => {
-  const custom = store.customModels.map(({ api_key_encrypted: _secret, ...model }) => model);
+  const custom = store.customModels
+    .filter((model) => canAccess(model, req.user.id))
+    .map(({ api_key_encrypted: _secret, ...model }) => model);
   ok(res, { builtin: store.builtinModels, custom });
 });
 
@@ -88,7 +92,7 @@ router.post('/models', auth, (req, res) => {
   const { name, base_url, model_name, api_key, priority } = req.body || {};
   if (!base_url || !model_name) return errors.param(res, 'BaseURL 与模型名为必填项');
   const model = {
-    id: store.id('m'), name: name || model_name, provider: 'custom', base_url, model_name,
+    id: store.id('m'), owner_id: req.user.id, name: name || model_name, provider: 'custom', base_url, model_name,
     api_key_masked: `sk-****-****-${String(api_key || '').slice(-4)}`,
     api_key_encrypted: encryptSecret(api_key),
     enabled: true, priority: priority || 1, builtin: false, status: 'connected', created_at: store.now(),
@@ -99,21 +103,21 @@ router.post('/models', auth, (req, res) => {
 });
 
 router.delete('/models/:id', auth, (req, res) => {
-  const idx = store.customModels.findIndex((m) => m.id === req.params.id);
+  const idx = store.customModels.findIndex((m) => m.id === req.params.id && canAccess(m, req.user.id));
   if (idx < 0) return errors.notFound(res, '模型不存在');
   store.customModels.splice(idx, 1);
   ok(res, {}, '模型已删除');
 });
 
 router.post('/models/:id/test', auth, async (req, res) => {
-  const m = store.customModels.find((x) => x.id === req.params.id);
+  const m = store.customModels.find((x) => x.id === req.params.id && canAccess(x, req.user.id));
   if (!m) return errors.notFound(res, '模型不存在');
   const started = Date.now();
-  if (!gateway.enabled(m.id)) {
+  if (!gateway.enabled(m.id, req.user.id)) {
     return ok(res, { success: true, mode: 'demo-fallback', latency_ms: Date.now() - started, sample: '模型已保存；配置 OPENAI_API_KEY 或模型密钥后将启用真实调用。' });
   }
   try {
-    const result = await gateway.complete([{ role: 'user', content: '请只回复：连接正常' }], { model: m.id });
+    const result = await gateway.complete([{ role: 'user', content: '请只回复：连接正常' }], { model: m.id, userId: req.user.id });
     ok(res, { success: true, mode: 'live', latency_ms: Date.now() - started, sample: result.text.slice(0, 80) });
   } catch (error) {
     errors.modelTimeout(res, `模型连接失败：${error.message}`);
@@ -124,7 +128,7 @@ router.post('/models/:id/test', auth, async (req, res) => {
 router.get('/usage', auth, (req, res) => {
   const { range = 30 } = req.query;
   const days = Number(range) || 30;
-  const records = store.usageRecords.slice(-days * 3);
+  const records = store.usageRecords.filter((record) => canAccess(record, req.user.id)).slice(-days * 3);
   const byDay = {};
   const byModel = {};
   const byScene = {};
@@ -151,21 +155,29 @@ router.get('/usage', auth, (req, res) => {
 
 /* ---------- 订阅与订单 REQ-USER-04 ---------- */
 router.get('/billing/plans', auth, (req, res) => ok(res, store.plans));
-router.get('/billing/subscription', auth, (req, res) => ok(res, store.subscription));
-router.get('/billing/orders', auth, (req, res) => ok(res, store.orders));
+router.get('/billing/subscription', auth, (req, res) => {
+  if (req.user.id === 'u1') return ok(res, store.subscription);
+  const plan = store.plans.find((item) => item.id === req.user.plan) || store.plans[0];
+  return ok(res, {
+    plan: plan.id, plan_name: plan.name, price: plan.price, period: plan.period,
+    expire_at: null, auto_renew: false, quota: { chat: 50, literature: 20, chart: 0, kb: 1 },
+    used: { chat: 0, literature: 0, chart: 0, kb: 0 },
+  });
+});
+router.get('/billing/orders', auth, (req, res) => ok(res, store.orders.filter((order) => canAccess(order, req.user.id))));
 
 router.post('/orders', auth, (req, res) => {
   const { plan_id } = req.body || {};
   const plan = store.plans.find((p) => p.id === plan_id);
   if (!plan) return errors.notFound(res, '套餐不存在');
-  const order = { id: store.id('o'), order_no: `SX${Date.now()}`, plan: plan.name, amount: plan.price, pay_status: 'pending', period: plan.period, created_at: store.now() };
+  const order = { id: store.id('o'), owner_id: req.user.id, order_no: `SX${Date.now()}`, plan: plan.name, amount: plan.price, pay_status: 'pending', period: plan.period, created_at: store.now() };
   store.orders.unshift(order);
   ok(res, { order, pay_params: { channel: 'demo', qr_url: 'https://pay.sciencex.cn/demo' } }, '订单已创建（演示环境模拟支付）');
 });
 
-router.post('/pay/callback', (req, res) => {
+router.post('/pay/callback', auth, (req, res) => {
   const { order_no } = req.body || {};
-  const order = store.orders.find((o) => o.order_no === order_no);
+  const order = store.orders.find((o) => o.order_no === order_no && canAccess(o, req.user.id));
   if (order && order.pay_status === 'pending') order.pay_status = 'paid';
   ok(res, { ack: true }, '支付回调已处理（幂等）');
 });
@@ -176,7 +188,7 @@ router.get('/account/security', auth, (req, res) => {
     two_factor: { enabled: false, method: 'totp' },
     password_updated_at: store.daysAgo(120),
     active_sessions: [{ device: 'Chrome · Windows', ip: '10.24.6.18', last_active: store.now() }],
-    audit_logs: store.auditLogs,
+    audit_logs: store.auditLogs.filter((entry) => canAccess(entry, req.user.id)),
   });
 });
 

@@ -35,9 +35,9 @@ function generateReply(messages, scene = 'workbench') {
 }
 
 /** 优先调用已配置的 OpenAI 兼容网关，没有密钥时保留本地演示回退。 */
-async function generateResponse(messages, { scene = 'workbench', model, signal } = {}) {
+async function generateResponse(messages, { scene = 'workbench', model, signal, userId } = {}) {
   try {
-    const remote = await gateway.complete(messages, { model, signal });
+    const remote = await gateway.complete(messages, { model, signal, userId });
     if (remote) return remote;
   } catch (error) {
     console.warn('[ScienceX AI] 模型网关调用失败，回退到演示生成器:', error.message);
