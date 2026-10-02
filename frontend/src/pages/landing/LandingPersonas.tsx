@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import Icon from '../../components/Icon';
+import gradStudentImg from '../../assets/personas/grad_student.jpg';
+import earlyScholarImg from '../../assets/personas/early_scholar.jpg';
+import labPiImg from '../../assets/personas/lab_pi.jpg';
 
 interface PersonaScenario {
   id: string;
   role: string;
   tag: string;
+  coverImg: string;
   avatarIcon: string;
   themeColor: string;
   badgeBg: string;
@@ -16,12 +20,13 @@ interface PersonaScenario {
   metrics: string[];
 }
 
-// 仅保留三大核心角色：硕博研究生、青年学者/博士后、课题组导师/PI
+// 三大核心学术角色：硕博研究生、青年学者/博士后、课题组导师/PI
 const PERSONA_SCENARIOS: PersonaScenario[] = [
   {
     id: 'grad-student',
     role: '硕士 / 博士研究生',
     tag: '学术探索 · 开题与精读',
+    coverImg: gradStudentImg,
     avatarIcon: 'book',
     themeColor: '#1b7a5e',
     badgeBg: 'rgba(27, 122, 94, 0.12)',
@@ -44,6 +49,7 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
     id: 'early-scholar',
     role: '青年学者 / 博士后',
     tag: '顶会冲刺 · 地道写作',
+    coverImg: earlyScholarImg,
     avatarIcon: 'pen',
     themeColor: '#c2762b',
     badgeBg: 'rgba(194, 118, 43, 0.12)',
@@ -66,6 +72,7 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
     id: 'lab-pi',
     role: '课题组导师 / 实验室 PI',
     tag: '团队统筹 · 资产沉淀',
+    coverImg: labPiImg,
     avatarIcon: 'users',
     themeColor: '#2563eb',
     badgeBg: 'rgba(37, 99, 235, 0.12)',
@@ -101,7 +108,7 @@ export const LandingPersonas: React.FC = () => {
         </p>
       </div>
 
-      {/* 三大画像场景卡片网格（点击有交互效果与专属配色） */}
+      {/* 三大画像场景卡片网格（带精致封面图与多主题交互） */}
       <div
         style={{
           display: 'grid',
@@ -116,18 +123,18 @@ export const LandingPersonas: React.FC = () => {
               key={p.id}
               onClick={() => setSelectedId(p.id)}
               style={{
-                borderRadius: 20,
-                padding: '26px 24px',
-                background: isSelected ? p.cardActiveBg : 'rgba(255, 255, 255, 0.65)',
-                backdropFilter: 'blur(14px)',
+                borderRadius: 22,
+                overflow: 'hidden',
+                background: isSelected ? p.cardActiveBg : 'rgba(255, 255, 255, 0.75)',
+                backdropFilter: 'blur(16px)',
                 border: isSelected ? `2.5px solid ${p.themeColor}` : '1.5px solid var(--line)',
                 boxShadow: isSelected
-                  ? `0 18px 40px -8px ${p.shadowColor}, 0 4px 14px rgba(0, 0, 0, 0.05)`
-                  : '0 4px 16px -6px rgba(0, 0, 0, 0.05)',
+                  ? `0 20px 48px -10px ${p.shadowColor}, 0 4px 16px rgba(0, 0, 0, 0.06)`
+                  : '0 6px 20px -6px rgba(0, 0, 0, 0.06)',
                 display: 'flex',
                 flexDirection: 'column',
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                transition: 'all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 transform: isSelected ? 'translateY(-4px)' : 'none',
                 position: 'relative',
               }}
@@ -135,154 +142,238 @@ export const LandingPersonas: React.FC = () => {
                 if (!isSelected) {
                   e.currentTarget.style.borderColor = p.themeColor;
                   e.currentTarget.style.transform = 'translateY(-3px)';
-                  e.currentTarget.style.boxShadow = `0 10px 24px -6px ${p.shadowColor}`;
+                  e.currentTarget.style.boxShadow = `0 12px 28px -6px ${p.shadowColor}`;
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isSelected) {
                   e.currentTarget.style.borderColor = 'var(--line)';
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 4px 16px -6px rgba(0, 0, 0, 0.05)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px -6px rgba(0, 0, 0, 0.06)';
                 }
               }}
               role="button"
               tabIndex={0}
               aria-label={`选择画像：${p.role}`}
             >
-              {/* 顶部微高亮角标 */}
+              {/* 顶部选中角标 */}
               {isSelected && (
                 <div
                   style={{
                     position: 'absolute',
-                    top: -11,
-                    right: 22,
+                    top: 14,
+                    right: 14,
+                    zIndex: 10,
                     background: p.themeColor,
                     color: '#ffffff',
                     fontSize: 11,
                     fontWeight: 800,
-                    padding: '2px 10px',
+                    padding: '3px 12px',
                     borderRadius: 999,
-                    boxShadow: `0 4px 10px ${p.shadowColor}`,
+                    boxShadow: `0 4px 12px ${p.shadowColor}`,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 4,
+                    gap: 5,
+                    backdropFilter: 'blur(6px)',
                   }}
                 >
-                  <Icon name="check" size={11} /> 当前选中方案
+                  <Icon name="check" size={12} /> 聚焦方案
                 </div>
               )}
 
-              {/* 卡片头部 */}
-              <div className="row-between items-center" style={{ marginBottom: 14 }}>
-                <div className="row g-2 items-center">
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 14,
-                      background: p.badgeBg,
-                      color: p.themeColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: isSelected ? `0 4px 12px ${p.shadowColor}` : 'none',
-                      transition: 'all 0.3s ease',
-                    }}
-                  >
-                    <Icon name={p.avatarIcon as any} size={22} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--ink)' }}>{p.role}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{p.tag}</div>
-                  </div>
-                </div>
-                <span
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 999,
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    background: isSelected ? p.themeColor : p.badgeBg,
-                    color: isSelected ? '#ffffff' : p.themeColor,
-                    transition: 'all 0.25s ease',
-                  }}
-                >
-                  {isSelected ? '✓ 聚焦场景' : '点击查看'}
-                </span>
-              </div>
-
-              {/* 核心场景定位 */}
+              {/* 封面图区域 */}
               <div
                 style={{
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  color: p.themeColor,
-                  marginBottom: 14,
-                  padding: '7px 12px',
-                  borderRadius: 10,
-                  background: isSelected ? 'rgba(255, 255, 255, 0.85)' : 'var(--bg-deep)',
-                  border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid transparent',
-                  transition: 'all 0.25s ease',
+                  position: 'relative',
+                  width: '100%',
+                  height: 190,
+                  overflow: 'hidden',
+                  background: '#0e1d17',
                 }}
               >
-                🎯 {p.sceneTitle}
-              </div>
-
-              {/* 痛点与解法 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 16 }}>
-                <div style={{ fontSize: 12.5, color: '#8b3d36', background: 'rgba(194, 74, 66, 0.06)', padding: '11px 13px', borderRadius: 12 }}>
-                  <div style={{ fontWeight: 700, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Icon name="alert" size={13} /> 典型科研痛点
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.55 }}>
-                    {p.pains.map((pain, idx) => (
-                      <li key={idx} style={{ marginBottom: 3 }}>{pain}</li>
-                    ))}
-                  </ul>
-                </div>
-
+                <img
+                  src={p.coverImg}
+                  alt={p.role}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.5s ease',
+                    transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                    display: 'block',
+                  }}
+                  loading="lazy"
+                />
+                {/* 蒙层渐变 */}
                 <div
                   style={{
-                    fontSize: 12.5,
-                    color: 'var(--ink)',
-                    background: isSelected ? 'rgba(255, 255, 255, 0.95)' : 'var(--brand-softer)',
-                    border: isSelected ? `1px solid ${p.themeColor}33` : 'none',
-                    padding: '11px 13px',
-                    borderRadius: 12,
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(14, 29, 23, 0.88) 0%, rgba(14, 29, 23, 0.25) 50%, rgba(0,0,0,0.1) 100%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+
+                {/* 封面图内叠底信息 */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 12,
+                    left: 16,
+                    right: 16,
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'space-between',
+                    zIndex: 2,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        background: 'rgba(255, 255, 255, 0.92)',
+                        color: p.themeColor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <Icon name={p.avatarIcon as any} size={20} />
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 800,
+                          fontSize: 16.5,
+                          color: '#ffffff',
+                          textShadow: '0 2px 8px rgba(0, 0, 0, 0.7)',
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {p.role}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          color: '#d1e3d9',
+                          marginTop: 3,
+                          textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
+                        }}
+                      >
+                        {p.tag}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 卡片主体内容 */}
+              <div style={{ padding: '20px 22px 22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                {/* 核心场景定位 */}
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: p.themeColor,
+                    marginBottom: 14,
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: isSelected ? 'rgba(255, 255, 255, 0.9)' : 'var(--bg-deep)',
+                    border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid var(--line)',
                     transition: 'all 0.25s ease',
                   }}
                 >
-                  <div style={{ fontWeight: 700, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5, color: p.themeColor }}>
-                    <Icon name="zap" size={13} /> ScienceX 专属解法
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.55 }}>
-                    {p.solves.map((solve, idx) => (
-                      <li key={idx} style={{ marginBottom: 3 }}>{solve}</li>
-                    ))}
-                  </ul>
+                  🎯 {p.sceneTitle}
                 </div>
-              </div>
 
-              {/* 量化指标标签 */}
-              <div className="row g-1 wrap" style={{ borderTop: '1px solid var(--line)', paddingTop: 12, marginTop: 'auto' }}>
-                {p.metrics.map((m, idx) => (
-                  <span
-                    key={idx}
+                {/* 痛点与解法 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 16 }}>
+                  <div
                     style={{
-                      fontSize: 11,
-                      padding: '3px 9px',
-                      borderRadius: 6,
-                      background: isSelected ? `${p.themeColor}15` : 'rgba(0, 0, 0, 0.04)',
-                      color: isSelected ? p.themeColor : 'var(--ink-2)',
-                      fontWeight: isSelected ? 700 : 600,
-                      border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid transparent',
+                      fontSize: 12.5,
+                      color: '#8b3d36',
+                      background: 'rgba(194, 74, 66, 0.06)',
+                      padding: '11px 13px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(194, 74, 66, 0.12)',
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Icon name="alert" size={13} /> 典型科研痛点
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.55 }}>
+                      {p.pains.map((pain, idx) => (
+                        <li key={idx} style={{ marginBottom: 3 }}>
+                          {pain}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      color: 'var(--ink)',
+                      background: isSelected ? 'rgba(255, 255, 255, 0.95)' : 'var(--brand-softer)',
+                      border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid var(--line)',
+                      padding: '11px 13px',
+                      borderRadius: 12,
                       transition: 'all 0.25s ease',
                     }}
                   >
-                    ⚡ {m}
-                  </span>
-                ))}
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        marginBottom: 5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        color: p.themeColor,
+                      }}
+                    >
+                      <Icon name="zap" size={13} /> ScienceX 专属解法
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.55 }}>
+                      {p.solves.map((solve, idx) => (
+                        <li key={idx} style={{ marginBottom: 3 }}>
+                          {solve}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* 量化指标标签 */}
+                <div
+                  className="row g-1 wrap"
+                  style={{
+                    borderTop: '1px solid var(--line)',
+                    paddingTop: 12,
+                    marginTop: 'auto',
+                  }}
+                >
+                  {p.metrics.map((m, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        fontSize: 11,
+                        padding: '3px 9px',
+                        borderRadius: 6,
+                        background: isSelected ? `${p.themeColor}15` : 'rgba(0, 0, 0, 0.04)',
+                        color: isSelected ? p.themeColor : 'var(--ink-2)',
+                        fontWeight: isSelected ? 700 : 600,
+                        border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid transparent',
+                        transition: 'all 0.25s ease',
+                      }}
+                    >
+                      ⚡ {m}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           );
