@@ -15,17 +15,34 @@ const PALETTE = [
   { color: '#bfd7f7', label: '疑问' },
 ];
 
-export default function ImmersiveReader({ doc, activeKey, onTranslate }: {
+export default function ImmersiveReader({
+  doc,
+  activeKey,
+  onTranslate,
+  query = '',
+  setQuery,
+  matchIdx = 0,
+  matchesCount = 0,
+  onMatchesCountChange,
+  notesOpen = false,
+  setNotesOpen,
+  onHighlightsCountChange,
+}: {
   doc: any;
   activeKey: string | null;
   onTranslate: (text: string, secId: string, idx: number) => void;
+  query?: string;
+  setQuery?: (q: string) => void;
+  matchIdx?: number;
+  matchesCount?: number;
+  onMatchesCountChange?: (count: number) => void;
+  notesOpen?: boolean;
+  setNotesOpen?: (v: boolean | ((prev: boolean) => boolean)) => void;
+  onHighlightsCountChange?: (count: number) => void;
 }) {
   const sections: any[] = doc?.structured?.sections || [];
-  const [fit, setFit] = useState<'page' | 'width'>('page');
-  const [outlineOpen, setOutlineOpen] = useState(false);
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [matchIdx, setMatchIdx] = useState(0);
+  const activeQuery = query;
+
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [popup, setPopup] = useState<Popup | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
@@ -35,17 +52,27 @@ export default function ImmersiveReader({ doc, activeKey, onTranslate }: {
 
   /* 批注按文档隔离持久化 */
   useEffect(() => {
-    try { setHighlights(JSON.parse(localStorage.getItem(storeKey) || '[]')); } catch { setHighlights([]); }
-    setPopup(null); setNotePopup(null); setQuery('');
-  }, [storeKey]);
+    try {
+      const list = JSON.parse(localStorage.getItem(storeKey) || '[]');
+      setHighlights(list);
+      onHighlightsCountChange?.(list.length);
+    } catch {
+      setHighlights([]);
+      onHighlightsCountChange?.(0);
+    }
+    setPopup(null);
+    setNotePopup(null);
+  }, [storeKey, onHighlightsCountChange]);
+
   const commit = (list: Highlight[]) => {
     setHighlights(list);
+    onHighlightsCountChange?.(list.length);
     try { localStorage.setItem(storeKey, JSON.stringify(list)); } catch { /* 存储异常时仅丢失持久化 */ }
   };
 
   /* 全文检索：大小写不敏感，逐段落收集匹配区间 */
   const matches = useMemo<Match[]>(() => {
-    const q = query.trim().toLowerCase();
+    const q = activeQuery.trim().toLowerCase();
     if (!q) return [];
     const out: Match[] = [];
     sections.forEach((s: any) => (s.paragraphs || []).forEach((p: string, pi: number) => {
@@ -54,15 +81,16 @@ export default function ImmersiveReader({ doc, activeKey, onTranslate }: {
       while (i >= 0) { out.push({ secId: s.id, paraIdx: pi, start: i, end: i + q.length }); i = t.indexOf(q, i + q.length); }
     }));
     return out;
-  }, [query, sections]);
-  useEffect(() => { setMatchIdx(0); }, [query]);
+  }, [activeQuery, sections]);
+
+  useEffect(() => {
+    onMatchesCountChange?.(matches.length);
+  }, [matches, onMatchesCountChange]);
+
   useEffect(() => {
     const m = matches[matchIdx];
     if (m) document.getElementById(`para-${m.secId}-${m.paraIdx}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, [matchIdx, matches]);
-
-  const step = (d: number) => { if (matches.length) setMatchIdx((i) => (i + d + matches.length) % matches.length); };
-  const gotoSection = (id: string) => { document.getElementById(`sec-${id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); setOutlineOpen(false); };
 
   /* 平滑划词：把浏览器选区换算为段落内字符偏移（选区须完整落在同一段落内） */
   const captureSelection = (secId: string, paraIdx: number): Popup | null => {
@@ -89,7 +117,7 @@ export default function ImmersiveReader({ doc, activeKey, onTranslate }: {
     commit([...highlights, h]);
     window.getSelection()?.removeAllRanges();
     setPopup(null); setNoteDraft('');
-    if (!notesOpen) setNotesOpen(true);
+    if (!notesOpen) setNotesOpen?.(true);
   };
 
   /* 段落渲染：叠加批注区间与检索区间，按边界切分为连续片段 */
@@ -160,44 +188,7 @@ export default function ImmersiveReader({ doc, activeKey, onTranslate }: {
 
   return (
     <div ref={scrollRef} style={{ position: 'relative', flex: 1, overflowY: 'auto', minWidth: 0 }}>
-      {/* 阅读工具栏（吸顶） */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 6, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '8px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ position: 'relative' }}>
-          <button className={`tag ${outlineOpen ? 'tag-green' : 'tag-gray'}`} style={{ cursor: 'pointer', border: 'none' }} onClick={() => setOutlineOpen((v) => !v)}>
-            <Icon name="layers" size={11} />大纲
-          </button>
-          {outlineOpen && (
-            <div className="card anim-in" style={{ position: 'absolute', top: 26, left: 0, zIndex: 9, width: 250, maxHeight: 280, overflowY: 'auto', padding: 8 }}>
-              {sections.map((s: any) => (
-                <button key={s.id} className="row g-1" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '7px 8px', borderRadius: 6, fontSize: 12.5 }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-softer)')} onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
-                  onClick={() => gotoSection(s.id)}>
-                  <Icon name="chevronRight" size={11} /><span style={{ flex: 1 }}>{s.title}</span>
-                  <span className="text-xs text-muted">P{Number(String(s.page))}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <button className={`tag ${fit === 'page' ? 'tag-green' : 'tag-gray'}`} style={{ cursor: 'pointer', border: 'none' }} onClick={() => setFit('page')} title="整页宽度排版（70ch 居中）"><Icon name="book" size={11} />整页</button>
-        <button className={`tag ${fit === 'width' ? 'tag-green' : 'tag-gray'}`} style={{ cursor: 'pointer', border: 'none' }} onClick={() => setFit('width')} title="按容器宽度自适应"><Icon name="eye" size={11} />自适应</button>
-        <div className="row g-1" style={{ marginLeft: 'auto', alignItems: 'center' }}>
-          <Icon name="search" size={12} className="text-muted" />
-          <input className="input" style={{ width: 120, fontSize: 12, padding: '4px 8px' }} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="全文检索…" />
-          {query && (
-            <span className="row g-1" style={{ alignItems: 'center' }}>
-              <span className="text-xs text-muted">{matches.length ? `${matchIdx + 1}/${matches.length}` : '0 处'}</span>
-              <button className="btn btn-ghost btn-icon" style={{ width: 22, height: 22 }} onClick={() => step(-1)} disabled={!matches.length}><Icon name="chevronDown" size={11} style={{ transform: 'rotate(180deg)' }} /></button>
-              <button className="btn btn-ghost btn-icon" style={{ width: 22, height: 22 }} onClick={() => step(1)} disabled={!matches.length}><Icon name="chevronDown" size={11} /></button>
-            </span>
-          )}
-        </div>
-        <button className={`tag ${notesOpen ? 'tag-amber' : 'tag-gray'}`} style={{ cursor: 'pointer', border: 'none' }} onClick={() => setNotesOpen((v) => !v)}>
-          <Icon name="pen" size={11} />批注 {highlights.length > 0 && `(${highlights.length})`}
-        </button>
-      </div>
-
-      {/* 批注列表抽屉 */}
+      {/* 批注列表抽屉（由顶栏批注按钮控制展开） */}
       {notesOpen && (
         <div className="card anim-in" style={{ margin: '10px 14px 0', padding: 10, maxHeight: 180, overflowY: 'auto' }}>
           <div className="row g-1 mb-1"><span className="text-xs fw-bold">高亮与批注</span><span className="text-xs text-muted">点击条目可跳回原文</span></div>
@@ -220,8 +211,8 @@ export default function ImmersiveReader({ doc, activeKey, onTranslate }: {
       )}
 
       {/* 正文 */}
-      <div style={{ padding: '22px 26px' }}>
-        <article className="anim-in" style={{ maxWidth: fit === 'page' ? 700 : 'none', margin: fit === 'page' ? '0 auto' : undefined }}>
+      <div style={{ padding: '20px 24px' }}>
+        <article className="anim-in" style={{ maxWidth: 720, margin: '0 auto' }}>
           <header style={{ borderBottom: '2px solid var(--brand)', paddingBottom: 12, marginBottom: 16 }}>
             <h1 className="text-serif" style={{ fontSize: 19, lineHeight: 1.5 }}>{doc.title}</h1>
             <div className="text-small text-muted mt-1">{doc.authors} · {doc.venue} · {doc.pages} 页

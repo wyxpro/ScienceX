@@ -63,7 +63,7 @@ export default function AppLayout() {
         <div className="sb-logo-mark"><Icon name="flask" size={19} /></div>
         <div>
           <div className="sb-logo-name">ScienceX</div>
-          <div className="sb-logo-sub">AI Research Workbench</div>
+          <div className="sb-logo-sub">AI 科研全流程</div>
         </div>
       </div>
       <nav className="sb-scroll">

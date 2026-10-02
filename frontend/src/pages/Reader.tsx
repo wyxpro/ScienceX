@@ -148,6 +148,18 @@ export default function Reader() {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
 
+  /* 全文检索与批注状态（置于左栏顶栏右侧） */
+  const [readerQuery, setReaderQuery] = useState('');
+  const [readerMatchIdx, setReaderMatchIdx] = useState(0);
+  const [readerMatchesCount, setReaderMatchesCount] = useState(0);
+  const [readerNotesOpen, setReaderNotesOpen] = useState(false);
+  const [readerHighlightsCount, setReaderHighlightsCount] = useState(0);
+
+  const handleStepMatch = (delta: number) => {
+    if (readerMatchesCount <= 0) return;
+    setReaderMatchIdx((prev) => (prev + delta + readerMatchesCount) % readerMatchesCount);
+  };
+
   /* 翻译功能状态 */
   const [transCustomInput, setTransCustomInput] = useState('');
   const [transCustomResult, setTransCustomResult] = useState<any | null>(null);
@@ -588,18 +600,12 @@ export default function Reader() {
                 {/* 模式切换与文献库弹窗触发按钮 */}
                 <div className="row g-1 items-center" style={{ flexShrink: 0 }}>
                   <button
-                    className={`tag ${leftMode === 'read' ? 'tag-green' : 'tag-gray'}`}
-                    style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
-                    onClick={() => setLeftMode('read')}
-                  >
-                    <Icon name="book" size={11} /> 沉浸式阅读
-                  </button>
-                  <button
                     className={`tag ${leftMode === 'file' ? 'tag-green' : 'tag-gray'}`}
                     style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
-                    onClick={() => setLeftMode('file')}
+                    onClick={() => setLeftMode(leftMode === 'file' ? 'read' : 'file')}
+                    title="在结构化正文阅读与源文件视图间切换"
                   >
-                    <Icon name="doc" size={11} /> 源文件预览
+                    <Icon name="doc" size={11} /> {leftMode === 'file' ? '返回正文' : '源文件预览'}
                     {fileMap[doc.id] ? `（${detectKind(fileMap[doc.id].name).toUpperCase()}）` : ''}
                   </button>
                   <button
@@ -610,11 +616,93 @@ export default function Reader() {
                   >
                     <Icon name="upload" size={11} /> 文献库 / 导入
                   </button>
+
+                  {/* 全文检索与批注：置于“文献库 / 导入”按钮右侧 */}
+                  {leftMode === 'read' && (
+                    <>
+                      <div
+                        className="row g-1"
+                        style={{
+                          alignItems: 'center',
+                          marginLeft: 4,
+                          background: '#ffffff',
+                          border: '1px solid var(--line)',
+                          borderRadius: 6,
+                          padding: '1px 6px',
+                        }}
+                      >
+                        <Icon name="search" size={12} className="text-muted" />
+                        <input
+                          className="input"
+                          style={{
+                            width: 86,
+                            fontSize: 12,
+                            padding: '2px 4px',
+                            border: 'none',
+                            background: 'transparent',
+                            boxShadow: 'none',
+                          }}
+                          value={readerQuery}
+                          onChange={(e) => {
+                            setReaderQuery(e.target.value);
+                            setReaderMatchIdx(0);
+                          }}
+                          placeholder="全文检索…"
+                        />
+                        {readerQuery && (
+                          <span className="row g-1" style={{ alignItems: 'center' }}>
+                            <span className="text-xs text-muted" style={{ fontSize: 10.5 }}>
+                              {readerMatchesCount ? `${readerMatchIdx + 1}/${readerMatchesCount}` : '0 处'}
+                            </span>
+                            <button
+                              className="btn btn-ghost btn-icon"
+                              style={{ width: 18, height: 18, padding: 0 }}
+                              onClick={() => handleStepMatch(-1)}
+                              disabled={!readerMatchesCount}
+                              title="上一处匹配"
+                            >
+                              <Icon name="chevronDown" size={10} style={{ transform: 'rotate(180deg)' }} />
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-icon"
+                              style={{ width: 18, height: 18, padding: 0 }}
+                              onClick={() => handleStepMatch(1)}
+                              disabled={!readerMatchesCount}
+                              title="下一处匹配"
+                            >
+                              <Icon name="chevronDown" size={10} />
+                            </button>
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        className={`tag ${readerNotesOpen ? 'tag-amber' : 'tag-gray'}`}
+                        style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
+                        onClick={() => setReaderNotesOpen((v) => !v)}
+                        title="高亮与批注管理"
+                      >
+                        <Icon name="pen" size={11} /> 批注 {readerHighlightsCount > 0 && `(${readerHighlightsCount})`}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
               {leftMode === 'read' ? (
-                <ImmersiveReader doc={doc} activeKey={paraKey} onTranslate={translatePara} />
+                <ImmersiveReader
+                  doc={doc}
+                  activeKey={paraKey}
+                  onTranslate={translatePara}
+                  query={readerQuery}
+                  setQuery={setReaderQuery}
+                  matchIdx={readerMatchIdx}
+                  matchesCount={readerMatchesCount}
+                  onMatchesCountChange={setReaderMatchesCount}
+                  notesOpen={readerNotesOpen}
+                  setNotesOpen={setReaderNotesOpen}
+                  onHighlightsCountChange={setReaderHighlightsCount}
+                />
               ) : fileMap[doc.id] ? (
                 <div
                   style={{

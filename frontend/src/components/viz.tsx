@@ -17,7 +17,14 @@ export function Mindmap({ data }: { data: MindNode }) {
   };
   const totalRows = Math.max(1, data.children?.reduce((a, c, i) => a + leavesOf(c, `r${i}`), 0) ?? 1);
   const H = Math.max(200, totalRows * rowH + 36);
-  const W = 720;
+
+  // 动态计算最大可见层级深度，确保导图在任何层级下均能完全完整显示
+  const getDepth = (n: MindNode, path: string, currentDepth: number): number => {
+    if (!n.children?.length || collapsed[path]) return currentDepth;
+    return Math.max(currentDepth, ...n.children.map((c, i) => getDepth(c, `${path}/${i}`, currentDepth + 1)));
+  };
+  const maxDepth = Math.max(1, getDepth(data, 'root', 0));
+  const W = Math.max(760, rootW + maxDepth * colW + 120);
 
   // 第二遍：分配坐标并产出 SVG 元素
   type Box = { path: string; node: MindNode; depth: number; x: number; y: number; w: number; hasKids: boolean; collapsed: boolean };
@@ -87,9 +94,6 @@ export function Mindmap({ data }: { data: MindNode }) {
           </g>
         ))}
       </svg>
-      <div style={{ padding: '6px 12px 10px', fontSize: 11.5, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Icon name="info" size={13} /> 点击节点可折叠 / 展开
-      </div>
     </div>
   );
 }
