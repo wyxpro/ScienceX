@@ -34,7 +34,6 @@ export default function Account() {
   /* 订阅 */
   const [plans, setPlans] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
-  const [orders, setOrders] = useState<any[]>([]);
   const [order, setOrder] = useState<any>(null);
 
   /* 安全 */
@@ -75,11 +74,9 @@ export default function Account() {
       Promise.all([
         api<any[]>('/billing/plans'),
         api<any>('/billing/subscription'),
-        api<any>('/billing/orders'),
-      ]).then(([p, s, o]) => {
+      ]).then(([p, s]) => {
         setPlans(p || []);
         setSubscription(s);
-        setOrders(o?.items || (Array.isArray(o) ? o : []));
       }).catch(() => {});
     }
   }, [tab]);
@@ -226,7 +223,6 @@ export default function Account() {
         <BillingSection
           subscription={subscription}
           plans={plans}
-          orders={orders}
           onBuy={buy}
         />
       )}

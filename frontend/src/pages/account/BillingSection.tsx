@@ -1,18 +1,16 @@
 import React from 'react';
 import Icon from '../../components/Icon';
-import { Empty, Progress, Tag } from '../../components/ui';
+import { Progress, Tag } from '../../components/ui';
 
 interface BillingSectionProps {
   subscription: any;
   plans: any[];
-  orders: any[];
   onBuy: (planId: string) => void;
 }
 
 export const BillingSection: React.FC<BillingSectionProps> = ({
   subscription,
   plans,
-  orders,
   onBuy,
 }) => {
   if (!subscription) return null;
@@ -117,36 +115,6 @@ export const BillingSection: React.FC<BillingSectionProps> = ({
             )}
           </div>
         ))}
-      </div>
-
-      <div className="card" style={{ overflow: 'hidden' }}>
-        <div
-          className="text-xs text-muted fw-bold"
-          style={{ padding: '10px 16px', borderBottom: '1px solid var(--line)' }}
-        >
-          订单记录
-        </div>
-        {orders.length === 0 ? (
-          <div style={{ padding: 20 }}>
-            <Empty icon="card" text="暂无订单" />
-          </div>
-        ) : (
-          orders.map((o) => (
-            <div
-              key={o.id}
-              className="row-between text-small"
-              style={{ padding: '11px 16px', borderBottom: '1px solid var(--line)' }}
-            >
-              <span className="mono text-xs">{o.order_no}</span>
-              <span>{o.plan}</span>
-              <span className="mono">¥{o.amount}</span>
-              <Tag color={o.pay_status === 'paid' ? 'green' : 'amber'}>
-                {o.pay_status === 'paid' ? '已支付' : '待支付'}
-              </Tag>
-              <span className="text-xs text-muted">{String(o.created_at).slice(0, 10)}</span>
-            </div>
-          ))
-        )}
       </div>
     </div>
   );

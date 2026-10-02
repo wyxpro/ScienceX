@@ -103,7 +103,7 @@ export default function AppLayout() {
         ))}
       </nav>
 
-      <div className="sb-user" onClick={() => nav('/account')} title={collapsed ? user?.name : undefined}>
+      <div className="sb-user" onClick={() => nav('/account')} title={collapsed ? '设置与管理' : undefined}>
         <div className="avatar" style={{ width: 30, height: 30, fontSize: 12.5, borderWidth: 0 }}>{user?.name?.[0] || '研'}</div>
         {!collapsed && (
           <>
