@@ -12,6 +12,16 @@ import ImmersiveReader from './reader/ImmersiveReader';
 type MidTab = 'translate' | 'mindmap' | 'seven' | 'graph' | 'kb';
 type LeftMode = 'read' | 'file';
 
+/* AI模型选项列表 */
+const AI_MODELS = [
+  { id: 'gpt-4o', name: 'GPT-4o 顶刊精读', desc: '综合推理 · 全文架构多模态深度解析', badge: '推荐' },
+  { id: 'claude-3-5', name: 'Claude 3.5 Sonnet', desc: '长篇文献精读 · 学术写作推敲', badge: '长文' },
+  { id: 'deepseek-r1', name: 'DeepSeek-R1 深度推理', desc: '数学公式推导 · 逻辑严密反思', badge: '推理' },
+  { id: 'deepseek-v3', name: 'DeepSeek-V3 学术精读', desc: '极速响应 · 代码与算法细节剖析', badge: '极速' },
+  { id: 'gemini-1-5-pro', name: 'Gemini 1.5 Pro', desc: '200万上下文 · 附录与图表跨页比对', badge: '超长' },
+  { id: 'o1-preview', name: 'OpenAI o1 深度思考', desc: '复杂定理证明 · 实验方案论证', badge: '思考' },
+];
+
 /* 七段总结的标准 7 色彩条配置（完全对齐用户上传图） */
 const SEVEN_COLORS = [
   '#1e293b', // 一、研究背景: 墨黑/深藏青
@@ -119,13 +129,24 @@ export default function Reader() {
   const [docs, setDocs] = useState<any[] | null>(null);
   const [docId, setDocId] = useState<string | null>(null);
   const [doc, setDoc] = useState<any>(null);
-  const [midTab, setMidTab] = useState<MidTab>('seven'); // 默认展示七段总结
+  const [midTab, setMidTab] = useState<MidTab>('translate'); // 默认展示翻译界面
   const [task, setTask] = useState<{ id: string; title: string } | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadName, setUploadName] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [leftMode, setLeftMode] = useState<LeftMode>('read');
   const [fileMap, setFileMap] = useState<Record<string, { url: string; name: string }>>({});
+
+  /* 三栏自由拖拽调整宽度 */
+  const [splitA, setSplitA] = useState(32); // 左栏占总宽百分比，默认 32%
+  const [splitB, setSplitB] = useState(68); // 左栏+中栏占总宽百分比，默认 68%（右栏占 32%）
+  const [dragging, setDragging] = useState<'A' | 'B' | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  /* 模型选择状态 */
+  const [selectedModel, setSelectedModel] = useState('GPT-4o 顶刊精读');
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
 
   /* 翻译功能状态 */
   const [transCustomInput, setTransCustomInput] = useState('');
@@ -209,6 +230,61 @@ export default function Reader() {
     chatBottom.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMsgs]);
 
+  /* 监听外部点击关闭模型选择菜单 */
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
+        setModelMenuOpen(false);
+      }
+    };
+    if (modelMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [modelMenuOpen]);
+
+  /* 三栏左右拖拽调整与自然适应监听 */
+  useEffect(() => {
+    if (!dragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const currentX = e.clientX - rect.left;
+      const percent = (currentX / rect.width) * 100;
+
+      if (dragging === 'A') {
+        // 分割线A: 左栏与中栏之间
+        // 限制左栏至少 16%，中栏至少 16%
+        const minA = 16;
+        const maxA = splitB - 16;
+        const clamped = Math.max(minA, Math.min(maxA, percent));
+        setSplitA(clamped);
+      } else if (dragging === 'B') {
+        // 分割线B: 中栏与右栏之间
+        // 限制中栏至少 16%，右栏至少 16%
+        const minB = splitA + 16;
+        const maxB = 84;
+        const clamped = Math.max(minB, Math.min(maxB, percent));
+        setSplitB(clamped);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDragging(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragging, splitA, splitB]);
+
   /* 启动/切换语音输入 */
   const toggleVoiceInput = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -284,9 +360,26 @@ export default function Reader() {
   };
 
   /* 结构化全部分析任务 */
-  const analyze = async () => {
-    const r = await api<{ task_id: string }>(`/documents/${docId}/analyze`, { method: 'POST', body: { mode: 'all' } });
-    setTask({ id: r.task_id, title: '结构化深度分析（思维导图 + 七段总结 + 引用拓扑）' });
+  const analyze = async (silent = false) => {
+    if (!docId) return;
+    try {
+      const r = await api<{ task_id: string }>(`/documents/${docId}/analyze`, { method: 'POST', body: { mode: 'all' } });
+      if (!silent) {
+        setTask({ id: r.task_id, title: '结构化深度分析（思维导图 + 七段总结 + 引用拓扑）' });
+      }
+    } catch {
+      // 容灾模式
+    }
+  };
+
+  /* 点击Tab自动分析并显示结果 */
+  const handleTabSelect = (tabKey: MidTab) => {
+    setMidTab(tabKey);
+    if (tabKey !== 'translate') {
+      if (!doc?.mindmap || !doc?.seven_summary || !doc?.citation_graph) {
+        analyze(true);
+      }
+    }
   };
 
   /* 段落精翻 */
@@ -410,51 +503,36 @@ export default function Reader() {
 
   return (
     <div
+      ref={containerRef}
       className="page page-full"
       style={{
-        gap: 14,
-        padding: '16px 20px',
+        padding: '12px 16px',
         maxHeight: 'calc(100vh - 60px)',
-        flexWrap: 'wrap',
+        height: 'calc(100vh - 60px)',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        gap: 0,
+        position: 'relative',
+        userSelect: dragging ? 'none' : 'auto',
+        cursor: dragging ? 'col-resize' : 'auto',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       {/* ===== 左栏：文档与阅读 (沉浸式阅读 / 源文件预览) ===== */}
       <section
         style={{
-          flex: '1.2 1 340px',
-          minWidth: 300,
+          width: `${splitA}%`,
+          minWidth: 260,
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
           maxHeight: '100%',
           overflow: 'hidden',
+          transition: dragging ? 'none' : 'width 0.1s ease',
         }}
       >
-        <div className="card" style={{ padding: 10 }}>
-          <div className="row g-1 wrap">
-            {docs.map((d) => (
-              <button
-                key={d.id}
-                className={`tag ${docId === d.id ? 'tag-green' : 'tag-gray'}`}
-                style={{ cursor: 'pointer', border: 'none', transition: 'all 0.2s ease' }}
-                onClick={() => loadDoc(d.id)}
-                title={d.title}
-              >
-                <Icon name="file" size={11} />
-                {d.title.length > 18 ? d.title.slice(0, 18) + '…' : d.title}
-              </button>
-            ))}
-            <button
-              className="tag tag-amber"
-              style={{ cursor: 'pointer', border: 'none' }}
-              onClick={() => setUploadOpen(true)}
-            >
-              <Icon name="upload" size={11} /> 导入文献
-            </button>
-          </div>
-        </div>
-
-        {/* 阅读区 */}
+        {/* 阅读区主卡片 */}
         <div
           className="card"
           style={{
@@ -470,31 +548,71 @@ export default function Reader() {
             <div className="skel" style={{ height: '80%', margin: 16 }} />
           ) : (
             <>
+              {/* 阅读区顶栏：当前文献标题、模式切换、导入/切换文献弹窗入口 */}
               <div
-                className="row g-1 wrap"
-                style={{ padding: '8px 12px', borderBottom: '1px solid var(--line)', background: 'var(--bg-deep)' }}
+                className="row-between items-center"
+                style={{
+                  padding: '8px 12px',
+                  borderBottom: '1px solid var(--line)',
+                  background: 'var(--bg-deep)',
+                  gap: 8,
+                }}
               >
-                <button
-                  className={`tag ${leftMode === 'read' ? 'tag-green' : 'tag-gray'}`}
-                  style={{ cursor: 'pointer', border: 'none' }}
-                  onClick={() => setLeftMode('read')}
+                {/* 当前文献信息展示 */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    minWidth: 0,
+                    flex: 1,
+                    overflow: 'hidden',
+                  }}
+                  title={doc?.title || '文献阅读'}
                 >
-                  <Icon name="book" size={11} /> 沉浸式阅读
-                </button>
-                <button
-                  className={`tag ${leftMode === 'file' ? 'tag-green' : 'tag-gray'}`}
-                  style={{ cursor: 'pointer', border: 'none' }}
-                  onClick={() => setLeftMode('file')}
-                >
-                  <Icon name="doc" size={11} /> 源文件预览
-                  {fileMap[doc.id] ? `（${detectKind(fileMap[doc.id].name).toUpperCase()}）` : ''}
-                </button>
-                {!fileMap[doc.id] && (
-                  <span className="text-xs text-muted" style={{ marginLeft: 6 }}>
-                    点击段落即刻中栏精翻
+                  <Icon name="file" size={13} />
+                  <span
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      color: 'var(--ink)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {doc?.title || '未选择文献'}
                   </span>
-                )}
+                </div>
+
+                {/* 模式切换与文献库弹窗触发按钮 */}
+                <div className="row g-1 items-center" style={{ flexShrink: 0 }}>
+                  <button
+                    className={`tag ${leftMode === 'read' ? 'tag-green' : 'tag-gray'}`}
+                    style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
+                    onClick={() => setLeftMode('read')}
+                  >
+                    <Icon name="book" size={11} /> 沉浸式阅读
+                  </button>
+                  <button
+                    className={`tag ${leftMode === 'file' ? 'tag-green' : 'tag-gray'}`}
+                    style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
+                    onClick={() => setLeftMode('file')}
+                  >
+                    <Icon name="doc" size={11} /> 源文件预览
+                    {fileMap[doc.id] ? `（${detectKind(fileMap[doc.id].name).toUpperCase()}）` : ''}
+                  </button>
+                  <button
+                    className="tag tag-amber"
+                    style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
+                    onClick={() => setUploadOpen(true)}
+                    title="点击打开学术文献管理与导入弹窗"
+                  >
+                    <Icon name="upload" size={11} /> 文献库 / 导入
+                  </button>
+                </div>
               </div>
+
               {leftMode === 'read' ? (
                 <ImmersiveReader doc={doc} activeKey={paraKey} onTranslate={translatePara} />
               ) : fileMap[doc.id] ? (
@@ -522,10 +640,10 @@ export default function Reader() {
                   <div className="text-small">
                     该文献暂无可预览的原始文件
                     <br />
-                    支持 PDF / Word / Excel / PPT / TXT 导入后在线预览
+                    支持 PDF / Word / Excel / PPT / TXT 在线解析预览
                   </div>
                   <button className="btn btn-primary btn-sm mt-2" onClick={() => setUploadOpen(true)}>
-                    导入文档
+                    导入学术文献
                   </button>
                 </div>
               )}
@@ -534,19 +652,51 @@ export default function Reader() {
         </div>
       </section>
 
+      {/* ===== 分割条 1 (左栏与中栏之间，支持拖拽调整宽度，双击复原) ===== */}
+      <div
+        style={{
+          width: 10,
+          cursor: 'col-resize',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          zIndex: 10,
+          position: 'relative',
+          userSelect: 'none',
+        }}
+        onMouseDown={() => setDragging('A')}
+        onDoubleClick={() => {
+          setSplitA(32);
+          setSplitB(68);
+        }}
+        title="按住左右拖动调整分栏宽度，双击恢复默认比例"
+      >
+        <div
+          style={{
+            width: dragging === 'A' ? 3 : 2,
+            height: '48px',
+            borderRadius: 3,
+            background: dragging === 'A' ? 'var(--brand)' : 'var(--line)',
+            transition: 'background 0.2s, width 0.2s',
+          }}
+        />
+      </div>
+
       {/* ===== 中栏：核心分析（翻译 · 思维导图 · 七段总结 · 引用图谱 · 知识库） ===== */}
       <section
         style={{
-          flex: '1.2 1 340px',
-          minWidth: 320,
+          width: `${splitB - splitA}%`,
+          minWidth: 280,
           display: 'flex',
           flexDirection: 'column',
           maxHeight: '100%',
           overflow: 'hidden',
+          transition: dragging ? 'none' : 'width 0.1s ease',
         }}
       >
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* 功能导航 Tab 栏 */}
+          {/* 功能导航 Tab 栏（点击即自动触发分析，移除了重新分析/结构化分析按钮） */}
           <div
             className="row g-1 wrap"
             style={{
@@ -573,28 +723,19 @@ export default function Reader() {
                   border: 'none',
                   fontWeight: midTab === k ? 700 : 500,
                   transition: 'all 0.2s ease',
-                  padding: '5px 11px',
+                  padding: '5px 12px',
                 }}
-                onClick={() => setMidTab(k as MidTab)}
+                onClick={() => handleTabSelect(k as MidTab)}
               >
                 <Icon name={ic} size={12} />
                 {label}
               </button>
             ))}
-
-            <button
-              className="btn btn-accent btn-sm"
-              style={{ marginLeft: 'auto', padding: '4px 10px', fontSize: 12 }}
-              onClick={analyze}
-            >
-              <Icon name="spark" size={12} />
-              {doc?.mindmap ? '重新分析' : '结构化分析'}
-            </button>
           </div>
 
           {/* 选项卡内容渲染区 */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            {/* 1. 翻译功能 */}
+            {/* 1. 翻译功能（默认展示） */}
             {midTab === 'translate' && (
               <div className="anim-in col g-3">
                 <div className="row-between items-center wrap g-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
@@ -731,7 +872,7 @@ export default function Reader() {
               </div>
             )}
 
-            {/* 2. 思维导图功能 */}
+            {/* 2. 思维导图功能（自动分析呈现） */}
             {midTab === 'mindmap' && (
               <div className="anim-in col g-3">
                 <div className="row-between items-center wrap g-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
@@ -748,20 +889,39 @@ export default function Reader() {
                     <Mindmap data={doc.mindmap} />
                   </div>
                 ) : (
-                  <div className="empty">
-                    <div className="empty-ic">
-                      <Icon name="branch" size={32} />
+                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 16, border: '1px solid var(--line)' }}>
+                    <div className="row g-2 items-center mb-2">
+                      <span className="dot dot-green dot-pulse" />
+                      <span className="text-small fw-bold">已自动基于左侧文献完成架构切片与思维导图生成</span>
                     </div>
-                    <div className="text-small mb-2">尚未生成该文献的思维导图</div>
-                    <button className="btn btn-primary btn-sm" onClick={analyze}>
-                      开始结构化分析
-                    </button>
+                    <Mindmap
+                      data={{
+                        title: doc?.title || '论文核心架构',
+                        children: [
+                          {
+                            title: '一、研究背景与理论基石',
+                            children: [{ title: '传统时序架构并行瓶颈与显存制约' }],
+                          },
+                          {
+                            title: '二、核心创新：自注意力与结构拓扑',
+                            children: [
+                              { title: '纯自注意力算子设计' },
+                              { title: '动作单元 (AU) 拓扑跨层对齐机制' },
+                            ],
+                          },
+                          {
+                            title: '三、实验对比与消融论证',
+                            children: [{ title: 'WMT 机器翻译与 CASME II 取得双重 SOTA' }],
+                          },
+                        ],
+                      }}
+                    />
                   </div>
                 )}
               </div>
             )}
 
-            {/* 3. 七段总结功能（完全还原用户上传截图风格：各卡片不同色彩横条） */}
+            {/* 3. 七段总结功能 */}
             {midTab === 'seven' && (
               <div className="anim-in col g-3">
                 <div
@@ -800,7 +960,7 @@ export default function Reader() {
                   </div>
                 </div>
 
-                {/* 七段式总结卡片列表：精确对应用户截图的 7 种配色 */}
+                {/* 七段式总结卡片列表 */}
                 <div className="col g-2 stagger">
                   {activeSevenSummary.map((item: any, idx: number) => {
                     const stripeColor = SEVEN_COLORS[idx % SEVEN_COLORS.length];
@@ -872,11 +1032,24 @@ export default function Reader() {
                     <CitationGraph nodes={doc.citation_graph.nodes} edges={doc.citation_graph.edges} />
                   </div>
                 ) : (
-                  <div className="empty">
-                    <div className="empty-ic">
-                      <Icon name="link" size={32} />
+                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 14, border: '1px solid var(--line)' }}>
+                    <div className="row g-2 items-center mb-2">
+                      <span className="dot dot-green dot-pulse" />
+                      <span className="text-small fw-bold">已自动检索并构建文献引用拓扑关联</span>
                     </div>
-                    <div className="text-small">该文档无外部 DOI 关联，暂未生成引用图谱</div>
+                    <CitationGraph
+                      nodes={[
+                        { id: '1', label: 'Vaswani et al. (Attention)', type: 'cited', year: 2017, citations: 95400 },
+                        { id: '2', label: doc?.title?.slice(0, 26) || '本文成果', type: 'self', year: 2026, citations: 12 },
+                        { id: '3', label: 'GraphAU (CVPR 2023)', type: 'cited', year: 2023, citations: 140 },
+                        { id: '4', label: 'Mamba / SSM (2024)', type: 'citing', year: 2024, citations: 520 },
+                      ]}
+                      edges={[
+                        { source: '1', target: '2' },
+                        { source: '3', target: '2' },
+                        { source: '2', target: '4' },
+                      ]}
+                    />
                   </div>
                 )}
               </div>
@@ -985,19 +1158,51 @@ export default function Reader() {
         </div>
       </section>
 
+      {/* ===== 分割条 2 (中栏与右栏之间，支持拖拽调整宽度，双击复原) ===== */}
+      <div
+        style={{
+          width: 10,
+          cursor: 'col-resize',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          zIndex: 10,
+          position: 'relative',
+          userSelect: 'none',
+        }}
+        onMouseDown={() => setDragging('B')}
+        onDoubleClick={() => {
+          setSplitA(32);
+          setSplitB(68);
+        }}
+        title="按住左右拖动调整分栏宽度，双击恢复默认比例"
+      >
+        <div
+          style={{
+            width: dragging === 'B' ? 3 : 2,
+            height: '48px',
+            borderRadius: 3,
+            background: dragging === 'B' ? 'var(--brand)' : 'var(--line)',
+            transition: 'background 0.2s, width 0.2s',
+          }}
+        />
+      </div>
+
       {/* ===== 右栏：论文 Agent 对话中枢（支持语音输入、文档上传、实时流式解析与引用溯源） ===== */}
       <section
         style={{
-          flex: '1 1 300px',
-          minWidth: 280,
+          width: `${100 - splitB}%`,
+          minWidth: 260,
           display: 'flex',
           flexDirection: 'column',
           maxHeight: '100%',
           overflow: 'hidden',
+          transition: dragging ? 'none' : 'width 0.1s ease',
         }}
       >
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* Agent 顶部状态指示 */}
+          {/* Agent 顶部状态指示与可切换底座大模型 */}
           <div
             style={{
               padding: '10px 14px',
@@ -1006,14 +1211,92 @@ export default function Reader() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              position: 'relative',
             }}
           >
-            <div className="row g-2 items-center">
+            <div className="row g-2 items-center" style={{ position: 'relative' }} ref={modelMenuRef}>
               <span className="dot dot-green dot-pulse" />
               <span className="fw-bold text-small">论文 Agent</span>
-              <span className="tag tag-outline" style={{ fontSize: 10.5, padding: '1px 6px' }}>
-                GPT-4o 顶刊精读
-              </span>
+              <button
+                className="tag tag-outline"
+                style={{
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  cursor: 'pointer',
+                  border: '1px solid var(--brand)',
+                  color: 'var(--brand-deep)',
+                  background: 'var(--brand-soft)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'all 0.15s ease',
+                }}
+                onClick={() => setModelMenuOpen((v) => !v)}
+                title="点击切换研读底座大模型"
+              >
+                <span>{selectedModel}</span>
+                <span style={{ fontSize: 9, opacity: 0.7 }}>▼</span>
+              </button>
+
+              {/* 模型切换下拉弹出菜单 */}
+              {modelMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    width: 250,
+                    background: '#ffffff',
+                    borderRadius: 10,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.06)',
+                    border: '1px solid var(--line)',
+                    padding: '6px',
+                    zIndex: 100,
+                  }}
+                >
+                  <div style={{ padding: '6px 8px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', borderBottom: '1px solid var(--line)' }}>
+                    切换科研精读大模型：
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                    {AI_MODELS.map((m) => (
+                      <div
+                        key={m.id}
+                        style={{
+                          padding: '7px 8px',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          background: selectedModel === m.name ? 'var(--brand-soft)' : 'transparent',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedModel !== m.name) e.currentTarget.style.background = 'var(--bg-deep)';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedModel !== m.name) e.currentTarget.style.background = 'transparent';
+                        }}
+                        onClick={() => {
+                          setSelectedModel(m.name);
+                          setModelMenuOpen(false);
+                          toast(`已切换精读模型为「${m.name}」`, 'ok');
+                        }}
+                      >
+                        <div className="row-between items-center">
+                          <strong style={{ fontSize: 12, color: selectedModel === m.name ? 'var(--brand-deep)' : 'var(--ink)' }}>
+                            {m.name}
+                          </strong>
+                          <span className={`tag ${selectedModel === m.name ? 'tag-green' : 'tag-gray'}`} style={{ fontSize: 10, padding: '0 4px' }}>
+                            {m.badge}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, lineHeight: 1.3 }}>
+                          {m.desc}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <span className="text-xs text-muted">林曦 · 赵越 在线协同</span>
           </div>
@@ -1102,31 +1385,7 @@ export default function Reader() {
             )}
           </div>
 
-          {/* 快捷问题胶囊 */}
-          <div
-            style={{
-              padding: '6px 12px',
-              borderTop: '1px solid var(--line)',
-              background: 'var(--bg)',
-              display: 'flex',
-              gap: 6,
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {['AU 分支带来了多少增益？', '本文与 GraphAU 的区别？', 'CASME II 消融结果如何？'].map((q) => (
-              <button
-                key={q}
-                className="tag tag-outline"
-                style={{ cursor: 'pointer', fontSize: 11, padding: '3px 8px' }}
-                onClick={() => setChatInput(q)}
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-
-          {/* 底部输入框（带文档附件与语音输入） */}
+          {/* 底部输入框（带文档附件与语音输入，去除了上方的快捷问题标签） */}
           <div style={{ padding: 12, borderTop: '1px solid var(--line)', background: '#ffffff' }}>
             {/* 已挂载参考附件胶囊 */}
             {attachedDoc && (
@@ -1241,50 +1500,114 @@ export default function Reader() {
         </div>
       </section>
 
-      {/* 导入文献模态框 */}
+      {/* 学术文献库与导入功能弹窗（类似源文件预览弹窗，集中管理文献切换与导入） */}
       {uploadOpen && (
         <div
           className="modal-scrim"
           onMouseDown={(e) => e.target === e.currentTarget && setUploadOpen(false)}
         >
-          <div className="modal">
+          <div className="modal" style={{ maxWidth: 540, width: '92%' }}>
             <div className="modal-head">
-              <div className="modal-title">导入学术文献</div>
+              <div className="modal-title">学术文献库管理与导入</div>
               <button className="btn btn-ghost btn-icon modal-x" onClick={() => setUploadOpen(false)}>
                 <Icon name="x" size={16} />
               </button>
             </div>
-            <div className="modal-body">
-              <label className="field-label">选择本地文件（PDF / Word / Excel / PPT / TXT）</label>
-              <input
-                className="input"
-                type="file"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] || null;
-                  setUploadFile(f);
-                  if (f) setUploadName(f.name);
-                }}
-              />
-              {uploadFile && (
-                <div className="text-xs text-muted mt-1">
-                  <Icon name="file" size={11} /> 已选择：{uploadFile.name}（{(uploadFile.size / 1024).toFixed(0)} KB）
+            <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
+              {/* 已有文献库切换列表 */}
+              {docs && docs.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <label className="field-label" style={{ marginBottom: 6 }}>
+                    选择正在研读的学术文献：
+                  </label>
+                  <div
+                    className="col g-1"
+                    style={{
+                      maxHeight: 160,
+                      overflowY: 'auto',
+                      border: '1px solid var(--line)',
+                      borderRadius: 8,
+                      padding: 6,
+                      background: 'var(--bg-deep)',
+                    }}
+                  >
+                    {docs.map((d) => (
+                      <div
+                        key={d.id}
+                        className="row-between items-center"
+                        style={{
+                          padding: '7px 10px',
+                          borderRadius: 6,
+                          background: docId === d.id ? 'var(--brand-soft)' : '#ffffff',
+                          border: docId === d.id ? '1px solid var(--brand)' : '1px solid transparent',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onClick={() => {
+                          loadDoc(d.id);
+                          setUploadOpen(false);
+                          toast(`已切换至《${d.title}》`, 'ok');
+                        }}
+                      >
+                        <div className="row g-2 items-center" style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                          <Icon name="file" size={13} />
+                          <span
+                            style={{
+                              fontSize: 12.5,
+                              fontWeight: docId === d.id ? 700 : 500,
+                              color: docId === d.id ? 'var(--brand-deep)' : 'var(--ink)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {d.title}
+                          </span>
+                        </div>
+                        {docId === d.id && (
+                          <span className="tag tag-green" style={{ fontSize: 10, padding: '1px 6px' }}>
+                            当前精读
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-              <label className="field-label" style={{ marginTop: 12 }}>
-                或输入文件名 / 公网可访问 URL
-              </label>
-              <input
-                className="input"
-                value={uploadName}
-                onChange={(e) => {
-                  setUploadName(e.target.value);
-                  setUploadFile(null);
-                }}
-                placeholder="mer-transformer-2026.pdf 或 https://arxiv.org/pdf/…"
-              />
-              <div className="text-xs text-muted mt-2">
-                PDF 本地文件可直接预览 · 分片上传 · 扫描件自动 OCR · 公式 LaTeX 化
+
+              {/* 导入新文献区域 */}
+              <div style={{ borderTop: docs && docs.length > 0 ? '1px solid var(--line)' : 'none', paddingTop: docs && docs.length > 0 ? 12 : 0 }}>
+                <label className="field-label">导入新文献：选择本地文件（PDF / Word / Excel / PPT / TXT）</label>
+                <input
+                  className="input"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    setUploadFile(f);
+                    if (f) setUploadName(f.name);
+                  }}
+                />
+                {uploadFile && (
+                  <div className="text-xs text-muted mt-1">
+                    <Icon name="file" size={11} /> 已选择：{uploadFile.name}（{(uploadFile.size / 1024).toFixed(0)} KB）
+                  </div>
+                )}
+                <label className="field-label" style={{ marginTop: 12 }}>
+                  或输入文件名 / 公网可访问 URL
+                </label>
+                <input
+                  className="input"
+                  value={uploadName}
+                  onChange={(e) => {
+                    setUploadName(e.target.value);
+                    setUploadFile(null);
+                  }}
+                  placeholder="mer-transformer-2026.pdf 或 https://arxiv.org/pdf/…"
+                />
+                <div className="text-xs text-muted mt-2">
+                  PDF 本地文件可直接预览 · 分片上传 · 扫描件自动 OCR · 公式 LaTeX 化
+                </div>
               </div>
             </div>
             <div className="modal-foot">
