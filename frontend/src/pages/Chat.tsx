@@ -1,105 +1,76 @@
-/* AI 对话工作台 —— 现代化深色 Agent 工作台 (LobsterAI 视觉规范) */
+/* ============================================================
+   ScienceX AI 对话工作台 —— 全新美学重构版
+   非暗黑模式 / 明亮清爽 / 悬浮指令中枢 / 8大科研智能体范式
+   ============================================================ */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { api, chatStream } from '../api/client';
-import Icon from '../components/Icon';
+import Icon, { type IconName } from '../components/Icon';
 import { useToast } from '../components/ui';
 import { useAuth } from '../stores/auth';
 import type { AgentMode, ChatMessage, Conversation, SkillItem } from '../types';
-import { ChatSidebar, type AgentItem } from './chat/ChatSidebar';
+import { ChatCommandDock } from './chat/ChatCommandDock';
 import { ChatMessages } from './chat/ChatMessages';
-import { LobsterInputCard } from './chat/LobsterInputCard';
-import { LobsterModals } from './chat/LobsterModals';
+import { ChatSidebar } from './chat/ChatSidebar';
 import { MemoryDrawer } from './chat/MemoryDrawer';
-import './chat/lobster-chat.css';
 
-const DEFAULT_AGENTS: AgentItem[] = [
-  { id: 'main_agent', name: 'Main Agent', role: '灵犀科研主智能体' },
-  { id: 'literature_agent', name: 'Literature Agent', role: '文献精读与综述智能体' },
-  { id: 'experiment_agent', name: 'Experiment Agent', role: '消融实验与参数调优智能体' },
-  { id: 'reviewer_council', name: 'Reviewer Council', role: '五角色多智能体专家评审团' },
-];
+interface QuickPrompt {
+  id: string;
+  icon: IconName;
+  label: string;
+  prompt: string;
+}
 
-const QUICK_CAPSULES = [
-  {
-    icon: 'doc' as const,
-    label: 'Create Slides',
-    prompt: '为「微表情识别（MER）多模态融合」研究生成一份 12 页学术组会汇报 PPT 大纲与分页讲稿',
-  },
-  {
-    icon: 'chart' as const,
-    label: 'Data Analysis',
-    prompt: '分析当前消融实验 UF1 / UAR 指标数据，生成学术消融对比图并输出关键趋势洞察',
-  },
-  {
-    icon: 'book' as const,
-    label: 'Education & Learning',
-    prompt: '深度精读 2026 年微表情识别领域关键顶会论文，解析核心网络架构、AU 先验机制与局限性',
-  },
-  {
-    icon: 'globe' as const,
-    label: 'Create Website',
-    prompt: '为当前科研项目设计一个展示微表情识别算法、Demo 演示与消融基准的交互式学术主页',
-  },
+const QUICK_PROMPTS: QuickPrompt[] = [
+  { id: 'topic', icon: 'bulb', label: '选题方向推演', prompt: '帮我分析微表情识别领域 2026 年值得做的选题方向' },
+  { id: 'review', icon: 'book', label: '综述大纲生成', prompt: '为「AU 先验 + Transformer」这个主题生成一份文献综述大纲' },
+  { id: 'exp', icon: 'flask', label: '消融实验方案', prompt: '我的 up9 模型要做消融实验，帮我设计实验方案' },
+  { id: 'polish', icon: 'pen', label: '论文学术润色', prompt: '把这段论文摘要润色成更地道的学术英语' },
+  { id: 'chart', icon: 'chart', label: '科研图表生成', prompt: '帮我用 Python 生成一份多指标消融对比的学术柱状图' },
 ];
 
 export default function Chat() {
   const { user } = useAuth();
   const toast = useToast();
-
   const [convs, setConvs] = useState<Conversation[] | null>(null);
   const [activeConv, setActiveConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
-  const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>({
-    builtin: [
-      { id: 'm1', name: 'DeepSeek-V4-Pro', tag: '学术满血版' },
-      { id: 'm2', name: 'GPT-4o', tag: '高精全能' },
-      { id: 'm3', name: 'Claude-3.5-Sonnet', tag: '长文推理' },
-      { id: 'm4', name: 'DeepSeek-R1', tag: '慢思考推导' },
-    ],
-    custom: [],
-  });
-  const [model, setModel] = useState('DeepSeek-V4-Pro');
+  const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>({ builtin: [], custom: [] });
+  const [model, setModel] = useState('GPT-4o');
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [keyword, setKeyword] = useState('');
   const [recording, setRecording] = useState(false);
   const [agentMode, setAgentMode] = useState<AgentMode>('plan_execute');
   const [showMemoryDrawer, setShowMemoryDrawer] = useState(false);
   const [memoryCount, setMemoryCount] = useState<number>(4);
-
-  // 现代 Agent 界面状态
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeNav, setActiveNav] = useState('new_task');
-  const [selectedAgent, setSelectedAgent] = useState('main_agent');
-  const [agents, setAgents] = useState<AgentItem[]>(DEFAULT_AGENTS);
-  const [projectName, setProjectName] = useState('微表情识别（MER）研究');
-  const [activeModal, setActiveModal] = useState<'kits' | 'scheduled' | 'search' | 'mcp' | 'add_agent' | 'project' | null>(null);
-
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [projectName] = useState('微表情识别（MER）研究');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // 初始化带有精确演示数据的看板状态
+  const [dashboard, setDashboard] = useState<any>({
+    today_usage: { tokens: 38400, calls: 26, cost: 1.24 },
+  });
 
   const loadData = useCallback(async () => {
     try {
-      const [c, m, s, mem] = await Promise.all([
+      const [c, m, d, s, mem] = await Promise.all([
         api<{ items: Conversation[] } | Conversation[]>('/conversations'),
         api<{ builtin: any[]; custom: any[] }>('/models'),
+        api<any>('/dashboard/summary'),
         api<{ items: SkillItem[] } | SkillItem[]>('/skills'),
         api<{ total: number }>('/chat/memories').catch(() => ({ total: 4 })),
       ]);
       setConvs((c as any)?.items || (Array.isArray(c) ? c : []));
-      if (m?.builtin?.length) {
-        setModels(m);
-        // 如果后端配置有模型，优先保留或对齐
-        if (!m.builtin.some((b: any) => b.name === model)) {
-          setModel(m.builtin[0].name);
-        }
-      }
+      setModels(m || { builtin: [], custom: [] });
+      if (d) setDashboard(d);
       setSkills(Array.isArray(s) ? s : ((s as any)?.items || []));
       if (mem && typeof mem.total === 'number') setMemoryCount(mem.total);
     } catch (err: any) {
       toast(err.message || '加载工作台数据失败', 'err');
     }
-  }, [toast, model]);
+  }, [toast]);
 
   useEffect(() => {
     loadData();
@@ -111,20 +82,15 @@ export default function Chat() {
 
   const openConv = async (id: string) => {
     setActiveConv(id);
-    setActiveNav('tasks');
     const { items } = await api<{ items: ChatMessage[] }>(`/conversations/${id}/messages`);
     setMessages(items.map((m) => ({ ...m })));
   };
 
   const newConv = async () => {
-    const c = await api<Conversation>('/conversations', {
-      method: 'POST',
-      body: { title: '新的科研任务' },
-    });
+    const c = await api<Conversation>('/conversations', { method: 'POST', body: { title: '新的科研对话' } });
     setConvs((x) => [c, ...(x || [])]);
     setActiveConv(c.id);
     setMessages([]);
-    setActiveNav('new_task');
   };
 
   const removeConv = async (id: string, e: React.MouseEvent) => {
@@ -148,23 +114,20 @@ export default function Chat() {
 
   const enhancePrompt = async () => {
     if (!input.trim()) return toast('请先输入提示词', 'info');
-    const { enhanced } = await api<{ enhanced: string }>('/prompt/enhance', {
-      method: 'POST',
-      body: { prompt: input },
-    });
+    const { enhanced } = await api<{ enhanced: string }>('/prompt/enhance', { method: 'POST', body: { prompt: input } });
     setInput(enhanced);
-    toast('提示词已增强（学术背景 + 结构化约束）');
+    toast('提示词已增强（角色 + 结构 + 背景）');
   };
 
   const voiceInput = () => {
     if (recording) {
       setRecording(false);
-      setInput((v) => (v ? v + ' ' : '') + '帮我分析当前消融实验结果并生成进一步的改进方向');
+      setInput((v) => (v ? v + ' ' : '') + '（语音转写）帮我分析当前实验的下一步计划');
       toast('语音已转写为文字');
       return;
     }
     setRecording(true);
-    toast('正在聆听…再次点击结束（Web Speech API 模拟）', 'info');
+    toast('正在聆听…再次点击结束（演示模拟 Web Speech API）', 'info');
   };
 
   const send = async (text?: string, skillId?: string) => {
@@ -172,7 +135,6 @@ export default function Chat() {
     if (!content || streaming) return;
     setInput('');
     setStreaming(true);
-
     const userMsg: ChatMessage = { id: `u${Date.now()}`, role: 'user', content };
     const aiMsg: ChatMessage = {
       id: `a${Date.now()}`,
@@ -186,10 +148,7 @@ export default function Chat() {
 
     let convId = activeConv;
     if (!convId) {
-      const c = await api<Conversation>('/conversations', {
-        method: 'POST',
-        body: { title: content.slice(0, 18) },
-      });
+      const c = await api<Conversation>('/conversations', { method: 'POST', body: { title: content.slice(0, 18) } });
       convId = c.id;
       setActiveConv(c.id);
       setConvs((x) => [c, ...(x || [])]);
@@ -207,10 +166,8 @@ export default function Chat() {
         skills: skillId ? [skillId] : [],
       },
       {
-        onDelta: (t) =>
-          setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, content: x.content + t } : x))),
-        onPlan: (plan) =>
-          setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, plan } : x))),
+        onDelta: (t) => setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, content: x.content + t } : x))),
+        onPlan: (plan) => setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, plan } : x))),
         onStepStart: (step) =>
           setMessages((m) =>
             m.map((x) =>
@@ -219,9 +176,7 @@ export default function Chat() {
                     ...x,
                     plan: {
                       ...x.plan,
-                      steps: x.plan.steps.map((s, idx) =>
-                        idx === step.step_index ? { ...s, status: 'running' } : s
-                      ),
+                      steps: x.plan.steps.map((s, idx) => (idx === step.step_index ? { ...s, status: 'running' } : s)),
                     },
                   }
                 : x
@@ -287,221 +242,174 @@ export default function Chat() {
     );
   };
 
-  const handleSelectNav = (nav: string) => {
-    setActiveNav(nav);
-    if (nav === 'kits') setActiveModal('kits');
-    else if (nav === 'scheduled') setActiveModal('scheduled');
-    else if (nav === 'search') setActiveModal('search');
-    else if (nav === 'mcp') setActiveModal('mcp');
-    else if (nav === 'skills') {
-      if (skills.length > 0) {
-        toast(`已载入 ${skills.length} 个学术 Skills 扩展`, 'info');
-      } else {
-        toast('Skills 扩展就绪', 'info');
-      }
-    }
+  const invokeSkill = (skill: SkillItem) => {
+    send(`请使用「${skill.name}」技能：${skill.desc}`, skill.id);
   };
 
   const filteredConvs = convs?.filter((c) => c.title.includes(keyword)) || [];
-  const currentAgent = agents.find((a) => a.id === selectedAgent) || agents[0];
 
   return (
-    <div style={{ padding: '0 4px', height: '100%' }}>
-      {/* 现代深色 Agent 工作台外壳 */}
-      <div className="lobster-container">
-        {/* 左侧工作台侧栏 */}
-        <ChatSidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
-          activeNav={activeNav}
-          onSelectNav={handleSelectNav}
-          selectedAgent={selectedAgent}
-          onSelectAgent={(id) => {
-            setSelectedAgent(id);
-            const a = agents.find((x) => x.id === id);
-            toast(`已切换至 ${a?.name || '智能体'}`);
-          }}
-          agents={agents}
-          onAddAgent={() => setActiveModal('add_agent')}
-          convs={convs}
-          filteredConvs={filteredConvs}
-          activeConv={activeConv}
-          keyword={keyword}
-          onKeywordChange={setKeyword}
-          onNewConv={newConv}
-          onOpenConv={openConv}
-          onRenameConv={renameConv}
-          onRemoveConv={removeConv}
-        />
+    <div className="chat-workbench">
+      {/* ===== 左侧会话侧边栏（可折叠） ===== */}
+      <ChatSidebar
+        convs={convs}
+        filteredConvs={filteredConvs}
+        activeConv={activeConv}
+        keyword={keyword}
+        onKeywordChange={setKeyword}
+        onNewConv={newConv}
+        onOpenConv={openConv}
+        onRenameConv={renameConv}
+        onRemoveConv={removeConv}
+        collapsed={!sidebarOpen}
+      />
 
-        {/* 右侧主工作台 */}
-        <main className="lobster-main">
-          {/* 顶栏控制状态条 */}
-          <div className="lobster-topbar">
-            <div className="lobster-topbar-left">
-              {sidebarCollapsed && (
-                <button
-                  type="button"
-                  className="lobster-sidebar-open-btn"
-                  onClick={() => setSidebarCollapsed(false)}
-                  title="展开侧边栏"
-                >
-                  <Icon name="layoutSidebar" size={15} />
-                  <span>Sidebar</span>
-                </button>
-              )}
+      {/* ===== 主工作区视窗 ===== */}
+      <div className="chat-main-stage">
+        {/* 顶部轻量状态栏 */}
+        <div className="chat-stage-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              className="chat-tool-btn"
+              onClick={() => setSidebarOpen((v) => !v)}
+              title={sidebarOpen ? '收起会话列表' : '展开会话列表'}
+              aria-label="切换侧边栏"
+            >
+              <Icon name="menu" size={16} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 7,
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                }}
+              >
+                <Icon name="flask" size={13} />
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                {activeConv ? convs?.find((c) => c.id === activeConv)?.title || '科研对话' : 'AI 对话中枢'}
+              </span>
             </div>
 
-            <div className="lobster-topbar-right">
-              {/* 课题记忆抽屉入口 */}
-              <button
-                type="button"
-                className="lobster-mem-btn"
-                onClick={() => setShowMemoryDrawer(true)}
-                title="管理课题组三层长短期记忆引擎"
-              >
-                <Icon name="spark" size={13} />
-                <span>Memory ({memoryCount})</span>
-              </button>
+            <div className="chat-header-pill" style={{ color: '#059669', background: '#ecfdf5', borderColor: '#a7f3d0' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+              <span>{model} 在线</span>
+            </div>
 
-              {/* 标志性绿色安全态指示器 */}
-              <div className="lobster-security-pill" title="Security & Sandboxing Active">
-                <Icon name="shield" size={14} />
-                <span>Security Active</span>
-              </div>
-
-              {/* 在有消息时提供快捷新任务按钮 */}
-              {messages.length > 0 && (
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{ color: '#a4a9bd', borderColor: 'rgba(255,255,255,0.1)' }}
-                  onClick={newConv}
-                  title="开始新任务"
-                >
-                  <Icon name="plus" size={13} />
-                  <span>新任务</span>
-                </button>
-              )}
+            <div className="chat-header-pill" style={{ color: '#4f46e5', background: '#e0e7ff', borderColor: '#c7d2fe' }}>
+              <span>灵犀 Agent 引擎</span>
             </div>
           </div>
 
-          {/* 内容展示区：空白初始态 (Hero) 或 对话消息流 (Flow) */}
-          {messages.length === 0 ? (
-            <div className="lobster-hero-stage">
-              {/* 居中标志性圆角橘红徽章图标 */}
-              <div className="lobster-logo-badge" title="LobsterAI Agent Engine">
-                <Icon name="lobster" size={32} />
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 12, color: '#64748b' }}>
+              今日已用 <strong style={{ color: '#0f172a' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</strong> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
+            </div>
+          </div>
+        </div>
 
-              <h1 className="lobster-title">LobsterAI</h1>
-              <div className="lobster-subtitle">All-scenario office assistant Agent</div>
+        {/* 内容区域：空状态（LobsterAI 风格居中 Hero + 输入卡片） 或 消息流 */}
+        {messages.length === 0 ? (
+          <div className="chat-hero-container">
+            {/* 居中标志性 App Badge */}
+            <div className="chat-hero-badge">
+              <Icon name="flask" size={28} />
+            </div>
 
-              {/* 居中核心悬浮提示词卡片 */}
-              <LobsterInputCard
+            {/* 标题与副标题 */}
+            <h1 className="chat-hero-title">ScienceX AI</h1>
+            <p className="chat-hero-subtitle">
+              全周期 AI 科研智能体中枢 · 覆盖选题、文献、实验、写作与评审
+            </p>
+
+            {/* 核心悬浮输入中枢卡片 */}
+            <ChatCommandDock
+              input={input}
+              onInputChange={setInput}
+              onSend={() => send()}
+              streaming={streaming}
+              recording={recording}
+              onVoiceInput={voiceInput}
+              onUploadClick={() => toast('附件上传：演示环境已就绪', 'info')}
+              onEnhancePrompt={enhancePrompt}
+              model={model}
+              onSelectModel={setModel}
+              models={models}
+              skills={skills}
+              onInvokeSkill={invokeSkill}
+              projectName={projectName}
+              agentMode={agentMode}
+              onSelectAgentMode={setAgentMode}
+              memoryCount={memoryCount}
+              onOpenMemoryDrawer={() => setShowMemoryDrawer(true)}
+            />
+
+            {/* 下方快捷推荐指令胶囊栏 */}
+            <div className="chat-quick-tags">
+              {QUICK_PROMPTS.map((qp) => (
+                <button
+                  key={qp.id}
+                  type="button"
+                  className="chat-quick-tag"
+                  onClick={() => send(qp.prompt)}
+                  title={qp.prompt}
+                >
+                  <Icon name={qp.icon} size={14} style={{ color: '#059669' }} />
+                  <span>{qp.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* 消息滚动流 */}
+            <ChatMessages
+              messages={messages}
+              user={user}
+              bottomRef={bottomRef}
+            />
+
+            {/* 底部悬浮吸附输入中枢卡片 */}
+            <div className="chat-dock-sticky-container">
+              <ChatCommandDock
                 input={input}
                 onInputChange={setInput}
+                onSend={() => send()}
                 streaming={streaming}
                 recording={recording}
-                onSend={() => send()}
                 onVoiceInput={voiceInput}
-                onUploadClick={() => toast('附件上传：演示沙箱已连接', 'info')}
-                onOpenKits={() => setActiveModal('kits')}
+                onUploadClick={() => toast('附件上传：演示环境已就绪', 'info')}
                 onEnhancePrompt={enhancePrompt}
                 model={model}
-                models={models}
                 onSelectModel={setModel}
+                models={models}
+                skills={skills}
+                onInvokeSkill={invokeSkill}
                 projectName={projectName}
-                agentName={currentAgent.name}
-                onOpenProjectSelect={() => setActiveModal('project')}
-                onOpenAgentSelect={() => setActiveModal('kits')}
-                placeholder="Assign a task or ask any question"
+                agentMode={agentMode}
+                onSelectAgentMode={setAgentMode}
+                memoryCount={memoryCount}
+                onOpenMemoryDrawer={() => setShowMemoryDrawer(true)}
               />
-
-              {/* 卡片下方的快捷学术指令胶囊 */}
-              <div className="lobster-capsules-row">
-                {QUICK_CAPSULES.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    className="lobster-capsule"
-                    onClick={() => send(item.prompt)}
-                    title={item.prompt}
-                  >
-                    <Icon name={item.icon} size={15} />
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
             </div>
-          ) : (
-            <div className="lobster-chat-flow">
-              {/* 消息滚动流 */}
-              <div className="lobster-messages-scroll">
-                <div className="lobster-messages-container">
-                  <ChatMessages
-                    messages={messages}
-                    user={user}
-                    suggestions={[]}
-                    onSelectSuggestion={(text) => send(text)}
-                    bottomRef={bottomRef}
-                  />
-                </div>
-              </div>
-
-              {/* 底部吸底悬浮输入卡片 */}
-              <div className="lobster-docked-input-shell">
-                <LobsterInputCard
-                  docked={true}
-                  input={input}
-                  onInputChange={setInput}
-                  streaming={streaming}
-                  recording={recording}
-                  onSend={() => send()}
-                  onVoiceInput={voiceInput}
-                  onUploadClick={() => toast('附件上传：演示沙箱已连接', 'info')}
-                  onOpenKits={() => setActiveModal('kits')}
-                  onEnhancePrompt={enhancePrompt}
-                  model={model}
-                  models={models}
-                  onSelectModel={setModel}
-                  projectName={projectName}
-                  agentName={currentAgent.name}
-                  onOpenProjectSelect={() => setActiveModal('project')}
-                  onOpenAgentSelect={() => setActiveModal('kits')}
-                  placeholder="Assign a task or ask any question"
-                />
-              </div>
-            </div>
-          )}
-        </main>
+          </>
+        )}
       </div>
 
-      {/* 弹窗与抽屉 */}
-      <LobsterModals
-        activeModal={activeModal}
-        onClose={() => setActiveModal(null)}
-        agentMode={agentMode}
-        onSelectAgentMode={setAgentMode}
-        convs={convs}
-        onOpenConv={openConv}
-        onNewConvWithPrompt={(prompt) => send(prompt)}
-        projectName={projectName}
-        onSelectProject={setProjectName}
-        onAddCustomAgent={(newAgent) => {
-          setAgents((prev) => [...prev, newAgent]);
-          setSelectedAgent(newAgent.id);
-          toast(`智能体「${newAgent.name}」已创建并生效`);
-        }}
-      />
-
+      {/* 课题组三层记忆抽屉 */}
       <MemoryDrawer
         open={showMemoryDrawer}
         onClose={() => setShowMemoryDrawer(false)}
         convId={activeConv}
-        onMemoryChanged={() =>
-          api<{ total: number }>('/chat/memories').then((r) => setMemoryCount(r?.total || 4))
-        }
+        onMemoryChanged={() => api<{ total: number }>('/chat/memories').then((r) => setMemoryCount(r?.total || 4))}
       />
     </div>
   );

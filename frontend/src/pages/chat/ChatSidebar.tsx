@@ -1,22 +1,9 @@
 import React from 'react';
 import Icon from '../../components/Icon';
+import { Skeleton } from '../../components/ui';
 import type { Conversation } from '../../types';
 
-export interface AgentItem {
-  id: string;
-  name: string;
-  role?: string;
-}
-
 interface ChatSidebarProps {
-  collapsed: boolean;
-  onToggleCollapse: () => void;
-  activeNav: string;
-  onSelectNav: (nav: string) => void;
-  selectedAgent: string;
-  onSelectAgent: (id: string) => void;
-  agents: AgentItem[];
-  onAddAgent: () => void;
   convs: Conversation[] | null;
   filteredConvs: Conversation[];
   activeConv: string | null;
@@ -26,183 +13,131 @@ interface ChatSidebarProps {
   onOpenConv: (id: string) => void;
   onRenameConv: (id: string) => void;
   onRemoveConv: (id: string, e: React.MouseEvent) => void;
+  collapsed?: boolean;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
-  collapsed,
-  onToggleCollapse,
-  activeNav,
-  onSelectNav,
-  selectedAgent,
-  onSelectAgent,
-  agents,
-  onAddAgent,
   convs,
   filteredConvs,
   activeConv,
+  keyword,
+  onKeywordChange,
   onNewConv,
   onOpenConv,
   onRenameConv,
   onRemoveConv,
+  collapsed = false,
 }) => {
   return (
-    <aside className={`lobster-sidebar ${collapsed ? 'collapsed' : ''}`}>
-      {/* 顶部 macOS 红黄绿小圆点 + 侧边栏折叠图标 */}
-      <div className="lobster-window-header">
-        <div className="lobster-traffic-lights" title="ScienceX Agent Workspace">
-          <span className="lobster-dot lobster-dot-red" />
-          <span className="lobster-dot lobster-dot-yellow" />
-          <span className="lobster-dot lobster-dot-green" />
-        </div>
-        <button
-          type="button"
-          className="lobster-sidebar-toggle"
-          onClick={onToggleCollapse}
-          title={collapsed ? '展开侧栏' : '收起侧栏'}
-          aria-label="切换侧边栏"
-        >
-          <Icon name="layoutSidebar" size={15} />
-        </button>
+    <aside className={`chat-sidebar-card ${collapsed ? 'collapsed' : ''}`}>
+      {/* 新对话按钮 */}
+      <button
+        className="chat-new-btn"
+        onClick={onNewConv}
+        aria-label="创建新对话"
+      >
+        <Icon name="plus" size={15} strokeWidth={2.4} />
+        <span>开启新对话</span>
+      </button>
+
+      {/* 搜索框 */}
+      <div className="chat-search-wrap">
+        <span style={{ position: 'absolute', left: 10, top: 8, color: '#94a3b8', display: 'flex' }}>
+          <Icon name="search" size={14} />
+        </span>
+        <input
+          placeholder="搜索历史会话..."
+          value={keyword}
+          onChange={(e) => onKeywordChange(e.target.value)}
+          aria-label="搜索历史会话"
+        />
+        {keyword && (
+          <button
+            type="button"
+            onClick={() => onKeywordChange('')}
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: 7,
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              padding: 2,
+            }}
+          >
+            <Icon name="x" size={12} />
+          </button>
+        )}
       </div>
 
-      {/* 核心操作导航清单 */}
-      <div className="lobster-nav-list">
-        <button
-          type="button"
-          className={`lobster-nav-item ${activeNav === 'new_task' ? 'active' : ''}`}
-          onClick={() => {
-            onSelectNav('new_task');
-            onNewConv();
-          }}
-          title="创建并开启全新任务"
-        >
-          <Icon name="pen" size={15} />
-          <span>New Task</span>
-        </button>
-
-        <button
-          type="button"
-          className={`lobster-nav-item ${activeNav === 'search' ? 'active' : ''}`}
-          onClick={() => onSelectNav('search')}
-          title="搜索历史科研任务与会话"
-        >
-          <Icon name="search" size={15} />
-          <span>Search Tasks</span>
-        </button>
-
-        <button
-          type="button"
-          className={`lobster-nav-item ${activeNav === 'scheduled' ? 'active' : ''}`}
-          onClick={() => onSelectNav('scheduled')}
-          title="学术定时任务（文献推送、模型定期巡检）"
-        >
-          <Icon name="clock" size={15} />
-          <span>Scheduled Tasks</span>
-        </button>
-
-        <button
-          type="button"
-          className={`lobster-nav-item ${activeNav === 'kits' ? 'active' : ''}`}
-          onClick={() => onSelectNav('kits')}
-          title="科研场景模式套件（Plan-Execute / ReAct / CodeAct 等）"
-        >
-          <Icon name="grid" size={15} />
-          <span>Kits</span>
-        </button>
-
-        <button
-          type="button"
-          className={`lobster-nav-item ${activeNav === 'skills' ? 'active' : ''}`}
-          onClick={() => onSelectNav('skills')}
-          title="智能体学术技能库"
-        >
-          <Icon name="sparkles" size={15} />
-          <span>Skills</span>
-        </button>
-
-        <button
-          type="button"
-          className={`lobster-nav-item ${activeNav === 'mcp' ? 'active' : ''}`}
-          onClick={() => onSelectNav('mcp')}
-          title="Model Context Protocol 外部工具与服务"
-        >
-          <Icon name="link" size={15} />
-          <span>MCP</span>
-        </button>
-      </div>
-
-      {/* My Agents 智能体分组 */}
-      <div className="lobster-section-title">
-        <span>My Agents</span>
-        <button
-          type="button"
-          className="lobster-section-btn"
-          onClick={onAddAgent}
-          title="创建自定义智能体"
-          aria-label="添加智能体"
-        >
-          <Icon name="plus" size={13} />
-        </button>
-      </div>
-
-      <div className="lobster-agents-list">
-        {agents.map((agent) => {
-          const isSelected = selectedAgent === agent.id;
-          return (
-            <button
-              key={agent.id}
-              type="button"
-              className={`lobster-agent-item ${isSelected ? 'selected' : ''}`}
-              onClick={() => onSelectAgent(agent.id)}
-            >
-              <Icon name="bot" size={15} style={{ color: isSelected ? '#10b981' : '#7d8296' }} />
-              <span className="ellipsis">{agent.name}</span>
-              {isSelected && <span className="lobster-agent-indicator" />}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 最近任务/会话 */}
-      {convs && convs.length > 0 && (
-        <div className="lobster-history-block">
-          <div className="lobster-history-title">
-            <span>RECENT TASKS</span>
-            <span style={{ fontSize: 10, opacity: 0.7 }}>{convs.length}</span>
+      {/* 会话列表 */}
+      <div style={{ overflowY: 'auto', flex: 1, paddingRight: 2 }} className="custom-scrollbar">
+        {convs === null ? (
+          <div style={{ padding: 8 }}>
+            <Skeleton lines={5} />
           </div>
-          <div style={{ maxHeight: 110, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {filteredConvs.slice(0, 6).map((c) => (
+        ) : filteredConvs.length === 0 ? (
+          <div style={{ padding: '30px 10px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+            <Icon name="chat" size={24} style={{ opacity: 0.35, marginBottom: 6 }} />
+            <div>暂无历史会话</div>
+          </div>
+        ) : (
+          filteredConvs.map((c) => {
+            const isActive = activeConv === c.id;
+            return (
               <div
                 key={c.id}
-                className={`lobster-history-item ${activeConv === c.id ? 'active' : ''}`}
+                className={`chat-conv-item ${isActive ? 'active' : ''}`}
                 onClick={() => onOpenConv(c.id)}
                 title={c.title}
               >
-                <Icon name="chat" size={12} style={{ opacity: 0.6, flexShrink: 0 }} />
-                <span className="grow ellipsis">{c.title}</span>
-                <span className="row" style={{ gap: 2 }} onClick={(e) => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, flex: 1 }}>
+                  <Icon
+                    name="chat"
+                    size={14}
+                    style={{
+                      color: isActive ? '#059669' : '#94a3b8',
+                      flex: 'none',
+                    }}
+                  />
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontSize: 13,
+                    }}
+                  >
+                    {c.title}
+                  </span>
+                </div>
+
+                <div className="chat-conv-actions" onClick={(e) => e.stopPropagation()}>
                   <button
-                    className="btn btn-ghost btn-icon"
-                    style={{ padding: 1, color: '#7c8196', width: 16, height: 16 }}
+                    type="button"
+                    className="chat-conv-action-btn"
                     onClick={() => onRenameConv(c.id)}
-                    title="重命名"
+                    title="重命名会话"
+                    aria-label="重命名会话"
                   >
-                    <Icon name="edit" size={10} />
+                    <Icon name="edit" size={12} />
                   </button>
                   <button
-                    className="btn btn-ghost btn-icon"
-                    style={{ padding: 1, color: '#ef4444', width: 16, height: 16 }}
+                    type="button"
+                    className="chat-conv-action-btn delete"
                     onClick={(e) => onRemoveConv(c.id, e)}
-                    title="删除"
+                    title="删除会话"
+                    aria-label="删除会话"
                   >
-                    <Icon name="trash" size={10} />
+                    <Icon name="trash" size={12} />
                   </button>
-                </span>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            );
+          })
+        )}
+      </div>
     </aside>
   );
 };
