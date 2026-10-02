@@ -120,41 +120,49 @@ router.post('/charts/:id/analyze', auth, (req, res) => {
 router.post('/writing/polish', auth, async (req, res) => {
   const { text = '', style = 'academic', target = '' } = req.body || {};
   if (!text) return errors.param(res, '待润色文本不能为空');
-  const live = await ai.generateResponse([
-    { role: 'system', content: `你是学术英文编辑。按${style}风格${target ? `，面向${target}` : ''}润色用户文本，只输出润色后的正文，不添加解释。` },
-    { role: 'user', content: text },
-  ], { userId: req.user.id });
-  if (!live.fallback) return ok(res, { polished: live.text, changes: [], style, target, mode: 'live' });
-  ok(res, {
-    polished: text
-      .replace(/\bwe propose\b/gi, 'we introduce')
-      .replace(/\bvery good\b/gi, 'remarkable')
-      .replace(/\bcan improve\b/gi, 'yields an improvement of')
-      .replace(/\bimproving our baseline by 4.3 points\b/gi, 'yielding a 6.6% relative improvement over our baseline'),
-    changes: [
-      { type: '词汇升级', from: 'we propose', to: 'we introduce', reason: '避免连续段落重复 propose' },
-      { type: '学术表达', from: 'very good', to: 'remarkable', reason: '口语化 → 学术化' },
-      { type: '量化表述', from: 'by 4.3 points', to: '6.6% relative improvement', reason: '相对提升更规范' },
-    ],
-    style, target,
-  });
+  try {
+    const live = await ai.generateResponse([
+      { role: 'system', content: `你是学术英文编辑。按${style}风格${target ? `，面向${target}` : ''}润色用户文本，只输出润色后的正文，不添加解释。` },
+      { role: 'user', content: text },
+    ], { userId: req.user.id });
+    if (!live.fallback) return ok(res, { polished: live.text, changes: [], style, target, mode: 'live' });
+    ok(res, {
+      polished: text
+        .replace(/\bwe propose\b/gi, 'we introduce')
+        .replace(/\bvery good\b/gi, 'remarkable')
+        .replace(/\bcan improve\b/gi, 'yields an improvement of')
+        .replace(/\bimproving our baseline by 4.3 points\b/gi, 'yielding a 6.6% relative improvement over our baseline'),
+      changes: [
+        { type: '词汇升级', from: 'we propose', to: 'we introduce', reason: '避免连续段落重复 propose' },
+        { type: '学术表达', from: 'very good', to: 'remarkable', reason: '口语化 → 学术化' },
+        { type: '量化表述', from: 'by 4.3 points', to: '6.6% relative improvement', reason: '相对提升更规范' },
+      ],
+      style, target,
+    });
+  } catch {
+    errors.modelTimeout(res, '润色模型请求失败，请稍后重试');
+  }
 });
 
 router.post('/writing/translate', auth, async (req, res) => {
   const { text = '', direction = 'en2zh' } = req.body || {};
   if (!text) return errors.param(res, '待翻译文本不能为空');
-  const live = await ai.generateResponse([
-    { role: 'system', content: `你是科研论文翻译助手。将文本${direction === 'en2zh' ? '翻译成中文' : '翻译成英文'}，保留术语、公式和引用，只输出译文。` },
-    { role: 'user', content: text },
-  ], { userId: req.user.id });
-  if (!live.fallback) return ok(res, { translated: live.text, direction, glossary: [], mode: 'live' });
-  ok(res, {
-    translated: direction === 'en2zh'
-      ? '微表情识别（MER）受制于细微的面部运动与稀缺的训练数据。我们提出 CLAU-Former，通过动作单元（AU）先验与视觉 token 的跨层交互注入结构信息。'
-      : 'Micro-expression recognition (MER) is hindered by subtle facial motions and scarce training data. We propose CLAU-Former, which injects structural information through cross-layer interaction between AU priors and visual tokens.',
-    direction,
-    glossary: [{ en: 'Action Unit (AU)', zh: '动作单元' }, { en: 'LOSO', zh: '留一主体交叉验证' }],
-  });
+  try {
+    const live = await ai.generateResponse([
+      { role: 'system', content: `你是科研论文翻译助手。将文本${direction === 'en2zh' ? '翻译成中文' : '翻译成英文'}，保留术语、公式和引用，只输出译文。` },
+      { role: 'user', content: text },
+    ], { userId: req.user.id });
+    if (!live.fallback) return ok(res, { translated: live.text, direction, glossary: [], mode: 'live' });
+    ok(res, {
+      translated: direction === 'en2zh'
+        ? '微表情识别（MER）受制于细微的面部运动与稀缺的训练数据。我们提出 CLAU-Former，通过动作单元（AU）先验与视觉 token 的跨层交互注入结构信息。'
+        : 'Micro-expression recognition (MER) is hindered by subtle facial motions and scarce training data. We propose CLAU-Former, which injects structural information through cross-layer interaction between AU priors and visual tokens.',
+      direction,
+      glossary: [{ en: 'Action Unit (AU)', zh: '动作单元' }, { en: 'LOSO', zh: '留一主体交叉验证' }],
+    });
+  } catch {
+    errors.modelTimeout(res, '翻译模型请求失败，请稍后重试');
+  }
 });
 
 router.post('/writing/plagiarism', auth, (req, res) => {

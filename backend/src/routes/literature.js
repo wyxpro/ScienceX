@@ -88,39 +88,52 @@ router.post('/literature/review', auth, (req, res) => {
 router.get('/tasks/:id', auth, (req, res) => {
   const task = store.tasks.get(req.params.id);
   if (!task || (task.owner_id ? task.owner_id !== req.user.id : req.user.id !== 'u1')) return errors.notFound(res, '任务不存在');
-  const { listeners, ...rest } = task;
+  const { listeners, events, ...rest } = task;
   ok(res, rest);
 });
 
 router.get('/tasks/:id/stream', auth, (req, res) => {
   const task = store.tasks.get(req.params.id);
   if (!task || (task.owner_id ? task.owner_id !== req.user.id : req.user.id !== 'u1')) return errors.notFound(res, '任务不存在');
-  res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-  let eventId = 0;
-  const send = (event, data) => {
-    if (!res.writableEnded) res.write(`id: ${++eventId}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.write('retry: 3000\n\n');
+  const lastEventId = Number.parseInt(req.get('Last-Event-ID') || req.query.last_event_id || '0', 10) || 0;
+  const send = (entry) => {
+    if (!res.writableEnded) res.write(`id: ${entry.id}\nevent: ${entry.event}\ndata: ${JSON.stringify(entry.data)}\n\n`);
   };
   const heartbeat = setInterval(() => { if (!res.writableEnded) res.write(': ping\n\n'); }, 15000);
-  send('progress', { task_id: task.id, percent: task.percent, stage: task.stage });
-  if (task.status === 'done') {
-    send('done', { task_id: task.id, result: task.result });
+  let replayCutoff = task.event_seq || 0;
+  const cleanup = () => {
     clearInterval(heartbeat);
-    return res.end();
-  }
-  const listener = (t) => {
-    send('progress', { task_id: t.id, percent: t.percent, stage: t.stage });
-    if (t.status === 'done') {
-      send('done', { task_id: t.id, result: t.result });
-      clearInterval(heartbeat);
-      res.end();
+    const index = task.listeners.indexOf(listener);
+    if (index >= 0) task.listeners.splice(index, 1);
+  };
+  const listener = (_task, entry) => {
+    if (entry.id <= replayCutoff) return;
+    send(entry);
+    if (entry.event === 'done' || entry.event === 'error') {
+      cleanup();
+      if (!res.writableEnded) res.end();
     }
   };
   task.listeners.push(listener);
-  req.on('close', () => {
-    clearInterval(heartbeat);
-    const i = task.listeners.indexOf(listener);
-    if (i >= 0) task.listeners.splice(i, 1);
-  });
+  const history = Array.isArray(task.events)
+    ? task.events.filter((entry) => entry.id > lastEventId && entry.id <= replayCutoff)
+    : [];
+  if (history.length) history.forEach(send);
+  else if (!['done', 'failed'].includes(task.status)) {
+    send({ id: replayCutoff || 1, event: 'progress', data: { task_id: task.id, percent: task.percent, stage: task.stage } });
+  }
+  if (['done', 'failed'].includes(task.status)) {
+    cleanup();
+    return res.end();
+  }
+  req.on('close', cleanup);
 });
 
 module.exports = { router };

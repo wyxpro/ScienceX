@@ -1,7 +1,26 @@
 # 🧪 ScienceX · AI 科研工作台
-[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Vite](https://img.shields.io/badge/Vite-5.4.7-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/) [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/) [![Express](https://img.shields.io/badge/Express-4.19.2-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/) [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Protocol](https://img.shields.io/badge/Protocol-SSE_Stream-FF6B6B?style=flat-square)](https://html.spec.whatwg.org/multipage/server-sent-events.html) [![OpenAI](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?style=flat-square&logo=openai&logoColor=white)](https://platform.openai.com/) [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Vite](https://img.shields.io/badge/Vite-5.4.7-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/) [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/) [![Express](https://img.shields.io/badge/Express-4.19.2-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/) [![Protocol](https://img.shields.io/badge/Protocol-SSE_Stream-FF6B6B?style=flat-square)](https://html.spec.whatwg.org/multipage/server-sent-events.html) [![OpenAI](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?style=flat-square&logo=openai&logoColor=white)](https://platform.openai.com/) [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 > **覆盖「选题 → 文献 → 实验 → 分析 → 写作 → 投稿 → 协作」全生命周期的下一代 AI 科研生产力中枢。**  
 > 对话即工作台，工具即智能体。把科研中繁复琐碎的机械劳动交给 AI，让研究人员聚焦于科学创新本身。
+
+---
+
+## 当前实现状态（As-Is，2026-10-02）
+
+本仓库当前交付的是可运行的高保真演示原型，不等同于下文 TSD 描述的完整生产架构。为避免把目标设计误认为已实现能力，边界如下：
+
+| 能力 | 当前仓库实现 | 状态 |
+| :--- | :--- | :---: |
+| Web 前端 | React 18 + TypeScript + Vite | 已交付 |
+| API 后端 | Node.js + Express，统一 REST/SSE 契约 | 已交付 |
+| 数据存储 | 本地 JSON 持久化演示 Store；无 PostgreSQL/Redis | 演示实现 |
+| 模型调用 | 可选 OpenAI 兼容网关；未配置时使用模板演示回退 | 部分交付 |
+| 文档导入与检索 | 支持文字内容导入、确定性关键词检索；不含真实 PDF 版面解析、OCR、Embedding/Rerank | 演示实现 |
+| 任务与智能体 | 进程内任务状态机与角色化结果模拟；不含消息队列或真实多 Agent 并行调用 | 演示实现 |
+| 导出与外部工具 | PPTX、MCP、GPU 集群等接口与流程已建模，但未交付真实执行器 | 目标能力 |
+| 生产架构 | Java/Spring Boot、Python/FastAPI、PostgreSQL、Redis、K8s | TSD 目标架构，未随本仓库交付 |
+
+真实模型调用需配置 `OPENAI_BASE_URL`、`OPENAI_API_KEY` 与 `OPENAI_MODEL`，或在个人设置中添加自有 OpenAI 兼容模型。未配置密钥时，界面仍可演示完整流程，但生成内容不代表真实大模型结果。
 
 ---
 
@@ -41,17 +60,17 @@
 | **鉴权与会话治理** | Spring Security + JWT / OAuth2 | Token 鉴权中间件 + Session 映射 | 支持 Bearer Token 全局拦截，具备 Session 过期与刷新机制 |
 | **追踪与可观测性** | OpenTelemetry + SkyWalking | `X-Request-Id` 链路追踪中间件 | 全链路贯穿请求指纹，统一捕获并分类 400xx/401xx/500xx/600xx 错误码体系 |
 | **端口容错机制** | 容器编排动态解析 / DNS 发现 | 智能 `EADDRINUSE` 自适应端口自增 | 端口冲突时自动探测并递增启动，持久化写入 `.port`，前端 Vite 代理自动热发现 |
-| **数据与缓存层** | PostgreSQL 16 + Redis 7 + MinIO | 内存响应式 Store (`store.js`) | 完整模拟关系实体（用户、项目、文献、实验、稿件、评审报告） |
+| **数据与缓存层** | PostgreSQL 16 + Redis 7 + MinIO | JSON 持久化 Store (`store.js`) | 在本地文件中持久化演示实体；不具备生产数据库的事务、并发与扩展能力 |
 
-### 3. AI 服务与智能体架构 (AI Services)
+### 3. AI 服务与智能体架构（当前实现与目标方案）
 
 | 核心组件 | 技术方案 | 协议 / 格式 | 说明与特性 |
 | :--- | :--- | :--- | :--- |
-| **模型调度网关** | Python FastAPI / Node Proxy | OpenAI API 兼容规范 | 统一路由 GPT-4o、Claude 3.5、DeepSeek 等主流大模型，支持自定义 BaseURL 接入 |
+| **模型调度网关** | 当前为 Node.js 网关；FastAPI 为目标架构 | OpenAI API 兼容规范 | 支持自定义 BaseURL 接入；无密钥或网关不可用时回退到演示模板 |
 | **流式事件总线** | Server-Sent Events (SSE) | `text/event-stream` | 标准 7 类事件驱动流：`start`、`tool`、`delta`、`progress`、`reference`、`done`、`error` |
-| **Agent 智能体编排** | LangChain / 自研 Multi-Agent 架构 | JSON Schema + Chain of Thought | 调度消融实验生成、开题任务拆解、提示词学术增强与审稿人多角色仲裁 |
-| **RAG 知识检索增强**| pgvector / Milvus 混合检索 | 文本切片 + 余弦相似度 | 结合文献 PDF 版面结构化分段，实现段落级召回与精准到页码的引用溯源 |
-| **外部生态开放** | Model Context Protocol (MCP) | JSON-RPC 2.0 / MCP 推荐引擎 | 动态匹配科研场景外部工具，如 ArXiv 索引器、PubMed 客户端、GitHub 代码克隆器 |
+| **Agent 智能体编排** | 当前为进程内任务与模板结果；Multi-Agent 为目标 | JSON Schema + SSE progress | 已实现流程编排和进度事件，尚未实现真实并行 Agent 调用与主席汇总 |
+| **RAG 知识检索增强**| 当前为文本切片 + 关键词评分；pgvector/Milvus 为目标 | 确定性检索 + 来源字段 | 可演示入库、召回和引用字段，尚未实现真实 Embedding、Rerank 与 PDF 页码解析 |
+| **外部生态开放** | 当前为 MCP 目录与连接状态模拟 | MCP 适配器为目标 | 尚未交付 ArXiv、PubMed、GitHub 等真实 MCP 客户端 |
 
 ---
 
@@ -72,7 +91,7 @@ Science/
 │       ├── lib/
 │       │   ├── ai.js            # AI 生成模拟器、SSE 流式协议引擎、异步任务编排
 │       │   ├── respond.js       # 统一响应结构封装器 (ok / errors 标准化)
-│       │   └── store.js         # 全局内存数据仓储 (预置学术项目/文献/GPU/期刊数据)
+│       │   └── store.js         # JSON 持久化演示数据仓储 (预置学术项目/文献/GPU/期刊数据)
 │       └── routes/
 │           ├── account.js       # 用户认证、个人资料、模型密钥托管、用量审计、安全设置
 │           ├── chat.js          # 对话工作台、会话历史、看板聚合、Skills 与 MCP

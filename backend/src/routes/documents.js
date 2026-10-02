@@ -37,7 +37,10 @@ router.post('/documents/upload', auth, async (req, res) => {
   };
   store.documents.unshift(doc);
   const task = ai.createTask('parse', ['下载 / 读取文件', '版面解析', '公式与图表识别', '构建结构化文本'], () => ({ doc_id: doc.id }), req.user.id);
-  task.listeners.push(() => { doc.parsed_status = 'parsed'; });
+  task.listeners.push((_task, entry) => {
+    if (entry.event === 'done') doc.parsed_status = 'parsed';
+    if (entry.event === 'error') doc.parsed_status = 'failed';
+  });
   ok(res, { doc_id: doc.id, task_id: task.id, status: 'parsing' }, '解析任务已提交');
 });
 
@@ -55,15 +58,25 @@ router.get('/documents/:id/structured', auth, (req, res) => {
 });
 
 /* ---------- 翻译 REQ-READ-02 / REQ-WRT-01 ---------- */
-router.post('/documents/:id/translate', auth, (req, res) => {
+router.post('/documents/:id/translate', auth, async (req, res) => {
   const doc = store.documents.find((d) => d.id === req.params.id && canAccess(d, req.user.id));
   if (!doc) return errors.notFound(res, '文档不存在');
   const { text = '', direction = 'en2zh' } = req.body || {};
-  const sample = {
-    en2zh: '微表情（ME）是不受主观意识控制的面部运动，通常持续 1/25 至 1/2 秒，能够揭示真实情绪，在测谎与临床诊断中具有极高价值。',
-    zh2en: 'Micro-expressions are involuntary facial movements lasting 1/25 to 1/2 second, revealing genuine emotions with high value in lie detection and clinical diagnosis.',
-  };
-  ok(res, { original: text.slice(0, 120), translated: sample[direction] || sample.en2zh, direction, glossary: [{ en: 'micro-expression', zh: '微表情' }, { en: 'LOSO', zh: '留一主体交叉验证' }] });
+  if (!text) return errors.param(res, '待翻译文本不能为空');
+  try {
+    const live = await ai.generateResponse([
+      { role: 'system', content: `你是科研论文翻译助手。将文本${direction === 'en2zh' ? '翻译成中文' : '翻译成英文'}，保留术语、公式和引用，只输出译文。` },
+      { role: 'user', content: text },
+    ], { userId: req.user.id });
+    if (!live.fallback) return ok(res, { original: text.slice(0, 120), translated: live.text, direction, glossary: [], mode: 'live' });
+    const sample = {
+      en2zh: '微表情（ME）是不受主观意识控制的面部运动，通常持续 1/25 至 1/2 秒，能够揭示真实情绪，在测谎与临床诊断中具有极高价值。',
+      zh2en: 'Micro-expressions are involuntary facial movements lasting 1/25 to 1/2 second, revealing genuine emotions with high value in lie detection and clinical diagnosis.',
+    };
+    ok(res, { original: text.slice(0, 120), translated: sample[direction] || sample.en2zh, direction, glossary: [{ en: 'micro-expression', zh: '微表情' }, { en: 'LOSO', zh: '留一主体交叉验证' }], mode: 'demo-fallback' });
+  } catch {
+    errors.modelTimeout(res, '翻译模型请求失败，请稍后重试');
+  }
 });
 
 /* ---------- 结构化分析：思维导图 + 七段式（异步任务） REQ-READ-02 ---------- */
@@ -107,13 +120,23 @@ router.get('/documents/:id/citation-graph', auth, (req, res) => {
 router.post('/documents/:id/chat', auth, async (req, res) => {
   const doc = store.documents.find((d) => d.id === req.params.id && canAccess(d, req.user.id));
   if (!doc) return errors.notFound(res, '文档不存在');
-  const { messages } = req.body || {};
-  const text = ai.generateReply(messages || [{ role: 'user', content: '这篇论文的核心贡献是什么？' }], 'document');
-  await ai.streamText(res, text, {
-    beforeStream: (send) => {
-      send('reference', { doc_id: doc.id, chunk_id: 'ck1', page: 5, title: doc.title });
-    },
-  });
+  const { messages, model } = req.body || {};
+  const questionMessages = Array.isArray(messages) && messages.length ? messages : [{ role: 'user', content: '这篇论文的核心贡献是什么？' }];
+  const context = doc.structured?.sections?.flatMap((section) => section.paragraphs || []).join('\n').slice(0, 18000) || doc.abstract || '';
+  try {
+    const result = await ai.generateResponse([
+      { role: 'system', content: `你正在回答论文《${doc.title}》的问题。仅基于下列文档内容回答；如果内容不足请明确说明。\n\n${context}` },
+      ...questionMessages,
+    ], { scene: 'document', model, userId: req.user.id });
+    const text = result.text;
+    await ai.streamText(res, text, {
+      beforeStream: (send) => {
+        send('reference', { doc_id: doc.id, chunk_id: `${doc.id}_s1_1`, page: doc.structured?.sections?.[0]?.page || 1, title: doc.title });
+      },
+    });
+  } catch {
+    if (!res.headersSent) errors.modelTimeout(res, '文献问答模型请求失败，请稍后重试');
+  }
 });
 
 /* ---------- 知识库 REQ-READ-04 / REQ-PRJ-01 ---------- */

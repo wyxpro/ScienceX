@@ -3,7 +3,14 @@ const crypto = require('crypto');
 const SCRYPT_PREFIX = 'scrypt';
 const ACCESS_TTL_MS = 7 * 86400000;
 const REFRESH_TTL_MS = 30 * 86400000;
-const masterKey = crypto.createHash('sha256').update(process.env.SCIENCEX_MASTER_KEY || 'sciencex-development-key-change-me').digest();
+const configuredMasterKey = process.env.SCIENCEX_MASTER_KEY || '';
+const masterKey = crypto.createHash('sha256').update(configuredMasterKey || 'sciencex-development-key-change-me').digest();
+
+function assertProductionConfig() {
+  if (process.env.NODE_ENV === 'production' && configuredMasterKey.length < 32) {
+    throw new Error('SCIENCEX_MASTER_KEY must be set to at least 32 characters in production');
+  }
+}
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -50,4 +57,4 @@ function decryptSecret(value) {
   }
 }
 
-module.exports = { ACCESS_TTL_MS, REFRESH_TTL_MS, hashPassword, verifyPassword, createToken, parseBearer, encryptSecret, decryptSecret };
+module.exports = { ACCESS_TTL_MS, REFRESH_TTL_MS, hashPassword, verifyPassword, createToken, parseBearer, encryptSecret, decryptSecret, assertProductionConfig };

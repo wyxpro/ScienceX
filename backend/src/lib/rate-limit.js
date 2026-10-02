@@ -1,3 +1,5 @@
+const { fail } = require('./respond');
+
 const buckets = new Map();
 
 function rateLimit({ windowMs = 60000, max = 120, key = (req) => req.ip || 'anonymous' } = {}) {
@@ -13,7 +15,7 @@ function rateLimit({ windowMs = 60000, max = 120, key = (req) => req.ip || 'anon
     res.setHeader('X-RateLimit-Limit', String(max));
     res.setHeader('X-RateLimit-Remaining', String(Math.max(0, max - bucket.count)));
     if (bucket.count > max) {
-      res.status(429).json({ code: 42901, message: '请求过于频繁，请稍后重试', data: {}, timestamp: new Date().toISOString() });
+      fail(res, 429, 42901, '请求过于频繁，请稍后重试');
       return;
     }
     next();

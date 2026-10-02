@@ -8,6 +8,7 @@ const cors = require('cors');
 const { ok } = require('./lib/respond');
 const { rateLimit } = require('./lib/rate-limit');
 const store = require('./lib/store');
+const { assertProductionConfig } = require('./lib/security');
 
 const accountRoutes = require('./routes/account');
 const chatRoutes = require('./routes/chat');
@@ -22,17 +23,18 @@ app.use(cors({ origin(origin, callback) {
   if (!origin || allowedOrigins.has(origin)) return callback(null, true);
   return callback(null, false);
 } }));
-app.use(express.json({ limit: '2mb' }));
 app.disable('x-powered-by');
 
 // 请求追踪（TSD §5.1：X-Request-Id 全链路透传）
 app.use((req, res, next) => {
-  res.setHeader('X-Request-Id', `req_${Date.now().toString(36)}`);
+  req.requestId = `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  res.setHeader('X-Request-Id', req.requestId);
   res.on('finish', () => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) store.persist();
   });
   next();
 });
+app.use(express.json({ limit: '2mb' }));
 
 app.use('/api/v1/chat/completions', rateLimit({ windowMs: 60000, max: 30 }));
 app.use('/api/v1/writing', rateLimit({ windowMs: 60000, max: 60 }));
@@ -51,13 +53,21 @@ app.use('/api/v1', publishRoutes.router);
 
 // 404
 app.use((req, res) => {
-  res.status(404).json({ code: 40003, message: `接口不存在: ${req.method} ${req.path}`, data: {}, timestamp: new Date().toISOString() });
+  res.status(404).json({ code: 40003, message: `接口不存在: ${req.method} ${req.path}`, data: {}, request_id: req.requestId, timestamp: new Date().toISOString() });
 });
 
 // 全局异常（TSD §6.1：500xx 服务端错误）
 app.use((err, req, res, next) => {
-  console.error('[error]', err);
-  res.status(500).json({ code: 50001, message: '服务内部错误，请稍后重试', data: { details: String(err.message || err) }, timestamp: new Date().toISOString() });
+  if (res.headersSent) {
+    if (!res.writableEnded) res.end();
+    return;
+  }
+  const badRequest = err?.type === 'entity.too.large' || err?.type === 'entity.parse.failed';
+  const status = Number(err?.statusCode) || (badRequest ? 400 : 500);
+  const code = Number(err?.businessCode) || (badRequest ? 40001 : 50001);
+  const message = err?.publicMessage || (badRequest ? '请求数据格式无效或超过大小限制' : '服务内部错误，请稍后重试');
+  console.error('[error]', { request_id: req.requestId, message: err?.message || String(err) });
+  res.status(status).json({ code, message, data: {}, request_id: req.requestId, timestamp: new Date().toISOString() });
 });
 
 const fs = require('fs');
@@ -66,6 +76,7 @@ const path = require('path');
 const DEFAULT_PORT = parseInt(process.env.PORT || '8787', 10);
 
 function startServer(port, maxAttempts = 20) {
+  assertProductionConfig();
   const server = app.listen(port, () => {
     console.log(`[ScienceX Backend] running at http://localhost:${port}`);
     console.log('[ScienceX Backend] API 前缀: /api/v1  ·  演示账号: demo@sciencex.cn / 123456');

@@ -1,5 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const testDataDir = path.join(os.tmpdir(), `sciencex-api-test-${process.pid}`);
+process.env.SCIENCEX_DATA_DIR = testDataDir;
 const app = require('../src/server');
 const gateway = require('../src/lib/model-gateway');
 
@@ -16,6 +21,7 @@ test.before(async () => {
 
 test.after(async () => {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  fs.rmSync(testDataDir, { recursive: true, force: true });
 });
 
 async function request(path, options = {}) {
@@ -40,6 +46,7 @@ test('健康检查返回统一结构', { concurrency: false }, async () => {
   assert.equal(response.status, 200);
   assert.equal(body.code, 0);
   assert.equal(body.data.service, 'sciencex-backend');
+  assert.equal(body.request_id, response.headers.get('x-request-id'));
 });
 
 test('登录、资料白名单和刷新令牌', { concurrency: false }, async () => {
@@ -106,6 +113,19 @@ test('新用户只能看到自己的资源', { concurrency: false }, async () =>
   assert.deepEqual(models.body.data.custom, []);
   assert.deepEqual(orders.body.data, []);
   assert.deepEqual(advice.body.data.items, []);
+
+  const createdProject = await request('/projects', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ name: '隔离用户项目' }),
+  });
+  assert.equal(createdProject.body.code, 0);
+  const dashboard = await request(`/dashboard/summary?project_id=${createdProject.body.data.id}`, { headers });
+  assert.equal(dashboard.body.code, 0);
+  assert.deepEqual(dashboard.body.data.recent_outputs, []);
+  assert.deepEqual(dashboard.body.data.papers_daily.items, []);
+  assert.deepEqual(dashboard.body.data.todos, []);
+  assert.deepEqual(dashboard.body.data.today_usage, { tokens: 0, calls: 0, cost: 0 });
 });
 
 test('SSE 查询参数 token 不能用于写请求', { concurrency: false }, async () => {
@@ -123,4 +143,38 @@ test('模型网关对无权模型显式失败关闭', { concurrency: false }, ()
   assert.equal(config.baseUrl, '');
   assert.equal(config.apiKey, '');
   assert.equal(gateway.enabled('m-custom-1', 'unrelated-user'), false);
+});
+
+test('模型网关允许公共 HTTPS 域名并拒绝内网地址', { concurrency: false }, () => {
+  assert.equal(gateway.parseModelBaseUrl('https://api.example.com/v1').hostname, 'api.example.com');
+  assert.throws(() => gateway.parseModelBaseUrl('https://10.0.0.1/v1'), /本地或内网/);
+  assert.throws(() => gateway.parseModelBaseUrl('http://api.example.com/v1'), /HTTPS/);
+});
+
+test('未知显式模型返回受控错误而不是进程异常', { concurrency: false }, async () => {
+  const { response, body } = await request('/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await ensureToken()}` },
+    body: JSON.stringify({ messages: [{ role: 'user', content: '测试' }], model: 'missing-model', stream: false }),
+  });
+  assert.equal(response.status, 404);
+  assert.equal(body.code, 40003);
+});
+
+test('异步导出任务通过 SSE 推送进度并正常完成', { concurrency: false, timeout: 15000 }, async () => {
+  const created = await request('/account/export', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await ensureToken()}` },
+    body: JSON.stringify({}),
+  });
+  assert.equal(created.body.code, 0);
+  const taskId = created.body.data.task_id;
+  const stream = await fetch(`${baseUrl}/tasks/${taskId}/stream`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
+  });
+  assert.equal(stream.status, 200);
+  const payload = await stream.text();
+  assert.match(payload, /id: \d+\nevent: progress/);
+  assert.match(payload, /event: done/);
+  assert.match(payload, new RegExp(`\"download_url\":\"/api/v1/static/exports/${taskId}\.zip\"`));
 });

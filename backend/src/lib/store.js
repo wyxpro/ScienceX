@@ -611,7 +611,7 @@ const tasks = new Map();
 const id = (prefix) => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 /* 开发环境 JSON 持久化：替代生产环境的 PostgreSQL/Redis，避免演示数据因重启丢失。 */
-const dataDir = path.resolve(__dirname, '../../.data');
+const dataDir = path.resolve(process.env.SCIENCEX_DATA_DIR || path.join(__dirname, '../../.data'));
 const dataFile = path.join(dataDir, 'store.json');
 const persistedCollections = {
   users, customModels, conversations, documents, projects, teams, knowledgeBases,

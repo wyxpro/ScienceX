@@ -4,6 +4,7 @@ const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
 const { ACCESS_TTL_MS, REFRESH_TTL_MS, createToken, hashPassword, verifyPassword, parseBearer, encryptSecret } = require('../lib/security');
 const gateway = require('../lib/model-gateway');
+const ai = require('../lib/ai');
 const { canAccess } = require('../lib/access');
 
 const router = express.Router();
@@ -26,9 +27,8 @@ function auth(req, res, next) {
 /* ---------- 认证 REQ-USER-05 ---------- */
 router.post('/auth/login', (req, res) => {
   const { email, password } = req.body || {};
-  const user = store.users.find((u) => u.email === email && (verifyPassword(password, u.password) || u.password === password));
+  const user = store.users.find((u) => u.email === email && verifyPassword(password, u.password));
   if (!user) return errors.param(res, '邮箱或密码错误（演示账号 demo@sciencex.cn / 123456）');
-  if (!String(user.password).startsWith('scrypt$')) user.password = hashPassword(password);
   const token = createToken('tk');
   const refreshToken = createToken('rf');
   store.sessions.set(token, { user_id: user.id, refresh_token: refreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
@@ -91,6 +91,7 @@ router.get('/models', auth, (req, res) => {
 router.post('/models', auth, (req, res) => {
   const { name, base_url, model_name, api_key, priority } = req.body || {};
   if (!base_url || !model_name) return errors.param(res, 'BaseURL 与模型名为必填项');
+  try { gateway.parseModelBaseUrl(base_url); } catch (error) { return errors.param(res, error.message); }
   const model = {
     id: store.id('m'), owner_id: req.user.id, name: name || model_name, provider: 'custom', base_url, model_name,
     api_key_masked: `sk-****-****-${String(api_key || '').slice(-4)}`,
@@ -128,7 +129,8 @@ router.post('/models/:id/test', auth, async (req, res) => {
 router.get('/usage', auth, (req, res) => {
   const { range = 30 } = req.query;
   const days = Number(range) || 30;
-  const records = store.usageRecords.filter((record) => canAccess(record, req.user.id)).slice(-days * 3);
+  const cutoff = new Date(Date.now() - Math.max(1, days) * 86400000).toISOString().slice(0, 10);
+  const records = store.usageRecords.filter((record) => canAccess(record, req.user.id) && record.date >= cutoff);
   const byDay = {};
   const byModel = {};
   const byScene = {};
@@ -197,9 +199,9 @@ router.post('/account/2fa', auth, (req, res) => {
 });
 
 router.post('/account/export', auth, (req, res) => {
-  const task = { id: store.id('task'), owner_id: req.user.id, type: 'export', status: 'running', percent: 10, stage: '打包个人数据', created_at: store.now() };
-  store.tasks.set(task.id, task);
-  setTimeout(() => { task.status = 'done'; task.percent = 100; task.result = { download_url: `/api/v1/static/exports/${task.id}.zip` }; }, 2000);
+  const task = ai.createTask('export', ['收集个人资料', '打包对话与文档', '生成下载文件'], (currentTask) => ({
+    download_url: `/api/v1/static/exports/${currentTask.id}.zip`,
+  }), req.user.id);
   ok(res, { task_id: task.id }, '导出任务已创建，完成后可下载');
 });
 

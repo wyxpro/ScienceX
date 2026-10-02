@@ -6,7 +6,7 @@ const store = require('./store');
 const gateway = require('./model-gateway');
 
 /** 根据用户输入生成模拟回答（Markdown 格式） */
-function generateReply(messages, scene = 'workbench') {
+function generateReply(messages, scene = 'workbench', user = null) {
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
   const q = (lastUser && lastUser.content) || '';
   const lower = q.toLowerCase();
@@ -31,18 +31,39 @@ function generateReply(messages, scene = 'workbench') {
     return `我可以帮你完成学术写作的多个环节：\n\n- **学术润色**：优化语法、逻辑与学术表达，支持指定期刊风格\n- **中英互译**：段落级双向翻译，自动对齐学术术语\n- **AI 查重**：相似度检测 + 重复片段定位\n- **AI 降重**：保义改写，附前后对比\n\n请直接在「论文写作」页粘贴文本操作，或把要润色的段落发给我。`;
   }
 
-  return `关于「${q.slice(0, 60)}」，我的分析如下：\n\n**核心要点**\n- 这是一个与${store.users[0].research_tags[0]}相关的科研问题，建议先界定问题边界与评价指标\n- 从文献看，该方向的成熟方案多采用结构先验 + 深度模型的组合思路\n- 建议优先复现 1-2 个代表性 baseline，在统一协议下再讨论创新点\n\n**建议的下一步**\n1. 在「选题灵感」检索相关文献，确认研究空白\n2. 在「文献阅读」精读 3 篇代表作，生成思维导图对比方法差异\n3. 在「实验设计」生成消融方案并记录参数\n\n需要我调用「文献综述生成」技能深入展开吗？`;
+  const researchTag = user?.research_tags?.[0] || '你的研究方向';
+  return `关于「${q.slice(0, 60)}」，我的分析如下：\n\n**核心要点**\n- 这是一个与${researchTag}相关的科研问题，建议先界定问题边界与评价指标\n- 从文献看，该方向的成熟方案多采用结构先验 + 深度模型的组合思路\n- 建议优先复现 1-2 个代表性 baseline，在统一协议下再讨论创新点\n\n**建议的下一步**\n1. 在「选题灵感」检索相关文献，确认研究空白\n2. 在「文献阅读」精读 3 篇代表作，生成思维导图对比方法差异\n3. 在「实验设计」生成消融方案并记录参数\n\n需要我调用「文献综述生成」技能深入展开吗？`;
 }
 
 /** 优先调用已配置的 OpenAI 兼容网关，没有密钥时保留本地演示回退。 */
 async function generateResponse(messages, { scene = 'workbench', model, signal, userId } = {}) {
+  if (model && !gateway.resolveModel(model, userId)) {
+    const error = new Error('模型不存在或无权访问');
+    error.statusCode = 404;
+    error.businessCode = 40003;
+    error.publicMessage = '模型不存在或无权访问';
+    throw error;
+  }
   try {
     const remote = await gateway.complete(messages, { model, signal, userId });
-    if (remote) return remote;
+    if (remote) {
+      if (userId && remote.usage) {
+        const promptTokens = Number(remote.usage.prompt_tokens) || 0;
+        const completionTokens = Number(remote.usage.completion_tokens) || 0;
+        store.usageRecords.unshift({
+          id: store.id('usage'), owner_id: userId, date: store.now().slice(0, 10),
+          scene, model: remote.model, prompt_tokens: promptTokens, completion_tokens: completionTokens,
+          calls: 1, cost: 0, source: 'gateway',
+        });
+      }
+      return remote;
+    }
   } catch (error) {
+    if (model) throw error;
     console.warn('[ScienceX AI] 模型网关调用失败，回退到演示生成器:', error.message);
   }
-  const text = generateReply(messages, scene);
+  const user = userId ? store.users.find((item) => item.id === userId) : null;
+  const text = generateReply(messages, scene, user);
   return { text, model: model || 'sim-model', usage: { total_tokens: Math.round(text.length * 0.7) }, fallback: true };
 }
 
@@ -71,64 +92,93 @@ function sseStream(res, { onDelta, onEvent, totalDelay = 1600, chunkCount = 40, 
 
 /** 模拟逐字流式输出一段 Markdown 文本 */
 async function streamText(res, text, { onDone, beforeStream, model = 'sim-model' } = {}) {
-  const { send } = sseStream(res);
+  sseStream(res);
   const messageId = store.id('msg');
   let closed = false;
-  const onClose = () => { closed = true; };
+  let sequence = 0;
+  const onClose = () => { if (!res.writableEnded) closed = true; };
+  const sendWithId = (event, data) => {
+    sequence += 1;
+    res.write(`id: ${sequence}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
   res.on('close', onClose);
-  send('start', { message_id: messageId, model });
-  if (beforeStream) beforeStream(send);
+  try {
+    sendWithId('start', { message_id: messageId, model });
+    if (beforeStream) beforeStream(sendWithId);
 
-  // 按 2~5 个字符切分为 token 块
-  const chunks = [];
-  let i = 0;
-  while (i < text.length) {
-    const size = 2 + Math.floor(Math.random() * 4);
-    chunks.push(text.slice(i, i + size));
-    i += size;
-  }
-  const perChunk = Math.max(12, Math.floor(1400 / chunks.length));
-  for (const c of chunks) {
-    if (closed || res.writableEnded) return;
-    send('delta', { text: c });
-    await sleep(perChunk);
-  }
-  const tokens = Math.round(text.length * 0.7);
-  if (!closed && !res.writableEnded) {
-    send('done', { message_id: messageId, tokens, cost: +(tokens * 0.00003).toFixed(4), ...onDone });
+    // 按 2~5 个字符切分为 token 块
+    const chunks = [];
+    let i = 0;
+    while (i < text.length) {
+      const size = 2 + Math.floor(Math.random() * 4);
+      chunks.push(text.slice(i, i + size));
+      i += size;
+    }
+    const perChunk = Math.max(12, Math.floor(1400 / Math.max(1, chunks.length)));
+    for (const c of chunks) {
+      if (closed || res.writableEnded) return false;
+      sendWithId('delta', { text: c });
+      await sleep(perChunk);
+    }
+    const tokens = Math.round(text.length * 0.7);
+    if (closed || res.writableEnded) return false;
+    sendWithId('done', { message_id: messageId, tokens, ...onDone });
     res.end();
+    return true;
+  } finally {
+    res.removeListener('close', onClose);
   }
-  res.removeListener('close', onClose);
 }
 
 /** 模拟异步任务：创建 → 进度推送 → 结果（GET /tasks/:id/stream 消费） */
 function createTask(type, stages, resultBuilder, ownerId = null) {
   const taskId = store.id('task');
-  const task = { id: taskId, owner_id: ownerId, type, status: 'pending', percent: 0, stage: stages[0], stages, created_at: store.now(), result: null, listeners: [] };
+  const task = { id: taskId, owner_id: ownerId, type, status: 'pending', percent: 0, stage: stages[0], stages, created_at: store.now(), result: null, listeners: [], event_seq: 0, events: [] };
   store.tasks.set(taskId, task);
+  publishTaskEvent(task, 'progress');
 
   (async () => {
-    await sleep(400);
-    task.status = 'running';
-    for (let s = 0; s < stages.length; s++) {
-      task.stage = stages[s];
-      const from = Math.round((s / stages.length) * 100);
-      const to = Math.round(((s + 1) / stages.length) * 100);
-      for (let p = from; p <= to; p += Math.round((to - from) / 3) || 1) {
-        task.percent = Math.min(p, 99);
-        task.listeners.forEach((fn) => fn(task));
-        await sleep(280 + Math.random() * 350);
+    try {
+      await sleep(400);
+      task.status = 'running';
+      publishTaskEvent(task, 'progress');
+      for (let s = 0; s < stages.length; s++) {
+        task.stage = stages[s];
+        const from = Math.round((s / stages.length) * 100);
+        const to = Math.round(((s + 1) / stages.length) * 100);
+        for (let p = from; p <= to; p += Math.round((to - from) / 3) || 1) {
+          task.percent = Math.min(p, 99);
+          publishTaskEvent(task, 'progress');
+          await sleep(280 + Math.random() * 350);
+        }
       }
+      task.percent = 100;
+      task.status = 'done';
+      task.result = resultBuilder(task);
+      publishTaskEvent(task, 'done');
+    } catch (error) {
+      task.status = 'failed';
+      task.error = '任务执行失败';
+      console.error('[ScienceX Task]', { task_id: task.id, message: error?.message || String(error) });
+      publishTaskEvent(task, 'error');
     }
-    task.percent = 100;
-    task.status = 'done';
-    task.result = resultBuilder();
-    task.listeners.forEach((fn) => fn(task));
   })();
 
   return task;
 }
 
+function publishTaskEvent(task, event) {
+  const terminalData = event === 'done'
+    ? { result: task.result }
+    : event === 'error'
+      ? { message: task.error || '任务执行失败' }
+      : {};
+  const entry = { id: ++task.event_seq, event, data: { task_id: task.id, percent: task.percent, stage: task.stage, ...terminalData } };
+  task.events.push(entry);
+  if (task.events.length > 1000) task.events.shift();
+  [...task.listeners].forEach((fn) => fn(task, entry));
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-module.exports = { generateReply, generateResponse, streamText, createTask, sseStream, sleep, chartPromptTemplates };
+module.exports = { generateReply, generateResponse, streamText, createTask, publishTaskEvent, sseStream, sleep, chartPromptTemplates };
