@@ -6,6 +6,8 @@
 const express = require('express');
 const cors = require('cors');
 const { ok } = require('./lib/respond');
+const { rateLimit } = require('./lib/rate-limit');
+const store = require('./lib/store');
 
 const accountRoutes = require('./routes/account');
 const chatRoutes = require('./routes/chat');
@@ -15,17 +17,29 @@ const researchRoutes = require('./routes/research');
 const publishRoutes = require('./routes/publish');
 
 const app = express();
-app.use(cors());
+const allowedOrigins = new Set((process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map((origin) => origin.trim()).filter(Boolean));
+app.use(cors({ origin(origin, callback) {
+  if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+  return callback(null, false);
+} }));
 app.use(express.json({ limit: '2mb' }));
+app.disable('x-powered-by');
 
 // 请求追踪（TSD §5.1：X-Request-Id 全链路透传）
 app.use((req, res, next) => {
   res.setHeader('X-Request-Id', `req_${Date.now().toString(36)}`);
+  res.on('finish', () => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) store.persist();
+  });
   next();
 });
 
+app.use('/api/v1/chat/completions', rateLimit({ windowMs: 60000, max: 30 }));
+app.use('/api/v1/writing', rateLimit({ windowMs: 60000, max: 60 }));
+app.use('/api/v1/literature', rateLimit({ windowMs: 60000, max: 60 }));
+
 // 健康检查
-app.get(['/health', '/api/health'], (req, res) => ok(res, { service: 'sciencex-backend', version: '1.0.0', ts: new Date().toISOString() }));
+app.get(['/health', '/api/health', '/api/v1/health'], (req, res) => ok(res, { service: 'sciencex-backend', version: '1.0.0', ts: new Date().toISOString() }));
 
 // 业务路由（统一前缀 /api/v1）
 app.use('/api/v1', accountRoutes.router);

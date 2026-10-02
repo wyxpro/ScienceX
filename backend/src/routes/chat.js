@@ -4,6 +4,7 @@ const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
 const ai = require('../lib/ai');
 const { auth } = require('./account');
+const { canAccess } = require('../lib/access');
 
 const router = express.Router();
 
@@ -12,10 +13,12 @@ router.post('/chat/completions', auth, express.json({ limit: '2mb' }), async (re
   const { messages, model, stream = true, skills = [] } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) return errors.param(res, 'messages 不能为空');
   if (!stream) {
-    return ok(res, { content: ai.generateReply(messages), model, usage: { total_tokens: 512 } });
+    const result = await ai.generateResponse(messages, { model });
+    return ok(res, { content: result.text, model: result.model || model, usage: result.usage || {} });
   }
   // SSE：start → (tool) → delta* → done  —— 遵循 TSD §5.4
-  const text = ai.generateReply(messages);
+  const result = await ai.generateResponse(messages, { model });
+  const text = result.text;
   const usedSkill = skills[0] ? store.skills.find((s) => s.id === skills[0]) : null;
   await ai.streamText(res, text, {
     beforeStream: (send) => {
@@ -24,7 +27,7 @@ router.post('/chat/completions', auth, express.json({ limit: '2mb' }), async (re
   });
   // 写回会话
   const convId = req.body.conversation_id;
-  const conv = store.conversations.find((c) => c.id === convId);
+  const conv = store.conversations.find((c) => c.id === convId && canAccess(c, req.user.id));
   if (conv) {
     conv.messages.push({ id: store.id('msg'), role: 'user', content: messages.at(-1).content, tokens: 64, created_at: store.now() });
     conv.messages.push({ id: store.id('msg'), role: 'assistant', model: model || 'GPT-4o', content: text, tokens: Math.round(text.length * 0.7), created_at: store.now() });
@@ -36,33 +39,33 @@ router.post('/chat/completions', auth, express.json({ limit: '2mb' }), async (re
 router.get('/conversations', auth, (req, res) => {
   const { keyword = '', page = 1, page_size = 20 } = req.query;
   const list = store.conversations
-    .filter((c) => c.title.includes(keyword))
+    .filter((c) => c.title.includes(keyword) && canAccess(c, req.user.id))
     .map(({ id, title, project_id, scene, model, updated_at, messages }) => ({ id, title, project_id, scene, model, updated_at, message_count: messages.length }))
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   ok(res, { items: list, total: list.length, has_more: false, page: +page });
 });
 
 router.post('/conversations', auth, (req, res) => {
-  const conv = { id: store.id('c'), title: req.body?.title || '新的对话', project_id: req.body?.project_id || null, scene: 'workbench', model: req.body?.model || 'm-gpt4o', updated_at: store.now(), messages: [] };
+  const conv = { id: store.id('c'), owner_id: req.user.id, title: req.body?.title || '新的对话', project_id: req.body?.project_id || null, scene: 'workbench', model: req.body?.model || 'm-gpt4o', updated_at: store.now(), messages: [] };
   store.conversations.unshift(conv);
   ok(res, { id: conv.id, title: conv.title, project_id: conv.project_id, scene: conv.scene, model: conv.model, updated_at: conv.updated_at, message_count: 0 });
 });
 
 router.get('/conversations/:id/messages', auth, (req, res) => {
-  const conv = store.conversations.find((c) => c.id === req.params.id);
+  const conv = store.conversations.find((c) => c.id === req.params.id && canAccess(c, req.user.id));
   if (!conv) return errors.notFound(res, '会话不存在');
   ok(res, { items: conv.messages, total: conv.messages.length, has_more: false });
 });
 
 router.patch('/conversations/:id', auth, (req, res) => {
-  const conv = store.conversations.find((c) => c.id === req.params.id);
+  const conv = store.conversations.find((c) => c.id === req.params.id && canAccess(c, req.user.id));
   if (!conv) return errors.notFound(res, '会话不存在');
   if (req.body?.title) conv.title = req.body.title;
   ok(res, { id: conv.id, title: conv.title }, '会话已更新');
 });
 
 router.delete('/conversations/:id', auth, (req, res) => {
-  const idx = store.conversations.findIndex((c) => c.id === req.params.id);
+  const idx = store.conversations.findIndex((c) => c.id === req.params.id && canAccess(c, req.user.id));
   if (idx < 0) return errors.notFound(res, '会话不存在');
   store.conversations.splice(idx, 1);
   ok(res, {}, '会话已删除');
@@ -70,7 +73,8 @@ router.delete('/conversations/:id', auth, (req, res) => {
 
 /* ---------- 顶部看板 REQ-CHAT-04 ---------- */
 router.get('/dashboard/summary', auth, (req, res) => {
-  const project = store.projects.find((p) => p.id === (req.query.project_id || 'p1')) || store.projects[0];
+  const project = store.projects.find((p) => p.id === (req.query.project_id || 'p1') && canAccess(p, req.user.id)) || store.projects.find((p) => canAccess(p, req.user.id));
+  if (!project) return errors.notFound(res, '项目不存在');
   ok(res, {
     project: { id: project.id, name: project.name, progress: project.progress },
     recent_outputs: store.recentOutputs,
@@ -95,7 +99,8 @@ router.post('/skills/:id/invoke', auth, async (req, res) => {
 /* ---------- MCP 推荐 REQ-CHAT-03 ---------- */
 router.get('/mcp/recommend', auth, (req, res) => {
   const intent = String(req.query.intent || '');
-  const matched = store.mcpServers.filter((m) => !intent || m.category.some(() => intent.includes('文献') || intent.includes('论文') || intent.includes('代码')));
+  const keywords = intent.match(/文献|论文|代码|实验|检索/g) || [];
+  const matched = store.mcpServers.filter((m) => !keywords.length || keywords.some((keyword) => m.category.includes(keyword) || m.desc.includes(keyword)));
   ok(res, matched.length ? matched : store.mcpServers);
 });
 router.post('/mcp/:id/connect', auth, (req, res) => {

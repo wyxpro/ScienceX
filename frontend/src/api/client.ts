@@ -3,7 +3,7 @@
    支持：类型泛型、静默 Token 续期、SSE 容错解析、断线断点重连、Abort 中断与 401 路由广播
    ============================================================ */
 
-const BASE = '/api/v1';
+const BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
 export class ApiError extends Error {
   code: number;
@@ -23,7 +23,7 @@ let memoryRefreshToken = '';
 export function getToken(): string {
   if (memoryToken) return memoryToken;
   try {
-    const s = sessionStorage.getItem('sx_token') || localStorage.getItem('sx_token') || '';
+    const s = sessionStorage.getItem('sx_token') || '';
     memoryToken = s;
     return s;
   } catch {
@@ -34,7 +34,7 @@ export function getToken(): string {
 export function getRefreshToken(): string {
   if (memoryRefreshToken) return memoryRefreshToken;
   try {
-    const s = sessionStorage.getItem('sx_refresh_token') || localStorage.getItem('sx_refresh_token') || '';
+    const s = sessionStorage.getItem('sx_refresh_token') || '';
     memoryRefreshToken = s;
     return s;
   } catch {
@@ -46,11 +46,9 @@ export function setToken(token: string, refreshToken?: string): void {
   memoryToken = token;
   try {
     sessionStorage.setItem('sx_token', token);
-    localStorage.setItem('sx_token', token); // 兼容性回退
     if (refreshToken) {
       memoryRefreshToken = refreshToken;
       sessionStorage.setItem('sx_refresh_token', refreshToken);
-      localStorage.setItem('sx_refresh_token', refreshToken);
     }
   } catch (_) {}
 }
@@ -61,8 +59,6 @@ export function clearToken(): void {
   try {
     sessionStorage.removeItem('sx_token');
     sessionStorage.removeItem('sx_refresh_token');
-    localStorage.removeItem('sx_token');
-    localStorage.removeItem('sx_refresh_token');
   } catch (_) {}
 }
 

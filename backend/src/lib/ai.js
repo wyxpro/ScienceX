@@ -3,6 +3,7 @@
  * 生产环境此处对接模型网关（OpenAI 兼容协议，见 TSD §3.1）
  */
 const store = require('./store');
+const gateway = require('./model-gateway');
 
 /** 根据用户输入生成模拟回答（Markdown 格式） */
 function generateReply(messages, scene = 'workbench') {
@@ -33,6 +34,18 @@ function generateReply(messages, scene = 'workbench') {
   return `关于「${q.slice(0, 60)}」，我的分析如下：\n\n**核心要点**\n- 这是一个与${store.users[0].research_tags[0]}相关的科研问题，建议先界定问题边界与评价指标\n- 从文献看，该方向的成熟方案多采用结构先验 + 深度模型的组合思路\n- 建议优先复现 1-2 个代表性 baseline，在统一协议下再讨论创新点\n\n**建议的下一步**\n1. 在「选题灵感」检索相关文献，确认研究空白\n2. 在「文献阅读」精读 3 篇代表作，生成思维导图对比方法差异\n3. 在「实验设计」生成消融方案并记录参数\n\n需要我调用「文献综述生成」技能深入展开吗？`;
 }
 
+/** 优先调用已配置的 OpenAI 兼容网关，没有密钥时保留本地演示回退。 */
+async function generateResponse(messages, { scene = 'workbench', model, signal } = {}) {
+  try {
+    const remote = await gateway.complete(messages, { model, signal });
+    if (remote) return remote;
+  } catch (error) {
+    console.warn('[ScienceX AI] 模型网关调用失败，回退到演示生成器:', error.message);
+  }
+  const text = generateReply(messages, scene);
+  return { text, model: model || 'sim-model', usage: { total_tokens: Math.round(text.length * 0.7) }, fallback: true };
+}
+
 /** 模拟生成图表的提示词模板（image2 生成通道的替代演示） */
 const chartPromptTemplates = [
   { type: 'bar', title: (kw) => `${kw} 指标对比`, desc: '分组柱状图，含误差棒，学术配色' },
@@ -57,10 +70,13 @@ function sseStream(res, { onDelta, onEvent, totalDelay = 1600, chunkCount = 40, 
 }
 
 /** 模拟逐字流式输出一段 Markdown 文本 */
-async function streamText(res, text, { onDone, beforeStream } = {}) {
+async function streamText(res, text, { onDone, beforeStream, model = 'sim-model' } = {}) {
   const { send } = sseStream(res);
   const messageId = store.id('msg');
-  send('start', { message_id: messageId, model: 'sim-model' });
+  let closed = false;
+  const onClose = () => { closed = true; };
+  res.on('close', onClose);
+  send('start', { message_id: messageId, model });
   if (beforeStream) beforeStream(send);
 
   // 按 2~5 个字符切分为 token 块
@@ -73,18 +89,22 @@ async function streamText(res, text, { onDone, beforeStream } = {}) {
   }
   const perChunk = Math.max(12, Math.floor(1400 / chunks.length));
   for (const c of chunks) {
+    if (closed || res.writableEnded) return;
     send('delta', { text: c });
     await sleep(perChunk);
   }
   const tokens = Math.round(text.length * 0.7);
-  send('done', { message_id: messageId, tokens, cost: +(tokens * 0.00003).toFixed(4), ...onDone });
-  res.end();
+  if (!closed && !res.writableEnded) {
+    send('done', { message_id: messageId, tokens, cost: +(tokens * 0.00003).toFixed(4), ...onDone });
+    res.end();
+  }
+  res.removeListener('close', onClose);
 }
 
 /** 模拟异步任务：创建 → 进度推送 → 结果（GET /tasks/:id/stream 消费） */
-function createTask(type, stages, resultBuilder) {
+function createTask(type, stages, resultBuilder, ownerId = null) {
   const taskId = store.id('task');
-  const task = { id: taskId, type, status: 'pending', percent: 0, stage: stages[0], stages, created_at: store.now(), result: null, listeners: [] };
+  const task = { id: taskId, owner_id: ownerId, type, status: 'pending', percent: 0, stage: stages[0], stages, created_at: store.now(), result: null, listeners: [] };
   store.tasks.set(taskId, task);
 
   (async () => {
@@ -111,4 +131,4 @@ function createTask(type, stages, resultBuilder) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-module.exports = { generateReply, streamText, createTask, sseStream, sleep, chartPromptTemplates };
+module.exports = { generateReply, generateResponse, streamText, createTask, sseStream, sleep, chartPromptTemplates };

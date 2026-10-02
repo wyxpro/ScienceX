@@ -58,7 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const target = redirectPath
           ? `/login?redirect=${encodeURIComponent(redirectPath)}`
           : '/login';
-        window.location.href = target;
+        window.history.pushState({}, '', target);
+        window.dispatchEvent(new PopStateEvent('popstate'));
       }
     };
 
@@ -94,7 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     clearToken();
     setUser(null);
-    window.location.href = '/login';
+    window.history.pushState({}, '', '/login');
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   return (

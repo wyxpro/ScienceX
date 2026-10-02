@@ -2,54 +2,64 @@
 const express = require('express');
 const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
+const { ACCESS_TTL_MS, REFRESH_TTL_MS, createToken, hashPassword, verifyPassword, parseBearer, encryptSecret } = require('../lib/security');
+const gateway = require('../lib/model-gateway');
 
 const router = express.Router();
 
 /* ---------- 鉴权中间件 ---------- */
 function auth(req, res, next) {
-  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  const token = parseBearer(req) || String(req.query.token || '');
   const session = store.sessions.get(token);
-  if (!session) return errors.unauthorized(res);
+  if (!session || session.expires_at <= Date.now()) {
+    if (token) store.sessions.delete(token);
+    return errors.unauthorized(res);
+  }
   req.user = store.users.find((u) => u.id === session.user_id);
+  if (!req.user) return errors.unauthorized(res);
+  req.authToken = token;
   next();
 }
 
 /* ---------- 认证 REQ-USER-05 ---------- */
 router.post('/auth/login', (req, res) => {
   const { email, password } = req.body || {};
-  const user = store.users.find((u) => u.email === email && u.password === password);
+  const user = store.users.find((u) => u.email === email && (verifyPassword(password, u.password) || u.password === password));
   if (!user) return errors.param(res, '邮箱或密码错误（演示账号 demo@sciencex.cn / 123456）');
-  const token = `tk_${store.id('s')}`;
-  store.sessions.set(token, { user_id: user.id, expires_at: Date.now() + 7 * 86400000 });
+  if (!String(user.password).startsWith('scrypt$')) user.password = hashPassword(password);
+  const token = createToken('tk');
+  const refreshToken = createToken('rf');
+  store.sessions.set(token, { user_id: user.id, refresh_token: refreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
   const { password: _p, ...profile } = user;
-  ok(res, { token, refresh_token: `rf_${token}`, user: profile });
+  ok(res, { token, refresh_token: refreshToken, user: profile });
 });
 
 router.post('/auth/register', (req, res) => {
   const { email, password, name } = req.body || {};
   if (!email || !password || !name) return errors.param(res, '邮箱、密码、昵称为必填项');
   if (store.users.some((u) => u.email === email)) return errors.param(res, '该邮箱已注册');
-  const user = { id: store.id('u'), email, password, name, title: '研究者', avatar: '', research_tags: [], lang: 'zh', plan: 'free', created_at: store.now() };
+  const user = { id: store.id('u'), email, password: hashPassword(password), name, title: '研究者', avatar: '', research_tags: [], lang: 'zh', plan: 'free', created_at: store.now() };
   store.users.push(user);
-  const token = `tk_${store.id('s')}`;
-  store.sessions.set(token, { user_id: user.id, expires_at: Date.now() + 7 * 86400000 });
+  const token = createToken('tk');
+  const refreshToken = createToken('rf');
+  store.sessions.set(token, { user_id: user.id, refresh_token: refreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
   const { password: _p, ...profile } = user;
-  ok(res, { token, refresh_token: `rf_${token}`, user: profile }, '注册成功');
+  ok(res, { token, refresh_token: refreshToken, user: profile }, '注册成功');
 });
 
 router.post('/auth/refresh', (req, res) => {
   const { refresh_token } = req.body || {};
-  const token = String(refresh_token || '').replace('rf_', '');
-  const session = store.sessions.get(token);
-  if (!session) return errors.unauthorized(res, 'Refresh Token 已失效');
-  const newToken = `tk_${store.id('s')}`;
-  store.sessions.set(newToken, { user_id: session.user_id, expires_at: Date.now() + 7 * 86400000 });
-  ok(res, { token: newToken });
+  const old = [...store.sessions.entries()].find(([, session]) => session.refresh_token === refresh_token);
+  if (!old || old[1].refresh_expires_at <= Date.now()) return errors.unauthorized(res, 'Refresh Token 已失效');
+  store.sessions.delete(old[0]);
+  const newToken = createToken('tk');
+  const newRefreshToken = createToken('rf');
+  store.sessions.set(newToken, { user_id: old[1].user_id, refresh_token: newRefreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
+  ok(res, { token: newToken, refresh_token: newRefreshToken });
 });
 
 router.post('/auth/logout', (req, res) => {
-  const token = (req.headers.authorization || '').replace('Bearer ', '');
-  store.sessions.delete(token);
+  store.sessions.delete(req.authToken || parseBearer(req));
   ok(res, {}, '已退出登录');
 });
 
@@ -60,14 +70,18 @@ router.get('/user/profile', auth, (req, res) => {
 });
 
 router.put('/user/profile', auth, (req, res) => {
-  Object.assign(req.user, req.body || {});
+  const allowed = ['name', 'title', 'avatar', 'research_tags', 'lang'];
+  for (const field of allowed) {
+    if (req.body?.[field] !== undefined) req.user[field] = req.body[field];
+  }
   const { password, ...profile } = req.user;
   ok(res, profile, '资料已更新');
 });
 
 /* ---------- 模型管理 REQ-USER-02 / REQ-CHAT-02 ---------- */
 router.get('/models', auth, (req, res) => {
-  ok(res, { builtin: store.builtinModels, custom: store.customModels });
+  const custom = store.customModels.map(({ api_key_encrypted: _secret, ...model }) => model);
+  ok(res, { builtin: store.builtinModels, custom });
 });
 
 router.post('/models', auth, (req, res) => {
@@ -76,10 +90,12 @@ router.post('/models', auth, (req, res) => {
   const model = {
     id: store.id('m'), name: name || model_name, provider: 'custom', base_url, model_name,
     api_key_masked: `sk-****-****-${String(api_key || '').slice(-4)}`,
+    api_key_encrypted: encryptSecret(api_key),
     enabled: true, priority: priority || 1, builtin: false, status: 'connected', created_at: store.now(),
   };
   store.customModels.push(model);
-  ok(res, model, '自定义模型已添加');
+  const { api_key_encrypted: _secret, ...publicModel } = model;
+  ok(res, publicModel, '自定义模型已添加');
 });
 
 router.delete('/models/:id', auth, (req, res) => {
@@ -89,10 +105,19 @@ router.delete('/models/:id', auth, (req, res) => {
   ok(res, {}, '模型已删除');
 });
 
-router.post('/models/:id/test', auth, (req, res) => {
+router.post('/models/:id/test', auth, async (req, res) => {
   const m = store.customModels.find((x) => x.id === req.params.id);
   if (!m) return errors.notFound(res, '模型不存在');
-  ok(res, { success: true, latency_ms: 180 + Math.floor(Math.random() * 300), sample: '连接正常，协议兼容 OpenAI chat/completions。' });
+  const started = Date.now();
+  if (!gateway.enabled(m.id)) {
+    return ok(res, { success: true, mode: 'demo-fallback', latency_ms: Date.now() - started, sample: '模型已保存；配置 OPENAI_API_KEY 或模型密钥后将启用真实调用。' });
+  }
+  try {
+    const result = await gateway.complete([{ role: 'user', content: '请只回复：连接正常' }], { model: m.id });
+    ok(res, { success: true, mode: 'live', latency_ms: Date.now() - started, sample: result.text.slice(0, 80) });
+  } catch (error) {
+    errors.modelTimeout(res, `模型连接失败：${error.message}`);
+  }
 });
 
 /* ---------- 用量统计 REQ-USER-03 ---------- */
@@ -160,7 +185,7 @@ router.post('/account/2fa', auth, (req, res) => {
 });
 
 router.post('/account/export', auth, (req, res) => {
-  const task = { id: store.id('task'), type: 'export', status: 'running', percent: 10, stage: '打包个人数据', created_at: store.now() };
+  const task = { id: store.id('task'), owner_id: req.user.id, type: 'export', status: 'running', percent: 10, stage: '打包个人数据', created_at: store.now() };
   store.tasks.set(task.id, task);
   setTimeout(() => { task.status = 'done'; task.percent = 100; task.result = { download_url: `/api/v1/static/exports/${task.id}.zip` }; }, 2000);
   ok(res, { task_id: task.id }, '导出任务已创建，完成后可下载');
