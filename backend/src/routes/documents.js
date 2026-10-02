@@ -28,7 +28,7 @@ router.post('/documents/upload', auth, async (req, res) => {
   if (extractedText.length > 5 * 1024 * 1024) return errors.param(res, '文件内容不能超过 5MB');
   const paragraphs = extractedText.split(/\n{2,}|(?<=[。！？.!?])\s+/).map((item) => item.trim()).filter(Boolean).slice(0, 500);
   const doc = {
-    id: store.id('d'), owner_id: req.user.id, project_id, title: name.replace(/\.(pdf|docx?|tex|md)$/i, ''),
+    id: store.id('d'), owner_id: req.user.id, project_id, title: name.replace(/\.(pdf|docx?|xlsx?|pptx?|txt|tex|md)$/i, ''),
     authors: '（待解析）', venue: '', year: new Date().getFullYear(), source_type: url ? 'url' : 'file',
     file_name: name, pages: 12, parsed_status: 'parsing', has_code: false, doi: '', abstract: '',
     created_at: store.now(),
