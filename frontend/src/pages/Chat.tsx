@@ -6,7 +6,6 @@ import Icon from '../components/Icon';
 import { Dropdown, DropdownItem, useToast } from '../components/ui';
 import { useAuth } from '../stores/auth';
 import type { AgentMode, ChatMessage, Conversation, SkillItem } from '../types';
-import { ChatDashboard } from './chat/ChatDashboard';
 import { ChatInputArea } from './chat/ChatInputArea';
 import { ChatMessages } from './chat/ChatMessages';
 import { ChatSidebar } from './chat/ChatSidebar';
@@ -32,7 +31,6 @@ export default function Chat() {
   const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>({ builtin: [], custom: [] });
   const [model, setModel] = useState('GPT-4o');
   const [skills, setSkills] = useState<SkillItem[]>([]);
-  const [showDash, setShowDash] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [recording, setRecording] = useState(false);
   const [agentMode, setAgentMode] = useState<AgentMode>('plan_execute');
@@ -374,13 +372,6 @@ export default function Chat() {
           />
         </div>
       </div>
-
-      {/* ===== 对话框下方：项目进度看板、最近产出、今日文献速递 ===== */}
-      <ChatDashboard
-        showDash={showDash}
-        onToggleDash={() => setShowDash((s) => !s)}
-        dashboard={dashboard}
-      />
 
       {/* 课题组三层记忆抽屉 */}
       <MemoryDrawer

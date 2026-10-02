@@ -189,7 +189,7 @@ export default function Login() {
                   color: '#ffffff',
                 }}
               >
-                一个入口，闭环科研。<br />
+                让科研更简单。<br />
                 <span style={{ color: '#7fd0ae' }}>让 AI 承接 60% 的重复劳动</span>
               </h1>
 
