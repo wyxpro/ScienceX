@@ -18,6 +18,7 @@ const researchRoutes = require('./routes/research');
 const publishRoutes = require('./routes/publish');
 
 const app = express();
+assertProductionConfig();
 const allowedOrigins = new Set((process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map((origin) => origin.trim()).filter(Boolean));
 app.use(cors({ origin(origin, callback) {
   if (!origin || allowedOrigins.has(origin)) return callback(null, true);

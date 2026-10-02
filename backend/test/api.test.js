@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const testDataDir = path.join(os.tmpdir(), `sciencex-api-test-${process.pid}`);
 process.env.SCIENCEX_DATA_DIR = testDataDir;
 const app = require('../src/server');
@@ -150,6 +151,33 @@ test('模型网关允许公共 HTTPS 域名并拒绝内网地址', { concurrency
   assert.equal(gateway.parseModelBaseUrl('https://api.example.com/v1').hostname, 'api.example.com');
   assert.throws(() => gateway.parseModelBaseUrl('https://10.0.0.1/v1'), /本地或内网/);
   assert.throws(() => gateway.parseModelBaseUrl('http://api.example.com/v1'), /HTTPS/);
+});
+
+test('生产模块导入要求配置主密钥', { concurrency: false }, () => {
+  const env = { ...process.env, NODE_ENV: 'production', SCIENCEX_MASTER_KEY: '' };
+  const result = spawnSync(process.execPath, ['-e', "require('./backend/src/server')"], {
+    cwd: path.resolve(__dirname, '../..'),
+    env,
+    encoding: 'utf8',
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /SCIENCEX_MASTER_KEY must be set/);
+});
+
+test('生产环境拒绝演示账号登录', { concurrency: false }, async () => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    const { response, body } = await request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'demo@sciencex.cn', password: '123456' }),
+    });
+    assert.equal(response.status, 401);
+    assert.equal(body.code, 40101);
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
+  }
 });
 
 test('模型网关总超时覆盖响应体读取', { concurrency: false }, async () => {
