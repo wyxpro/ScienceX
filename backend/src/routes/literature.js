@@ -133,7 +133,7 @@ router.get('/tasks/:id/stream', auth, (req, res) => {
     cleanup();
     return res.end();
   }
-  req.on('close', cleanup);
+  res.once('close', cleanup);
 });
 
 module.exports = { router };

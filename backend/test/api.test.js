@@ -7,6 +7,7 @@ const testDataDir = path.join(os.tmpdir(), `sciencex-api-test-${process.pid}`);
 process.env.SCIENCEX_DATA_DIR = testDataDir;
 const app = require('../src/server');
 const gateway = require('../src/lib/model-gateway');
+const store = require('../src/lib/store');
 
 let server;
 let baseUrl;
@@ -177,4 +178,23 @@ test('异步导出任务通过 SSE 推送进度并正常完成', { concurrency: 
   assert.match(payload, /id: \d+\nevent: progress/);
   assert.match(payload, /event: done/);
   assert.match(payload, new RegExp(`\"download_url\":\"/api/v1/static/exports/${taskId}\.zip\"`));
+});
+
+test('客户端关闭任务 SSE 后移除任务监听器', { concurrency: false, timeout: 10000 }, async () => {
+  const created = await request('/account/export', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await ensureToken()}` },
+    body: JSON.stringify({}),
+  });
+  const taskId = created.body.data.task_id;
+  const stream = await fetch(`${baseUrl}/tasks/${taskId}/stream`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
+  });
+  assert.equal(stream.status, 200);
+  const reader = stream.body.getReader();
+  await reader.read();
+  assert.equal(store.tasks.get(taskId).listeners.length, 1);
+  await reader.cancel();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(store.tasks.get(taskId).listeners.length, 0);
 });
