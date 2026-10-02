@@ -152,6 +152,44 @@ test('模型网关允许公共 HTTPS 域名并拒绝内网地址', { concurrency
   assert.throws(() => gateway.parseModelBaseUrl('http://api.example.com/v1'), /HTTPS/);
 });
 
+test('模型网关总超时覆盖响应体读取', { concurrency: false }, async () => {
+  const previous = {
+    baseUrl: process.env.OPENAI_BASE_URL,
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL,
+    timeout: process.env.OPENAI_TIMEOUT_MS,
+    fetch: global.fetch,
+  };
+  process.env.OPENAI_BASE_URL = 'https://1.1.1.1/v1';
+  process.env.OPENAI_API_KEY = 'test-key';
+  process.env.OPENAI_MODEL = 'test-model';
+  process.env.OPENAI_TIMEOUT_MS = '20';
+  global.fetch = async (_url, { signal }) => ({
+    ok: true,
+    json: () => new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => resolve({ choices: [{ message: { content: 'late' } }] }), 100);
+      signal.addEventListener('abort', () => {
+        clearTimeout(timeout);
+        reject(new DOMException('The operation was aborted', 'AbortError'));
+      }, { once: true });
+    }),
+  });
+  try {
+    await assert.rejects(gateway.complete([{ role: 'user', content: 'test' }]), { name: 'AbortError' });
+  } finally {
+    global.fetch = previous.fetch;
+    for (const [key, value] of [
+      ['OPENAI_BASE_URL', previous.baseUrl],
+      ['OPENAI_API_KEY', previous.apiKey],
+      ['OPENAI_MODEL', previous.model],
+      ['OPENAI_TIMEOUT_MS', previous.timeout],
+    ]) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
 test('未知显式模型返回受控错误而不是进程异常', { concurrency: false }, async () => {
   const { response, body } = await request('/chat/completions', {
     method: 'POST',

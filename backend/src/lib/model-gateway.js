@@ -90,24 +90,23 @@ async function complete(messages, { model, temperature = 0.2, signal, userId } =
     if (signal.aborted) controller.abort();
     else signal.addEventListener('abort', abortFromCaller, { once: true });
   }
-  let response;
   try {
-    response = await fetch(new URL('chat/completions', `${baseUrl.toString().replace(/\/$/, '')}/`), {
+    const response = await fetch(new URL('chat/completions', `${baseUrl.toString().replace(/\/$/, '')}/`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
       body: JSON.stringify({ model: config.modelName, messages, temperature, stream: false }),
       signal: controller.signal,
       redirect: 'error',
     });
+    if (!response.ok) throw new Error(`模型网关响应 ${response.status}`);
+    const payload = await response.json();
+    const content = payload.choices?.[0]?.message?.content;
+    if (typeof content !== 'string') throw new Error('模型网关返回内容为空');
+    return { text: content, model: config.modelName, usage: payload.usage || {} };
   } finally {
     clearTimeout(timeout);
     if (signal) signal.removeEventListener('abort', abortFromCaller);
   }
-  if (!response.ok) throw new Error(`模型网关响应 ${response.status}`);
-  const payload = await response.json();
-  const content = payload.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') throw new Error('模型网关返回内容为空');
-  return { text: content, model: config.modelName, usage: payload.usage || {} };
 }
 
 module.exports = { complete, enabled, gatewayConfig, resolveModel, isPrivateAddress, parseModelBaseUrl, validatePublicModelHost };
