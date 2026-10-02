@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const app = require('../src/server');
+const gateway = require('../src/lib/model-gateway');
 
 let server;
 let baseUrl;
@@ -115,4 +116,11 @@ test('SSE 查询参数 token 不能用于写请求', { concurrency: false }, asy
   const body = await response.json();
   assert.equal(response.status, 401);
   assert.equal(body.code, 40101);
+});
+
+test('模型网关对无权模型显式失败关闭', { concurrency: false }, () => {
+  const config = gateway.gatewayConfig('m-custom-1', 'unrelated-user');
+  assert.equal(config.baseUrl, '');
+  assert.equal(config.apiKey, '');
+  assert.equal(gateway.enabled('m-custom-1', 'unrelated-user'), false);
 });

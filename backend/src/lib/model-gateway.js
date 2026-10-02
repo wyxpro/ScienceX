@@ -5,11 +5,17 @@ const { canAccess } = require('./access');
 function resolveModel(modelId, userId) {
   const custom = store.customModels.filter((model) => canAccess(model, userId));
   const all = [...custom, ...store.builtinModels];
-  return all.find((model) => model.id === modelId || model.model_name === modelId || model.name === modelId) || custom.find((model) => model.enabled) || null;
+  if (modelId !== undefined && modelId !== null && String(modelId).trim() !== '') {
+    return all.find((model) => model.id === modelId || model.model_name === modelId || model.name === modelId) || null;
+  }
+  return custom.find((model) => model.enabled) || null;
 }
 
 function gatewayConfig(modelId, userId) {
   const model = resolveModel(modelId, userId);
+  const explicitModel = modelId !== undefined && modelId !== null && String(modelId).trim() !== '';
+  // Never reinterpret an unknown or unauthorized explicit model as the global default.
+  if (explicitModel && !model) return { model: null, baseUrl: '', apiKey: '', modelName: '' };
   const baseUrl = model?.base_url || process.env.OPENAI_BASE_URL || '';
   const apiKey = (model?.api_key_encrypted ? decryptSecret(model.api_key_encrypted) : '') || process.env.OPENAI_API_KEY || '';
   const modelName = model?.model_name || process.env.OPENAI_MODEL || model?.name || modelId;
