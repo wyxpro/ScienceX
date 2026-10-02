@@ -1,0 +1,53 @@
+/* 路由：懒加载 + 登录守卫（页面结构与 PRD §2.0 信息架构一一对应） */
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from '../stores/auth';
+import { PageLoading } from '../components/ui';
+import AppLayout from '../layouts/AppLayout';
+
+const Login = lazy(() => import('../pages/Login'));
+const Chat = lazy(() => import('../pages/Chat'));
+const Topic = lazy(() => import('../pages/Topic'));
+const Reader = lazy(() => import('../pages/Reader'));
+const Experiment = lazy(() => import('../pages/Experiment'));
+const Analysis = lazy(() => import('../pages/Analysis'));
+const Writing = lazy(() => import('../pages/Writing'));
+const Submission = lazy(() => import('../pages/Submission'));
+const Meeting = lazy(() => import('../pages/Meeting'));
+const Review = lazy(() => import('../pages/Review'));
+const Projects = lazy(() => import('../pages/Projects'));
+const Account = lazy(() => import('../pages/Account'));
+
+function Guard({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return <PageLoading />;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+export default function Router() {
+  return (
+    <BrowserRouter>
+      <Suspense fallback={<PageLoading />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<Guard><AppLayout /></Guard>}>
+            <Route path="/" element={<Navigate to="/chat" replace />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/tools/topic" element={<Topic />} />
+            <Route path="/tools/reader" element={<Reader />} />
+            <Route path="/tools/experiment" element={<Experiment />} />
+            <Route path="/tools/analysis" element={<Analysis />} />
+            <Route path="/tools/writing" element={<Writing />} />
+            <Route path="/tools/submission" element={<Submission />} />
+            <Route path="/features/meeting" element={<Meeting />} />
+            <Route path="/features/review" element={<Review />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/account" element={<Account />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  );
+}

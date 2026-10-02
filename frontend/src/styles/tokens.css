@@ -1,0 +1,60 @@
+/* ============================================================
+   ScienceX 设计系统 —— 学术暖纸 × 墨绿 × 琥珀
+   刻意避开蓝紫「AI 味」，采用 Nature/期刊质感的暖白纸面
+   ============================================================ */
+:root {
+  /* 色板 */
+  --bg: #f6f4ee;            /* 暖纸底 */
+  --bg-deep: #efece2;       /* 深一档纸面 */
+  --surface: #ffffff;
+  --ink: #1f2a24;           /* 墨绿黑 */
+  --ink-2: #4c5a52;
+  --muted: #8a948d;
+  --line: #e6e2d6;
+  --line-strong: #d5d0bf;
+
+  --brand: #1b7a5e;         /* 墨绿主色 */
+  --brand-strong: #14624a;
+  --brand-deep: #0e4a37;
+  --brand-soft: #e3f1ea;
+  --brand-softer: #f0f7f3;
+
+  --accent: #c2762b;        /* 琥珀点缀 */
+  --accent-soft: #faf0e1;
+  --gold: #b9891e;
+  --red: #c24a42;
+  --red-soft: #f9ecea;
+  --blue-safe: #3e7ca6;     /* 仅用于信息提示 */
+  --blue-safe-soft: #e9f1f7;
+
+  /* 侧边栏（深墨绿） */
+  --sb-bg: #182822;
+  --sb-bg-2: #122019;
+  --sb-text: #a9bcB2;
+  --sb-text-dim: #71857b;
+  --sb-active-bg: #26443a;
+  --sb-hover: rgba(255, 255, 255, 0.05);
+
+  /* 字体 */
+  --font-serif: Georgia, "Times New Roman", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+
+  /* 几何 */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+
+  --shadow-sm: 0 1px 2px rgba(31, 42, 36, 0.05);
+  --shadow-md: 0 1px 2px rgba(31, 42, 36, 0.04), 0 8px 24px -12px rgba(31, 42, 36, 0.14);
+  --shadow-lg: 0 2px 6px rgba(31, 42, 36, 0.06), 0 20px 48px -20px rgba(31, 42, 36, 0.22);
+
+  --sidebar-w: 236px;
+  --topbar-h: 60px;
+
+  /* 动效 */
+  --ease: cubic-bezier(0.22, 0.8, 0.32, 1);
+  --t-fast: 0.16s;
+  --t-mid: 0.28s;
+}

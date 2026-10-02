@@ -1,0 +1,15 @@
+{
+  "name": "sciencex-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ScienceX AI 科研工作台 - 后端 API 服务 (Node.js + Express)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
