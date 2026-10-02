@@ -743,7 +743,7 @@ export default function Landing() {
       </section>
 
       {/* ===== 竞品分析全景对比表 (Competitive Matrix Table) ===== */}
-      <section id="compare" className="landing-section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+      <section id="compare" className="landing-section" style={{ borderTop: '1px solid var(--line-strong)', borderBottom: '1px solid var(--line-strong)' }}>
         <div className="section-head">
           <div className="section-badge">Competitive Analysis</div>
           <h2 className="section-title">为什么选择 ScienceX？一表看清核心优势</h2>
@@ -899,7 +899,7 @@ export default function Landing() {
       </section>
 
       {/* ===== 会员计划 (Pricing Plans) ===== */}
-      <section id="pricing" className="landing-section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
+      <section id="pricing" className="landing-section" style={{ borderTop: '1px solid var(--line-strong)' }}>
         <div className="section-head">
           <div className="section-badge">Flexible Pricing</div>
           <h2 className="section-title">透明亲民的科研支持方案</h2>
@@ -987,86 +987,33 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ===== 底部召唤 CTA Banner (全景科技重构：光晕流动、微标签与高转化动作组件) ===== */}
+      {/* ===== 底部召唤 CTA Banner (极简沉浸流光设计) ===== */}
       <section className="landing-cta-section">
-        <div className="landing-cta-card">
+        <div className="landing-cta-card" style={{ padding: '64px 32px' }}>
           {/* 动态光晕与网格背景 */}
           <div className="cta-ambient-glow glow-1" />
           <div className="cta-ambient-glow glow-2" />
           <div className="cta-grid-pattern" />
 
-          <div className="cta-content">
-            {/* 顶部微标签 */}
-            <div className="cta-pill">
-              <span className="cta-pill-dot" />
-              <span>✦ 零配置门槛 · 浏览器一键接入 · 永久免费体验</span>
-            </div>
-
+          <div className="cta-content" style={{ maxWidth: 760 }}>
             {/* 主标题 */}
-            <h2 className="cta-title">
+            <h2 className="cta-title" style={{ margin: '0 0 32px' }}>
               准备好让 AI 成为你的终身科研协同伴侣了吗？
             </h2>
 
-            {/* 副标题 */}
-            <p className="cta-sub">
-              无需配置繁琐环境，一键登录即刻体验新一代 AI 原生科研全流程闭环生产力。
-            </p>
-
-            {/* 核心操作按钮组 */}
-            <div className="cta-actions">
+            {/* 核心操作按钮 */}
+            <div className="cta-actions" style={{ margin: 0, justifyContent: 'center' }}>
               <button
                 className="cta-btn-primary"
                 onClick={() => nav('/login')}
                 id="cta-start-btn"
+                style={{ padding: '16px 42px', fontSize: 16.5 }}
               >
                 <span>立即开启科研之旅 · 免费使用</span>
                 <span className="cta-btn-icon">
                   <Icon name="arrowRight" size={18} />
                 </span>
               </button>
-              <button
-                className="cta-btn-secondary"
-                onClick={() => {
-                  const el = document.getElementById('features');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <Icon name="sparkles" size={16} />
-                <span>探索全部六大功能</span>
-              </button>
-            </div>
-
-            {/* 信任与特性微徽章 */}
-            <div className="cta-badges">
-              <div className="cta-badge-item">
-                <span className="cta-badge-icon">⚡</span>
-                <span>3秒极速接入，免配置复杂环境</span>
-              </div>
-              <div className="cta-badge-item">
-                <span className="cta-badge-icon">🔒</span>
-                <span>本地数据隔离，严守学术伦理隐私</span>
-              </div>
-              <div className="cta-badge-item">
-                <span className="cta-badge-icon">🌐</span>
-                <span>支持主流顶尖模型与本地 Ollama</span>
-              </div>
-              <div className="cta-badge-item">
-                <span className="cta-badge-icon">📄</span>
-                <span>一键导出 Word、LaTeX 与汇报 PPTX</span>
-              </div>
-            </div>
-
-            {/* 底部社会认同微字样 */}
-            <div className="cta-proof">
-              <div className="cta-avatars">
-                <span className="cta-avatar">清</span>
-                <span className="cta-avatar">北</span>
-                <span className="cta-avatar">科</span>
-                <span className="cta-avatar">浙</span>
-              </div>
-              <span className="cta-proof-text">
-                已有来自 <strong>200+</strong> 所顶尖高校与科研机构的学者正在使用 ScienceX 加速创新产出
-              </span>
             </div>
           </div>
         </div>
