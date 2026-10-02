@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 });
 
 // 健康检查
-app.get('/health', (req, res) => ok(res, { service: 'sciencex-backend', version: '1.0.0', ts: new Date().toISOString() }));
+app.get(['/health', '/api/health'], (req, res) => ok(res, { service: 'sciencex-backend', version: '1.0.0', ts: new Date().toISOString() }));
 
 // 业务路由（统一前缀 /api/v1）
 app.use('/api/v1', accountRoutes.router);
@@ -74,5 +74,8 @@ function startServer(port, maxAttempts = 20) {
   });
 }
 
-startServer(DEFAULT_PORT);
+if (require.main === module) {
+  startServer(DEFAULT_PORT);
+}
 
+module.exports = app;
