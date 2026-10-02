@@ -89,6 +89,47 @@ async function attemptTokenRefresh(): Promise<string | null> {
   return null;
 }
 
+async function refreshAccessToken(): Promise<string | null> {
+  if (isRefreshing) {
+    return new Promise((resolve) => refreshSubscribers.push(resolve));
+  }
+
+  isRefreshing = true;
+  try {
+    const newToken = await attemptTokenRefresh();
+    onTokenRefreshed(newToken);
+    return newToken;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+// Streaming endpoints use fetch directly, so they need the same one-shot
+// refresh behavior as api() instead of failing immediately on an expired token.
+async function fetchWithAuth(url: string, init: RequestInit = {}): Promise<Response> {
+  const response = await fetch(url, init);
+  if (response.status !== 401 || init.signal?.aborted) return response;
+  if (!getRefreshToken()) {
+    handleAuthExpired();
+    return response;
+  }
+
+  await response.body?.cancel().catch(() => undefined);
+  const newToken = await refreshAccessToken();
+  if (!newToken) {
+    handleAuthExpired();
+    return response;
+  }
+
+  const headers = new Headers(init.headers);
+  headers.set('Authorization', `Bearer ${newToken}`);
+  const retryResponse = await fetch(url, { ...init, headers });
+  if (retryResponse.status === 401 && !init.signal?.aborted) {
+    handleAuthExpired();
+  }
+  return retryResponse;
+}
+
 function handleAuthExpired() {
   clearToken();
   // 广播 401 事件给 React 应用，支持平滑展示 Toast 与带参重定向
@@ -140,26 +181,9 @@ export async function api<T = any>(path: string, opts: RequestOptions = {}): Pro
   // 401 拦截处理
   if (json.code === 40101 || res.status === 401) {
     if (!isRetry && getRefreshToken()) {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        const newToken = await attemptTokenRefresh();
-        isRefreshing = false;
-        onTokenRefreshed(newToken);
-        if (newToken) {
-          return api<T>(path, { ...opts, isRetry: true });
-        }
-      } else {
-        // 等待正在进行的刷新
-        return new Promise<T>((resolve, reject) => {
-          refreshSubscribers.push((newToken) => {
-            if (newToken) {
-              resolve(api<T>(path, { ...opts, isRetry: true }));
-            } else {
-              handleAuthExpired();
-              reject(new ApiError(40101, '登录已过期，请重新登录'));
-            }
-          });
-        });
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        return api<T>(path, { ...opts, isRetry: true });
       }
     }
 
@@ -193,7 +217,7 @@ export async function chatStream(payload: any, handlers: SSEHandlers, signal?: A
   const token = getToken();
   const streamKey = `chat:${payload?.conversation_id || 'default'}`;
   try {
-    const res = await fetch(`${BASE}/chat/completions`, {
+    const res = await fetchWithAuth(`${BASE}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -222,7 +246,7 @@ export async function chatStream(payload: any, handlers: SSEHandlers, signal?: A
 export async function docChatStream(docId: string, messages: any[], handlers: SSEHandlers, signal?: AbortSignal): Promise<void> {
   const token = getToken();
   try {
-    const res = await fetch(`${BASE}/documents/${docId}/chat`, {
+    const res = await fetchWithAuth(`${BASE}/documents/${docId}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -251,13 +275,14 @@ export function taskStream(taskId: string, handlers: SSEHandlers): () => void {
   let stopped = false;
   let terminal = false;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let retryResolve: (() => void) | undefined;
   let attempts = 0;
 
   (async () => {
     while (!stopped && !controller.signal.aborted) {
       try {
         const token = getToken();
-        const res = await fetch(`${BASE}/tasks/${taskId}/stream`, {
+        const res = await fetchWithAuth(`${BASE}/tasks/${taskId}/stream`, {
           headers: {
             Accept: 'text/event-stream',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -300,7 +325,12 @@ export function taskStream(taskId: string, handlers: SSEHandlers): () => void {
         const delay = 500 * 2 ** attempts;
         attempts += 1;
         await new Promise<void>((resolve) => {
-          retryTimer = setTimeout(resolve, delay);
+          retryResolve = resolve;
+          retryTimer = setTimeout(() => {
+            retryTimer = undefined;
+            retryResolve = undefined;
+            resolve();
+          }, delay);
         });
       }
     }
@@ -308,7 +338,12 @@ export function taskStream(taskId: string, handlers: SSEHandlers): () => void {
 
   return () => {
     stopped = true;
-    if (retryTimer) clearTimeout(retryTimer);
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = undefined;
+    }
+    retryResolve?.();
+    retryResolve = undefined;
     controller.abort();
   };
 }
