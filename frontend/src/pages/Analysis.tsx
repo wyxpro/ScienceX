@@ -1,13 +1,14 @@
-/* 数据分析 —— REQ-ANA-01/02：图表生成（image2） / 示例库 / 图表历史 / AI 解读 */
+/* 数据分析 —— REQ-ANA-01/02：图表生成（image2） / 示例库 / 图表历史 / AI 解读 / DreamPaper 工作台 */
 import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import Icon from '../components/Icon';
 import { BarChart, HeatMap, LineChart } from '../components/charts';
 import { Empty, Skeleton, Tabs, useToast } from '../components/ui';
 import { TaskRunner } from '../components/TaskRunner';
+import DreamPaperWorkbench from './analysis/DreamPaperWorkbench';
 import type { ChartItem } from '../types';
 
-type Tab = 'generate' | 'library';
+type Tab = 'generate' | 'library' | 'dreampaper';
 
 const ABLATION = [
   { label: 'up9-base', value: 0.6464 },
@@ -135,9 +136,12 @@ export default function Analysis() {
         onChange={(k) => setTab(k as Tab)}
         tabs={[
           { key: 'generate', label: <><Icon name="spark" size={14} />图表生成与解读</> },
+          { key: 'dreampaper', label: <><Icon name="flask" size={14} />DreamPaper 工作台</> },
           { key: 'library', label: <><Icon name="layers" size={14} />示例图表库 / 历史</> },
         ]}
       />
+
+      {tab === 'dreampaper' && <DreamPaperWorkbench />}
 
       {tab === 'generate' && (
         <div

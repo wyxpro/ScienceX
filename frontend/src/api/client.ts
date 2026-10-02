@@ -202,7 +202,14 @@ export async function api<T = any>(path: string, opts: RequestOptions = {}): Pro
 export interface SSEHandlers {
   onStart?: (d: any) => void;
   onDelta?: (text: string) => void;
-  onProgress?: (d: { percent: number; stage: string; message?: string }) => void;
+  /** progress 载荷：DreamPaper 流水线额外携带 design_log（Design Log 流式增量）与 diagnosis（故障诊断卡） */
+  onProgress?: (d: {
+    percent: number;
+    stage: string;
+    message?: string;
+    design_log?: { step: string; label: string; status: string; content: string };
+    diagnosis?: Record<string, any>;
+  }) => void;
   onReference?: (d: any) => void;
   onTool?: (d: any) => void;
   onDone?: (d: any) => void;
