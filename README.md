@@ -1,13 +1,11 @@
 # 🧪 ScienceX · AI 科研工作台
-
+[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Vite](https://img.shields.io/badge/Vite-5.4.7-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/) [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/) [![Express](https://img.shields.io/badge/Express-4.19.2-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/) [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Protocol](https://img.shields.io/badge/Protocol-SSE_Stream-FF6B6B?style=flat-square)](https://html.spec.whatwg.org/multipage/server-sent-events.html) [![OpenAI](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?style=flat-square&logo=openai&logoColor=white)](https://platform.openai.com/) [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 > **覆盖「选题 → 文献 → 实验 → 分析 → 写作 → 投稿 → 协作」全生命周期的下一代 AI 科研生产力中枢。**  
 > 对话即工作台，工具即智能体。把科研中繁复琐碎的机械劳动交给 AI，让研究人员聚焦于科学创新本身。
 
 ---
 
 ## 📋 项目简介
-
-[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Vite](https://img.shields.io/badge/Vite-5.4.7-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/) [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/) [![Express](https://img.shields.io/badge/Express-4.19.2-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/) [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Protocol](https://img.shields.io/badge/Protocol-SSE_Stream-FF6B6B?style=flat-square)](https://html.spec.whatwg.org/multipage/server-sent-events.html) [![OpenAI](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?style=flat-square&logo=openai&logoColor=white)](https://platform.openai.com/) [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 **ScienceX（科研 AI 工作台）** 致力于打破传统科研软件“各单点工具割裂、流程缺乏连续性”的痛点。不同于单纯的文献检索器、文本润色插件或数据画图脚本，ScienceX 以 **AI 原生智能体对话中枢** 为核心骨架，将科研全周期所必需的 **6 大科研工具** 与 **2 大特色协同机制**（组会汇报、多智能体专家评审团）无缝咬合为一个**数据自沉淀、上下文可追溯、智能体可编排**的科研闭环工作流。
 

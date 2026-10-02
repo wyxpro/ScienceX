@@ -1,5 +1,6 @@
-/* AI 对话工作台 —— REQ-CHAT-01~04：流式对话 / 多模型 / 历史会话 / Skills / 顶部看板 */
+/* AI 对话工作台 —— REQ-CHAT-01~04：流式对话 / 多模型 / 历史会话 / Skills / 看板置底 */
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, chatStream } from '../api/client';
 import Icon from '../components/Icon';
 import Markdown from '../components/Markdown';
@@ -19,6 +20,7 @@ const SUGGESTIONS = [
 export default function Chat() {
   const { user } = useAuth();
   const toast = useToast();
+  const nav = useNavigate();
   const [convs, setConvs] = useState<Conversation[] | null>(null);
   const [activeConv, setActiveConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -26,22 +28,44 @@ export default function Chat() {
   const [streaming, setStreaming] = useState(false);
   const [models, setModels] = useState<any>({ builtin: [], custom: [] });
   const [model, setModel] = useState('GPT-4o');
-  const [dashboard, setDashboard] = useState<any>(null);
   const [skills, setSkills] = useState<any[]>([]);
   const [showDash, setShowDash] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [recording, setRecording] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // 初始化带有精确演示数据的看板状态
+  const [dashboard, setDashboard] = useState<any>({
+    project: {
+      name: '微表情识别（MER）研究',
+      progress: { topic: 100, literature: 78, experiment: 55, analysis: 40 },
+    },
+    recent_outputs: [
+      { id: 'ro1', type: 'chart', title: '消融实验 UF1 对比', meta: 'ch1 · 3天前', ref: '/tools/analysis' },
+      { id: 'ro2', type: 'doc', title: '七段式总结 · AUFormer (MM 24)', meta: 'd2 · 5天前', ref: '/tools/reader' },
+      { id: 'ro3', type: 'deck', title: '组会汇报 · up9 实验进展', meta: '12页 pptx · 5天前', ref: '/features/meeting' },
+      { id: 'ro4', type: 'report', title: '模拟审稿报告 #rv1', meta: '大修 · 2天前', ref: '/features/review' },
+    ],
+    papers_daily: {
+      items: [
+        { id: 'pd4', title: 'METrack: Real-time Micro-expression Spotting in Long Videos', venue: 'arXiv', reason: '匹配「微表情识别」方向', hot: 4 },
+        { id: 'pd5', title: 'Rethinking Evaluation Protocols in MER: A Reproducibility Study', venue: 'arXiv', reason: '与你阅读的综述相关', hot: 5 },
+      ],
+    },
+    today_usage: { tokens: 38400, calls: 26, cost: 1.24 },
+  });
+
   useEffect(() => {
     (async () => {
       const [c, m, d, s] = await Promise.all([
         api<any>('/conversations'),
-        api('/models'), api('/dashboard/summary'), api<any>('/skills'),
+        api('/models'),
+        api('/dashboard/summary'),
+        api<any>('/skills'),
       ]);
       setConvs(c?.items || (Array.isArray(c) ? c : []));
       setModels(m || { builtin: [], custom: [] });
-      setDashboard(d);
+      if (d) setDashboard(d);
       setSkills(Array.isArray(s) ? s : (s?.items || []));
     })();
   }, []);
@@ -59,7 +83,8 @@ export default function Chat() {
   const newConv = async () => {
     const c = await api<Conversation>('/conversations', { method: 'POST', body: { title: '新的对话' } });
     setConvs((x) => [c, ...(x || [])]);
-    setActiveConv(c.id); setMessages([]);
+    setActiveConv(c.id);
+    setMessages([]);
   };
 
   const removeConv = async (id: string, e: React.MouseEvent) => {
@@ -132,65 +157,31 @@ export default function Chat() {
   };
 
   const filteredConvs = convs?.filter((c) => c.title.includes(keyword)) || [];
-  const progressEntries = dashboard?.project?.progress ? Object.entries(dashboard.project.progress) as [string, number][] : [];
-  const stageNames: Record<string, string> = { topic: '选题', literature: '文献', experiment: '实验', analysis: '分析', writing: '写作', submission: '投稿' };
 
   return (
     <div className="page" style={{ maxWidth: 1500 }}>
-      {/* ===== 顶部三卡片（REQ-CHAT-04） ===== */}
-      {showDash && dashboard && (
-        <div className="grid grid-3 stagger" style={{ marginBottom: 18 }}>
-          <div className="card card-pad card-hover">
-            <div className="card-title"><Icon name="gauge" size={15} /> 项目进度看板</div>
-            <div className="text-small text-muted mt-1">{dashboard.project.name}</div>
-            <div className="mt-2">
-              {progressEntries.slice(0, 4).map(([k, v]) => (
-                <div key={k} style={{ marginBottom: 7 }}>
-                  <div className="row-between text-xs" style={{ marginBottom: 3 }}>
-                    <span>{stageNames[k]}</span><span className="mono">{v}%</span>
-                  </div>
-                  <Progress value={v} amber={v < 50 && v > 0} />
-                </div>
-              ))}
-            </div>
+      {/* ===== 顶部简明状态栏 ===== */}
+      <div className="row-between mb-3" style={{ alignItems: 'center' }}>
+        <div className="row g-2 items-center">
+          <div className="sb-logo-mark" style={{ width: 28, height: 28, borderRadius: 8, fontSize: 13 }}>
+            <Icon name="flask" size={15} />
           </div>
-          <div className="card card-pad card-hover">
-            <div className="card-title"><Icon name="clock" size={15} /> 最近产出</div>
-            <div className="mt-2 col g-1">
-              {dashboard.recent_outputs.slice(0, 4).map((o: any) => (
-                <div key={o.id} className="row g-2 text-small" style={{ padding: '5px 8px', borderRadius: 8, cursor: 'pointer', transition: 'background .15s' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-softer)')} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-                  <Icon name={o.type === 'chart' ? 'chart' : o.type === 'deck' ? 'layers' : o.type === 'report' ? 'award' : 'doc'} size={14} />
-                  <span className="ellipsis grow">{o.title}</span>
-                  <span className="text-xs text-muted">{o.meta}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="card card-pad card-hover">
-            <div className="card-title"><Icon name="mail" size={15} /> 今日文献速递</div>
-            <div className="mt-2 col g-2">
-              {(dashboard.papers_daily?.items || []).map((p: any) => (
-                <div key={p.id} style={{ padding: '7px 9px', borderRadius: 8, background: 'var(--brand-softer)' }}>
-                  <div className="text-small fw-bold clamp2">{p.title}</div>
-                  <div className="text-xs text-muted mt-1">{p.venue} · {p.reason} · 热度 {'★'.repeat(p.hot)}</div>
-                </div>
-              ))}
-            </div>
+          <span className="fw-bold" style={{ fontSize: 15 }}>对话中枢</span>
+          <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)', fontSize: 11.5 }}>
+            {model} 在线
+          </span>
+        </div>
+        <div className="row g-3 items-center">
+          <div className="text-small text-muted">
+            今日已用 <span className="mono fw-bold" style={{ color: 'var(--ink)' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</span> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
           </div>
         </div>
-      )}
-      <div className="row-between mb-2">
-        <div className="text-small text-muted">今日已用 {dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '—'} tokens · {dashboard?.today_usage?.calls ?? '—'} 次调用</div>
-        <button className="btn btn-ghost btn-sm" onClick={() => setShowDash((s) => !s)}>
-          <Icon name="chevronDown" size={13} />{showDash ? '收起看板' : '展开看板'}
-        </button>
       </div>
 
       {/* ===== 主体：会话列表 + 对话区 ===== */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(210px, 240px) 1fr', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 250px) 1fr', gap: 18, marginBottom: 22 }}>
         {/* 会话列表 */}
-        <div className="card" style={{ padding: 12, height: 'fit-content', maxHeight: 'calc(100vh - 320px)', display: 'flex', flexDirection: 'column' }}>
+        <div className="card" style={{ padding: 12, height: 'clamp(500px, 58vh, 620px)', display: 'flex', flexDirection: 'column' }}>
           <button className="btn btn-primary btn-block btn-sm" onClick={newConv}><Icon name="plus" size={14} />新对话</button>
           <div style={{ position: 'relative', margin: '10px 0' }}>
             <span style={{ position: 'absolute', left: 10, top: 8, color: 'var(--muted)' }}><Icon name="search" size={14} /></span>
@@ -222,9 +213,9 @@ export default function Chat() {
         </div>
 
         {/* 对话区 */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 520, height: 'calc(100vh - 300px)' }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'clamp(500px, 58vh, 620px)' }}>
           {/* 工具条 */}
-          <div className="row-between" style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
+          <div className="row-between" style={{ padding: '10px 16px', borderBottom: '1px solid var(--line)' }}>
             <div className="row g-2 wrap">
               <Dropdown trigger={<button className="btn btn-ghost btn-sm"><Icon name="cpu" size={14} />{model}<Icon name="chevronDown" size={13} /></button>}>
                 {models.builtin?.map((m: any) => (
@@ -247,15 +238,18 @@ export default function Chat() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px' }}>
             {messages.length === 0 ? (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="sb-logo-mark" style={{ width: 52, height: 52, marginBottom: 14 }}><Icon name="flask" size={26} /></div>
-                <div className="text-serif" style={{ fontSize: 19, fontWeight: 700 }}>下午好，{user?.name}</div>
-                <div className="text-small text-muted mt-1" style={{ marginBottom: 20 }}>今天想让 AI 助理团帮你做什么？</div>
-                <div className="grid grid-2 stagger" style={{ width: 'min(560px, 100%)' }}>
+                <div className="sb-logo-mark" style={{ width: 48, height: 48, marginBottom: 12 }}><Icon name="flask" size={24} /></div>
+                <div className="text-serif" style={{ fontSize: 18, fontWeight: 700 }}>下午好，{user?.name || '研究员'}</div>
+                <div className="text-small text-muted mt-1" style={{ marginBottom: 18 }}>今天想让 AI 助理团帮您处理哪项科研工作？</div>
+                <div className="grid grid-2 stagger" style={{ width: 'min(580px, 100%)', gap: 10 }}>
                   {SUGGESTIONS.map(([ic, text]) => (
-                    <button key={text} className="card card-pad card-hover" style={{ textAlign: 'left', cursor: 'pointer' }}
+                    <button key={text} className="card card-pad card-hover" style={{ textAlign: 'left', cursor: 'pointer', padding: '10px 12px' }}
                       onClick={() => send(text)}>
-                      <div className="row g-2" style={{ color: 'var(--brand-strong)' }}><Icon name={ic as any} size={16} /><span className="fw-bold text-small">快捷指令</span></div>
-                      <div className="text-small text-muted mt-1 clamp2">{text}</div>
+                      <div className="row g-2 items-center" style={{ color: 'var(--brand-strong)' }}>
+                        <Icon name={ic as any} size={15} />
+                        <span className="fw-bold text-small">快捷指令</span>
+                      </div>
+                      <div className="text-small text-muted mt-1 clamp2" style={{ lineHeight: 1.4 }}>{text}</div>
                     </button>
                   ))}
                 </div>
@@ -288,10 +282,10 @@ export default function Chat() {
           </div>
 
           {/* 输入区 */}
-          <div style={{ padding: '12px 16px 16px', borderTop: '1px solid var(--line)' }}>
+          <div style={{ padding: '10px 16px 14px', borderTop: '1px solid var(--line)' }}>
             <div className="chat-input-shell" style={{ padding: '10px 12px 8px' }}>
               <textarea
-                className="textarea" style={{ border: 'none', padding: 0, background: 'transparent', minHeight: 44, maxHeight: 140, resize: 'none' }}
+                className="textarea" style={{ border: 'none', padding: 0, background: 'transparent', minHeight: 40, maxHeight: 120, resize: 'none' }}
                 placeholder="输入你的科研问题…（Enter 发送 / Shift+Enter 换行）"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -312,6 +306,129 @@ export default function Chat() {
             <div className="text-xs text-muted text-center mt-1">内容由 AI 生成，请注意甄别与核实</div>
           </div>
         </div>
+      </div>
+
+      {/* ===== 对话框下方：项目进度看板、最近产出、今日文献速递 ===== */}
+      <div style={{ marginTop: 6, marginBottom: 20 }}>
+        <div className="row-between mb-3 items-center" style={{ padding: '0 2px' }}>
+          <div className="row g-2 items-center">
+            <span style={{ color: 'var(--brand)', display: 'inline-flex' }}>
+              <Icon name="gauge" size={16} />
+            </span>
+            <span className="fw-bold" style={{ fontSize: 15 }}>项目看板与科研动态</span>
+            <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)', fontSize: 11.5 }}>
+              {dashboard?.project?.name || '微表情识别（MER）研究'}
+            </span>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowDash((s) => !s)}>
+            <Icon name={showDash ? 'chevronDown' : 'chevronRight'} size={13} />
+            {showDash ? '收起看板' : '展开看板'}
+          </button>
+        </div>
+
+        {showDash && (
+          <div className="grid grid-3 stagger" style={{ gap: 16 }}>
+            {/* 卡片 1：项目进度看板 */}
+            <div className="card card-pad card-hover" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="row-between items-center mb-1">
+                <div className="card-title" style={{ margin: 0 }}>
+                  <Icon name="gauge" size={15} /> 项目进度看板
+                </div>
+                <button className="btn btn-ghost btn-xs text-xs" onClick={() => nav('/projects')} title="查看全部项目">
+                  详情 <Icon name="arrowRight" size={11} />
+                </button>
+              </div>
+              <div className="text-small text-muted" style={{ fontWeight: 600, color: 'var(--ink)' }}>
+                {dashboard?.project?.name || '微表情识别（MER）研究'}
+              </div>
+              
+              <div className="mt-3 col g-2 grow" style={{ justifyContent: 'center' }}>
+                {[
+                  ['选题', dashboard?.project?.progress?.topic ?? 100],
+                  ['文献', dashboard?.project?.progress?.literature ?? 78],
+                  ['实验', dashboard?.project?.progress?.experiment ?? 55],
+                  ['分析', dashboard?.project?.progress?.analysis ?? 40],
+                ].map(([label, val]) => (
+                  <div key={label as string} style={{ padding: '3px 0' }}>
+                    <div className="row-between text-small" style={{ marginBottom: 3 }}>
+                      <span className="fw-bold">{label}</span>
+                      <span className="mono fw-bold" style={{ color: Number(val) === 100 ? 'var(--brand)' : 'var(--ink)' }}>
+                        {val}%
+                      </span>
+                    </div>
+                    <Progress value={Number(val)} amber={Number(val) < 50 && Number(val) > 0} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 卡片 2：最近产出 */}
+            <div className="card card-pad card-hover" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="row-between items-center mb-1">
+                <div className="card-title" style={{ margin: 0 }}>
+                  <Icon name="clock" size={15} /> 最近产出
+                </div>
+                <span className="tag" style={{ background: 'var(--bg-deep)', color: 'var(--muted)', fontSize: 11 }}>
+                  4 项沉淀
+                </span>
+              </div>
+              <div className="text-small text-muted">科研资产自动化版本沉淀</div>
+
+              <div className="mt-2 col g-1 grow" style={{ justifyContent: 'center' }}>
+                {(dashboard?.recent_outputs || [
+                  { id: 'ro1', type: 'chart', title: '消融实验 UF1 对比', meta: 'ch1 · 3天前', ref: '/tools/analysis' },
+                  { id: 'ro2', type: 'doc', title: '七段式总结 · AUFormer (MM 24)', meta: 'd2 · 5天前', ref: '/tools/reader' },
+                  { id: 'ro3', type: 'deck', title: '组会汇报 · up9 实验进展', meta: '12页 pptx · 5天前', ref: '/features/meeting' },
+                  { id: 'ro4', type: 'report', title: '模拟审稿报告 #rv1', meta: '大修 · 2天前', ref: '/features/review' },
+                ]).slice(0, 4).map((o: any) => (
+                  <div key={o.id} className="row g-2 text-small items-center"
+                    style={{ padding: '7px 9px', borderRadius: 8, cursor: 'pointer', transition: 'background .15s' }}
+                    onClick={() => o.ref && nav(o.ref)}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-softer)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                    <span style={{ color: 'var(--brand)', display: 'inline-flex' }}>
+                      <Icon name={o.type === 'chart' ? 'chart' : o.type === 'deck' ? 'layers' : o.type === 'report' ? 'award' : 'doc'} size={14} />
+                    </span>
+                    <span className="ellipsis grow fw-bold" style={{ fontSize: 12.5 }}>{o.title}</span>
+                    <span className="text-xs text-muted mono" style={{ flexShrink: 0 }}>{o.meta}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 卡片 3：今日文献速递 */}
+            <div className="card card-pad card-hover" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="row-between items-center mb-1">
+                <div className="card-title" style={{ margin: 0 }}>
+                  <Icon name="mail" size={15} /> 今日文献速递
+                </div>
+                <button className="btn btn-ghost btn-xs text-xs" onClick={() => nav('/tools/reader')} title="前往文献阅读">
+                  阅读 <Icon name="arrowRight" size={11} />
+                </button>
+              </div>
+              <div className="text-small text-muted">算法匹配与阅读推荐</div>
+
+              <div className="mt-2 col g-2 grow" style={{ justifyContent: 'center' }}>
+                {(dashboard?.papers_daily?.items || [
+                  { id: 'pd4', title: 'METrack: Real-time Micro-expression Spotting in Long Videos', venue: 'arXiv', reason: '匹配「微表情识别」方向', hot: 4 },
+                  { id: 'pd5', title: 'Rethinking Evaluation Protocols in MER: A Reproducibility Study', venue: 'arXiv', reason: '与你阅读的综述相关', hot: 5 },
+                ]).map((p: any) => (
+                  <div key={p.id}
+                    onClick={() => nav('/tools/reader')}
+                    style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--brand-softer)', cursor: 'pointer', transition: 'transform .15s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}>
+                    <div className="text-small fw-bold clamp2" style={{ lineHeight: 1.35, color: 'var(--ink)' }}>{p.title}</div>
+                    <div className="row-between text-xs mt-1" style={{ color: 'var(--muted)' }}>
+                      <span>{p.venue} · {p.reason}</span>
+                      <span style={{ color: 'var(--gold)', letterSpacing: 1 }}>{'★'.repeat(p.hot || 4)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 移动端会话入口 */}
