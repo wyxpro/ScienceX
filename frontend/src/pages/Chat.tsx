@@ -7,6 +7,7 @@ import { api, chatStream } from '../api/client';
 import Icon, { type IconName } from '../components/Icon';
 import { useToast } from '../components/ui';
 import { useAuth } from '../stores/auth';
+import { useProject } from '../stores/project';
 import type { AgentMode, ChatMessage, Conversation, SkillItem } from '../types';
 import { ChatCommandDock } from './chat/ChatCommandDock';
 import { ChatMessages } from './chat/ChatMessages';
@@ -44,8 +45,9 @@ export default function Chat() {
   const [agentMode, setAgentMode] = useState<AgentMode>('plan_execute');
   const [showMemoryDrawer, setShowMemoryDrawer] = useState(false);
   const [memoryCount, setMemoryCount] = useState<number>(4);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [projectName] = useState('微表情识别（MER）研究');
+  const [sidebarOpen, setSidebarOpen] = useState(false); // 默认不显示，点击按钮才展开
+  const { currentProject } = useProject();
+  const projectName = currentProject?.name || currentProject?.title || '微表情识别（MER）研究';
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 初始化带有精确演示数据的看板状态
@@ -290,19 +292,46 @@ export default function Chat() {
               今日已用 <strong style={{ color: '#0f172a' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</strong> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
             </div>
 
-            {/* 右侧会话记录栏开关按钮 */}
+            {/* 右侧会话记录栏开关按钮：换个专属高亮颜色显示，点击才展开 */}
             <button
               type="button"
-              className="chat-tool-btn"
+              className="chat-history-pill-btn"
               onClick={() => setSidebarOpen((v) => !v)}
               title={sidebarOpen ? '收起右侧历史会话' : '展开右侧历史会话'}
               aria-label="切换历史会话侧边栏"
               style={{
-                background: sidebarOpen ? '#f1f5f9' : 'transparent',
-                color: sidebarOpen ? '#059669' : '#64748b',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: '1px solid #10b981',
+                background: sidebarOpen ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#ecfdf5',
+                color: sidebarOpen ? '#ffffff' : '#047857',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: sidebarOpen ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none',
               }}
             >
-              <Icon name="chat" size={16} />
+              <Icon name="chat" size={14} style={{ color: sidebarOpen ? '#ffffff' : '#059669' }} />
+              <span>历史对话</span>
+              {convs && convs.length > 0 && (
+                <span
+                  style={{
+                    background: sidebarOpen ? 'rgba(255, 255, 255, 0.3)' : '#10b981',
+                    color: '#ffffff',
+                    fontSize: 10.5,
+                    padding: '1px 6px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {convs.length}
+                </span>
+              )}
             </button>
           </div>
         </div>

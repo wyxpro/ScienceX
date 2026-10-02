@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Icon, { type IconName } from '../components/Icon';
 import { useAuth } from '../stores/auth';
+import { useProject } from '../stores/project';
+import { ProjectSpaceModal } from '../components/ProjectSpaceModal';
 
 interface NavItem { to: string; label: string; icon: IconName }
 interface NavGroup { title?: string; items: NavItem[] }
@@ -45,11 +47,13 @@ const TITLES: Record<string, [string, string]> = {
 };
 
 export default function AppLayout() {
-  const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
+  const { currentProject } = useProject();
   const loc = useLocation();
   const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
 
   useEffect(() => { setOpen(false); }, [loc.pathname]);
   useEffect(() => {
@@ -61,30 +65,32 @@ export default function AppLayout() {
 
   const sidebar = (
     <aside className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
-      <div className="sb-logo" style={{ cursor: 'pointer' }} onClick={() => nav('/landing')} title="前往官网宣传页">
-        <div className="sb-logo-mark"><Icon name="flask" size={19} /></div>
+      {/* 侧边栏精简顶部：去除 AI 工作台上方原有的大块占位，仅保留轻巧小巧的折叠手柄 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          padding: collapsed ? '12px 0 6px' : '12px 14px 6px',
+        }}
+      >
         {!collapsed && (
-          <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-            <div className="sb-logo-name">ScienceX</div>
-            <div className="sb-logo-sub">AI 科研全流程</div>
-          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--sb-text-dim)', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+            导航目录
+          </span>
         )}
-      </div>
-
-      {/* 边栏折叠/展开快捷切换手柄 */}
-      <div style={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-end', padding: collapsed ? '6px 0 2px' : '6px 12px 2px' }}>
         <button
           type="button"
           className="btn btn-ghost btn-icon btn-sm"
-          style={{ width: 26, height: 26, color: 'var(--sb-text-dim)', borderRadius: 7 }}
+          style={{ width: 24, height: 24, color: 'var(--sb-text-dim)', borderRadius: 6, padding: 0 }}
           onClick={() => setCollapsed((v) => !v)}
           title={collapsed ? '展开左侧边栏' : '折叠收起左侧边栏'}
         >
-          <Icon name="chevronDown" size={14} style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(90deg)' }} />
+          <Icon name="chevronDown" size={13} style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(90deg)' }} />
         </button>
       </div>
 
-      <nav className="sb-scroll">
+      <nav className="sb-scroll" style={{ paddingTop: 4 }}>
         {GROUPS.map((g, idx) => (
           <div className="sb-group" key={g.title || idx}>
             {!collapsed && g.title && <div className="sb-group-title">{g.title}</div>}
@@ -128,42 +134,98 @@ export default function AppLayout() {
       <div className="main-area">
         <header className="topbar">
           <button className="btn btn-ghost btn-icon hamburger" onClick={() => setOpen(true)}><Icon name="menu" size={19} /></button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+          
+          {/* 顶栏左侧：标题与【课题空间】管理交互组件 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
             <div style={{ minWidth: 0 }}>
               <div className="topbar-title">{title}</div>
               <div className="topbar-sub">{sub}</div>
             </div>
 
-            {/* 当前项目胶囊紧靠标题右边显示 */}
+            {/* 课题空间组件：替代原静态按钮，支持点击后选择、添加、删除项目 */}
             <button
+              type="button"
               className="chip-project"
-              onClick={() => nav('/projects')}
+              onClick={() => setProjectModalOpen(true)}
               style={{
                 marginLeft: 4,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '4px 12px',
+                padding: '5px 14px',
                 borderRadius: 999,
-                background: 'var(--brand-softer)',
-                border: '1px solid var(--brand-soft)',
-                color: 'var(--brand-strong)',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.08) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                color: '#065f46',
                 fontSize: 12.5,
-                fontWeight: 600,
+                fontWeight: 700,
+                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.08)',
+                transition: 'all 0.2s ease',
                 flexShrink: 0,
               }}
-              title="查看与切换当前科研课题空间"
+              title="点击打开课题空间：支持选择已有课题、新建课题或删除课题"
             >
-              <Icon name="layers" size={13} />
-              <span>当前项目 · 微表情识别（MER）研究</span>
+              <Icon name="layers" size={14} style={{ color: '#10b981' }} />
+              <span>课题空间 · {currentProject?.name || currentProject?.title || '微表情识别（MER）研究'}</span>
+              <Icon name="chevronDown" size={11} style={{ color: '#059669', opacity: 0.75 }} />
             </button>
           </div>
+
+          {/* 顶栏右侧：“ScienceX AI科研全流程”文字与品牌标志在右边显示 */}
+          <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '5px 12px',
+                borderRadius: 10,
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 6px rgba(15, 23, 42, 0.03)',
+                cursor: 'pointer',
+              }}
+              onClick={() => nav('/landing')}
+              title="前往 ScienceX 官网主页"
+            >
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 7,
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 2px 6px rgba(16, 185, 129, 0.35)',
+                }}
+              >
+                <Icon name="flask" size={13} />
+              </div>
+              <div style={{ lineHeight: 1.18, textAlign: 'left' }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, fontWeight: 800, color: '#142820', letterSpacing: 0.2 }}>
+                  ScienceX
+                </div>
+                <div style={{ fontSize: 9.5, color: '#64748b', letterSpacing: 0.8, fontWeight: 700 }}>
+                  AI 科研全流程
+                </div>
+              </div>
+            </div>
+          </div>
         </header>
+
         <main className="page-scroll" id="page-scroll">
           <Outlet />
         </main>
       </div>
+
+      {/* 课题空间模态弹窗：选择、添加、删除课题项目 */}
+      <ProjectSpaceModal
+        open={projectModalOpen}
+        onClose={() => setProjectModalOpen(false)}
+      />
     </div>
   );
 }

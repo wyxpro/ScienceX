@@ -191,9 +191,10 @@ export function CitationGraph3D({ nodes = DEFAULT_NODES, edges = DEFAULT_EDGES, 
         map.set(n.id, { x: 0, y: 0, z: 0 });
         return;
       }
-      // 斐波那契球面均匀分布算法
-      const count = list.length - 1;
-      const phi = Math.acos(1 - (2 * (idx + 0.5)) / count);
+      // 斐波那契球面均匀分布算法（严格 clamp 到 [-1, 1] 避免 Math.acos 返回 NaN）
+      const count = Math.max(1, list.length - 1);
+      const ratio = Math.max(-1, Math.min(1, 1 - (2 * (idx + 0.5)) / count));
+      const phi = Math.acos(ratio);
       const theta = Math.PI * (1 + Math.sqrt(5)) * (idx + 0.5);
 
       const r = n.type === 'foundation' ? R_BASE * 0.9 : n.type === 'citing' ? R_BASE * 1.15 : R_BASE;
@@ -201,7 +202,11 @@ export function CitationGraph3D({ nodes = DEFAULT_NODES, edges = DEFAULT_EDGES, 
       const y = r * Math.cos(phi) * 0.7; // 扁椭球空间视觉更好
       const z = r * Math.sin(phi) * Math.sin(theta);
 
-      map.set(n.id, { x, y, z });
+      map.set(n.id, {
+        x: Number.isFinite(x) ? x : 0,
+        y: Number.isFinite(y) ? y : 0,
+        z: Number.isFinite(z) ? z : 0,
+      });
     });
 
     return map;
@@ -222,9 +227,9 @@ export function CitationGraph3D({ nodes = DEFAULT_NODES, edges = DEFAULT_EDGES, 
 
       particleOffset.current = (particleOffset.current + 0.012) % 1;
 
-      const w = canvas.width;
-      const h = canvas.height;
-      if (w === 0 || h === 0) {
+      const w = canvas.width || 600;
+      const h = canvas.height || 480;
+      if (w <= 0 || h <= 0) {
         animFrameId.current = requestAnimationFrame(render);
         return;
       }
@@ -234,12 +239,15 @@ export function CitationGraph3D({ nodes = DEFAULT_NODES, edges = DEFAULT_EDGES, 
 
       ctx.clearRect(0, 0, w, h);
 
-      // 绘制精致的 3D 星空网格地平线光晕
-      const bgGrad = ctx.createRadialGradient(cx, cy, 30, cx, cy, Math.max(w, h) * 0.65);
-      bgGrad.addColorStop(0, 'rgba(15, 23, 42, 0.03)');
-      bgGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, w, h);
+      // 绘制精致的 3D 星空网格地平线光晕（防非有限数值）
+      const maxDim = Math.max(w, h, 200);
+      try {
+        const bgGrad = ctx.createRadialGradient(cx, cy, 30, cx, cy, maxDim * 0.65);
+        bgGrad.addColorStop(0, 'rgba(15, 23, 42, 0.03)');
+        bgGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+      } catch {}
 
       // 绘制 3D 赤道与纬度参考轨道圈
       ctx.save();
@@ -334,7 +342,10 @@ export function CitationGraph3D({ nodes = DEFAULT_NODES, edges = DEFAULT_EDGES, 
         const cfg = COLOR_MAP[node.type] || COLOR_MAP.related;
 
         const baseR = isCenter ? 22 : 14;
-        const radius = Math.max(8, baseR * p.scale * (isHovered || isSelected ? 1.25 : 1));
+        const validScale = Number.isFinite(p.scale) && p.scale > 0 ? p.scale : 1;
+        const radius = Math.max(8, baseR * validScale * (isHovered || isSelected ? 1.25 : 1));
+
+        if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(radius) || radius <= 0) return;
 
         // 节点立体辉光
         ctx.save();
@@ -343,15 +354,19 @@ export function CitationGraph3D({ nodes = DEFAULT_NODES, edges = DEFAULT_EDGES, 
         ctx.fillStyle = isHovered ? cfg.glow : `rgba(226, 232, 240, ${p.alpha * 0.6})`;
         ctx.fill();
 
-        // 节点主体球
-        const grad = ctx.createRadialGradient(p.x - radius * 0.3, p.y - radius * 0.3, radius * 0.1, p.x, p.y, radius);
-        grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.35, cfg.bg);
-        grad.addColorStop(1, cfg.border);
+        // 节点主体球（防非有限数值异常）
+        try {
+          const grad = ctx.createRadialGradient(p.x - radius * 0.3, p.y - radius * 0.3, Math.max(0.1, radius * 0.1), p.x, p.y, radius);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.35, cfg.bg);
+          grad.addColorStop(1, cfg.border);
+          ctx.fillStyle = grad;
+        } catch {
+          ctx.fillStyle = cfg.bg;
+        }
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
         ctx.fill();
         ctx.strokeStyle = isSelected ? '#ffffff' : cfg.border;
         ctx.lineWidth = isSelected ? 3 : 1.5;
