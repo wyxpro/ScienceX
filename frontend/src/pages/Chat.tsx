@@ -5,11 +5,13 @@ import { api, chatStream } from '../api/client';
 import Icon from '../components/Icon';
 import { Dropdown, DropdownItem, useToast } from '../components/ui';
 import { useAuth } from '../stores/auth';
-import type { ChatMessage, Conversation, SkillItem } from '../types';
+import type { AgentMode, ChatMessage, Conversation, SkillItem } from '../types';
 import { ChatDashboard } from './chat/ChatDashboard';
 import { ChatInputArea } from './chat/ChatInputArea';
 import { ChatMessages } from './chat/ChatMessages';
 import { ChatSidebar } from './chat/ChatSidebar';
+import { AgentModeSelector } from './chat/AgentModeSelector';
+import { MemoryDrawer } from './chat/MemoryDrawer';
 
 const SUGGESTIONS: [string, string][] = [
   ['bulb', '帮我分析微表情识别领域 2026 年值得做的选题方向'],
@@ -33,6 +35,9 @@ export default function Chat() {
   const [showDash, setShowDash] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [recording, setRecording] = useState(false);
+  const [agentMode, setAgentMode] = useState<AgentMode>('plan_execute');
+  const [showMemoryDrawer, setShowMemoryDrawer] = useState(false);
+  const [memoryCount, setMemoryCount] = useState<number>(4);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 初始化带有精确演示数据的看板状态
@@ -58,16 +63,18 @@ export default function Chat() {
 
   const loadData = useCallback(async () => {
     try {
-      const [c, m, d, s] = await Promise.all([
+      const [c, m, d, s, mem] = await Promise.all([
         api<{ items: Conversation[] } | Conversation[]>('/conversations'),
         api<{ builtin: any[]; custom: any[] }>('/models'),
         api<any>('/dashboard/summary'),
         api<{ items: SkillItem[] } | SkillItem[]>('/skills'),
+        api<{ total: number }>('/chat/memories').catch(() => ({ total: 4 })),
       ]);
       setConvs((c as any)?.items || (Array.isArray(c) ? c : []));
       setModels(m || { builtin: [], custom: [] });
       if (d) setDashboard(d);
       setSkills(Array.isArray(s) ? s : ((s as any)?.items || []));
+      if (mem && typeof mem.total === 'number') setMemoryCount(mem.total);
     } catch (err: any) {
       toast(err.message || '加载工作台数据失败', 'err');
     }
@@ -137,7 +144,14 @@ export default function Chat() {
     setInput('');
     setStreaming(true);
     const userMsg: ChatMessage = { id: `u${Date.now()}`, role: 'user', content };
-    const aiMsg: ChatMessage = { id: `a${Date.now()}`, role: 'assistant', content: '', model, streaming: true };
+    const aiMsg: ChatMessage = {
+      id: `a${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      model,
+      agent_mode: agentMode,
+      streaming: true,
+    };
     setMessages((m) => [...m, userMsg, aiMsg]);
 
     let convId = activeConv;
@@ -155,14 +169,75 @@ export default function Chat() {
           content: m.content,
         })),
         model,
+        agent_mode: agentMode,
         conversation_id: convId,
         skills: skillId ? [skillId] : [],
       },
       {
         onDelta: (t) => setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, content: x.content + t } : x))),
+        onPlan: (plan) => setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, plan } : x))),
+        onStepStart: (step) =>
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id && x.plan
+                ? {
+                    ...x,
+                    plan: {
+                      ...x.plan,
+                      steps: x.plan.steps.map((s, idx) => (idx === step.step_index ? { ...s, status: 'running' } : s)),
+                    },
+                  }
+                : x
+            )
+          ),
+        onStepUpdate: (up) =>
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id && x.plan
+                ? {
+                    ...x,
+                    plan: {
+                      ...x.plan,
+                      steps: x.plan.steps.map((s, idx) =>
+                        idx === up.step_index ? { ...s, status: up.status, output: up.output } : s
+                      ),
+                    },
+                  }
+                : x
+            )
+          ),
+        onThought: (th) =>
+          setMessages((m) =>
+            m.map((x) => (x.id === aiMsg.id ? { ...x, thoughts: [...(x.thoughts || []), th] } : x))
+          ),
+        onToolResult: (tr) =>
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id
+                ? {
+                    ...x,
+                    chart_data: tr.chart_data || x.chart_data,
+                    code: tr.code || x.code,
+                    papers: tr.papers || x.papers,
+                  }
+                : x
+            )
+          ),
+        onMemoryInjected: (mem) =>
+          setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, memory_injected: mem } : x))),
         onTool: (d) => toast(`技能「${d.name}」已调用`, 'info'),
         onDone: () => {
-          setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, streaming: false } : x)));
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id
+                ? {
+                    ...x,
+                    streaming: false,
+                    plan: x.plan ? { ...x.plan, percent: 100, status: 'completed' } : undefined,
+                  }
+                : x
+            )
+          );
           setStreaming(false);
           api<any>('/conversations').then((r: any) => setConvs(r?.items || (Array.isArray(r) ? r : [])));
         },
@@ -171,7 +246,7 @@ export default function Chat() {
           setStreaming(false);
           setMessages((m) => m.filter((x) => x.id !== aiMsg.id));
         },
-      },
+      }
     );
   };
 
@@ -193,8 +268,39 @@ export default function Chat() {
           <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)', fontSize: 11.5 }}>
             {model} 在线
           </span>
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: 12,
+              background: 'rgba(99, 102, 241, 0.1)',
+              color: '#6366f1',
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            灵犀 Agent 引擎
+          </span>
         </div>
         <div className="row g-3 items-center">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            style={{
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              background: 'rgba(16, 185, 129, 0.08)',
+              color: '#065f46',
+              fontWeight: 600,
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+            onClick={() => setShowMemoryDrawer(true)}
+            title="管理课题组三层长短期记忆引擎"
+          >
+            <Icon name="spark" size={13} />
+            <span>课题记忆 ({memoryCount})</span>
+          </button>
           <div className="text-small text-muted">
             今日已用 <span className="mono fw-bold" style={{ color: 'var(--ink)' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</span> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
           </div>
@@ -217,10 +323,10 @@ export default function Chat() {
         />
 
         {/* 对话区 */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'clamp(500px, 58vh, 620px)' }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'clamp(540px, 62vh, 660px)', overflow: 'hidden' }}>
           {/* 工具条 */}
           <div className="row-between" style={{ padding: '10px 16px', borderBottom: '1px solid var(--line)' }}>
-            <div className="row g-2 wrap">
+            <div className="row g-2 wrap items-center">
               <Dropdown trigger={<button className="btn btn-ghost btn-sm" aria-label="选择模型"><Icon name="cpu" size={14} />{model}<Icon name="chevronDown" size={13} /></button>}>
                 {models.builtin?.map((m: any) => (
                   <DropdownItem key={m.id} icon="cpu" onClick={() => setModel(m.name)}>{m.name} · {m.tag}</DropdownItem>
@@ -239,6 +345,13 @@ export default function Chat() {
               <Icon name="spark" size={14} />提示词增强
             </button>
           </div>
+
+          {/* 8 大科研级 Agent 编排模式胶囊切换栏 */}
+          <AgentModeSelector
+            currentMode={agentMode}
+            onSelectMode={setAgentMode}
+            disabled={streaming}
+          />
 
           {/* 消息流 */}
           <ChatMessages
@@ -267,6 +380,14 @@ export default function Chat() {
         showDash={showDash}
         onToggleDash={() => setShowDash((s) => !s)}
         dashboard={dashboard}
+      />
+
+      {/* 课题组三层记忆抽屉 */}
+      <MemoryDrawer
+        open={showMemoryDrawer}
+        onClose={() => setShowMemoryDrawer(false)}
+        convId={activeConv}
+        onMemoryChanged={() => api<{ total: number }>('/chat/memories').then((r) => setMemoryCount(r?.total || 4))}
       />
 
       {/* 移动端会话入口 */}

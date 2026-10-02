@@ -2,6 +2,10 @@ import React, { RefObject } from 'react';
 import Icon from '../../components/Icon';
 import Markdown from '../../components/Markdown';
 import type { ChatMessage, User } from '../../types';
+import { PlanFlowCard } from './PlanFlowCard';
+import { ReActThoughtBox } from './ReActThoughtBox';
+import { CodeActResultCard } from './CodeActResultCard';
+import { McpPapersCard } from './McpPapersCard';
 
 interface ChatMessagesProps {
   messages: ChatMessage[];
@@ -91,33 +95,100 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
               {m.role === 'user' ? (
                 <div className="chat-bubble-user">{m.content}</div>
               ) : (
-                <div className="chat-bubble-ai">
+                <div className="chat-bubble-ai" style={{ width: '100%', maxWidth: '880px' }}>
+                  {/* 记忆注入横幅 */}
+                  {m.memory_injected && m.memory_injected.count > 0 && (
+                    <div
+                      style={{
+                        margin: '0 0 10px',
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        border: '1px solid rgba(16, 185, 129, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: 11,
+                        color: '#065f46',
+                      }}
+                    >
+                      <Icon name="spark" size={12} />
+                      <span>
+                        已自动注入 <strong>{m.memory_injected.count} 条</strong> 课题组长期记忆与当前阶段摘要
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 灵寻 (LingSeek) 任务规划流看板 */}
+                  {m.plan && <PlanFlowCard plan={m.plan} />}
+
+                  {/* ReAct 思考与工具推演链 */}
+                  {m.thoughts && m.thoughts.length > 0 && (
+                    <ReActThoughtBox thoughts={m.thoughts} />
+                  )}
+
+                  {/* CodeAct 实验代码沙箱与消融图表 */}
+                  {(m.chart_data || m.code) && (
+                    <CodeActResultCard
+                      chartData={m.chart_data}
+                      code={m.code}
+                      stdout={m.chart_data?.insights ? undefined : m.chart_data?.stdout}
+                    />
+                  )}
+
+                  {/* arXiv 学术文献卡片 (MCP) */}
+                  {m.papers && m.papers.length > 0 && (
+                    <McpPapersCard papers={m.papers} />
+                  )}
+
+                  {/* 主文本流 */}
                   {m.content ? (
                     <Markdown
                       text={m.content}
                       className={m.streaming ? 'cursor-blink' : ''}
                     />
                   ) : (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        gap: 2,
-                        padding: '6px 2px',
-                      }}
-                      aria-label="正在思考"
-                    >
-                      <span className="typing-dot" />
-                      <span className="typing-dot" />
-                      <span className="typing-dot" />
-                    </span>
+                    m.streaming && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          gap: 2,
+                          padding: '6px 2px',
+                        }}
+                        aria-label="正在思考"
+                      >
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                      </span>
+                    )
                   )}
-                  {!m.streaming && m.model && (
+
+                  {/* 底部元信息 (模型名 + 智能体范式) */}
+                  {!m.streaming && (m.model || m.agent_mode) && (
                     <div
                       className="text-xs text-muted mt-2"
-                      style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10 }}
                     >
-                      <Icon name="cpu" size={11} />
-                      {m.model}
+                      {m.model && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Icon name="cpu" size={11} />
+                          {m.model}
+                        </div>
+                      )}
+                      {m.agent_mode && (
+                        <div
+                          style={{
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            background: 'var(--panel)',
+                            fontSize: 10.5,
+                            color: 'var(--muted)',
+                          }}
+                        >
+                          模式: {m.agent_mode}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

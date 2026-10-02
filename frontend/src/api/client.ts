@@ -214,6 +214,14 @@ export interface SSEHandlers {
   onTool?: (d: any) => void;
   onDone?: (d: any) => void;
   onError?: (msg: string) => void;
+  /* LingXiAgent 多智能体扩展事件 */
+  onPlan?: (data: any) => void;
+  onStepStart?: (data: any) => void;
+  onStepUpdate?: (data: any) => void;
+  onThought?: (data: any) => void;
+  onToolCall?: (data: any) => void;
+  onToolResult?: (data: any) => void;
+  onMemoryInjected?: (data: any) => void;
 }
 
 /* ---------- SSE：对话流式 (支持 AbortSignal 中断与 Last-Event-ID 记录) ---------- */
@@ -388,6 +396,27 @@ async function readSSE(stream: ReadableStream<Uint8Array>, handlers: SSEHandlers
         break;
       case 'tool':
         handlers.onTool?.(data);
+        break;
+      case 'plan':
+        handlers.onPlan?.(data);
+        break;
+      case 'step_start':
+        handlers.onStepStart?.(data);
+        break;
+      case 'step_update':
+        handlers.onStepUpdate?.(data);
+        break;
+      case 'thought':
+        handlers.onThought?.(data);
+        break;
+      case 'tool_call':
+        handlers.onToolCall?.(data);
+        break;
+      case 'tool_result':
+        handlers.onToolResult?.(data);
+        break;
+      case 'memory_injected':
+        handlers.onMemoryInjected?.(data);
         break;
       case 'error':
         handlers.onError?.(data.message || '模型生成遇到异常');

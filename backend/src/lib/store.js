@@ -521,6 +521,53 @@ const adviceRecords = [
   { id: 'a3', meeting: '9月组会', from: '林曦', date: daysAgo(35), category: '文献', content: '建议关注 MER 2024 Challenge 的评测口径。', status: 'done', todo: '阅读 MER2024 技术报告' },
 ];
 
+const researchMemories = [
+  {
+    id: 'mem1',
+    user_id: 'u1',
+    project_id: 'p1',
+    category: 'baseline',
+    key: '基线模型设定',
+    content: '当前课题核心基线为 up9 系列（含 AU 分支），近期最高指标 UF1=0.6892，UAR=0.6810',
+    tags: ['up9', 'baseline', 'AU-branch'],
+    active: true,
+    created_at: daysAgo(10),
+  },
+  {
+    id: 'mem2',
+    user_id: 'u1',
+    project_id: 'p1',
+    category: 'dataset',
+    key: '数据与评测协议',
+    content: '采用 CASME II 与 SAMM 双库评测，遵循严格的 LOSO (Leave-One-Subject-Out) 交叉验证协议',
+    tags: ['CASME-II', 'SAMM', 'LOSO'],
+    active: true,
+    created_at: daysAgo(15),
+  },
+  {
+    id: 'mem3',
+    user_id: 'u1',
+    project_id: 'p1',
+    category: 'target',
+    key: '目标投稿期刊与会议',
+    content: '主攻目标 ACM MM 2026 与 IEEE TPAMI，重点强化 cross-layer 创新性与消融论述',
+    tags: ['ACM-MM', 'TPAMI'],
+    active: true,
+    created_at: daysAgo(20),
+  },
+  {
+    id: 'mem4',
+    user_id: 'u1',
+    project_id: 'p1',
+    category: 'advisor',
+    key: '导师评审硬性要求',
+    content: '韩老师组会要求：所有消融实验必须使用至少 3 个随机种子 (7/13/42) 报告均值与方差',
+    tags: ['韩老师', '随机种子', '方差报告'],
+    active: true,
+    created_at: daysAgo(5),
+  },
+];
+
 const skills = [
   { id: 'sk1', name: '文献综述生成', desc: '输入主题，自动检索并生成带引用的综述草稿', icon: 'book', category: '文献', uses: 128 },
   { id: 'sk2', name: '统计分析向导', desc: '选择检验方法、解读 p 值与效应量', icon: 'chart', category: '数据', uses: 96 },
@@ -616,7 +663,7 @@ const dataFile = path.join(dataDir, 'store.json');
 const persistedCollections = {
   users, customModels, conversations, documents, projects, teams, knowledgeBases,
   experiments, charts, submissionTracks, manuscripts, reviewReports, adviceRecords,
-  usageRecords, orders, subscription,
+  researchMemories, usageRecords, orders, subscription,
 };
 
 function hydrate() {
@@ -654,5 +701,5 @@ module.exports = {
   projects, teams, knowledgeBases, experiments, gpuNodes, sotaLeaderboard, charts,
   chartTemplates, journals, submissionTracks, manuscripts, reviewReports, adviceRecords,
   skills, mcpServers, usageRecords, orders, subscription, plans, auditLogs, papersDaily,
-  recentOutputs, tasks, id, now, daysAgo, daysAhead, persist,
+  recentOutputs, tasks, researchMemories, id, now, daysAgo, daysAhead, persist,
 };
