@@ -35,10 +35,10 @@ export default function Router() {
     <BrowserRouter>
       <Suspense fallback={<PageLoading />}>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route element={<Guard><AppLayout /></Guard>}>
-            <Route path="/" element={<Navigate to="/chat" replace />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/tools/topic" element={<Topic />} />
             <Route path="/tools/reader" element={<Reader />} />

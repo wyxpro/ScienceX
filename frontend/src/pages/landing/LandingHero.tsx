@@ -52,7 +52,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onExploreFeatures }) =
           </button>
           <button className="btn-hero-secondary" onClick={onExploreFeatures}>
             <Icon name="eye" size={16} />
-            探索特色功能
+            探索科研场景
           </button>
         </div>
 

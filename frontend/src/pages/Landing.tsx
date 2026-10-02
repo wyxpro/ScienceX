@@ -1,6 +1,6 @@
 /* ============================================================
    ScienceX 官网宣传页 —— 电脑 & 移动端全适配 (F1 模块化解耦重构)
-   由 LandingHero / Features / Radar / Personas / Compare / Reviews / Pricing / CTA 组合
+   由 LandingHero / Radar / Personas / Compare / Reviews / Pricing / CTA 组合
    ============================================================ */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,6 @@ import '../styles/landing.css';
 
 import { LandingHero } from './landing/LandingHero';
 import { LandingMarquee } from './landing/LandingMarquee';
-import { LandingFeatures } from './landing/LandingFeatures';
 import { LandingRadar } from './landing/LandingRadar';
 import { LandingPersonas } from './landing/LandingPersonas';
 import { LandingCompare } from './landing/LandingCompare';
@@ -52,9 +51,8 @@ export default function Landing() {
           </div>
 
           <nav className="landing-nav-links" aria-label="官网快捷导航">
-            <span className="landing-nav-link" onClick={() => scrollTo('features')}>特色功能</span>
             <span className="landing-nav-link" onClick={() => scrollTo('radar')}>专家评审雷达</span>
-            <span className="landing-nav-link" onClick={() => scrollTo('personas')}>用户画像</span>
+            <span className="landing-nav-link" onClick={() => scrollTo('personas')}>用户画像与场景</span>
             <span className="landing-nav-link" onClick={() => scrollTo('compare')}>竞品全景对比</span>
             <span className="landing-nav-link" onClick={() => scrollTo('reviews')}>学者口碑</span>
             <span className="landing-nav-link" onClick={() => scrollTo('pricing')}>会员方案</span>
@@ -78,9 +76,8 @@ export default function Landing() {
 
       {/* ===== 核心分区子组件组合 ===== */}
       <main>
-        <LandingHero onExploreFeatures={() => scrollTo('features')} />
+        <LandingHero onExploreFeatures={() => scrollTo('personas')} />
         <LandingMarquee />
-        <LandingFeatures />
         <LandingRadar />
         <LandingPersonas />
         <LandingCompare />

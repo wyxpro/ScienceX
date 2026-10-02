@@ -739,108 +739,106 @@
 }
 
 /* ============================================================
-   底部召唤 CTA Banner (现代化深度重构：科技光芒、灵动粒子、高信任徽章与交互跃迁)
+   双层学者口碑无缝轮播 (上排向左，下排向右)
+   ============================================================ */
+.reviews-marquee-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  position: relative;
+  padding: 14px 0;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.reviews-marquee-row {
+  display: flex;
+  gap: 18px;
+  width: max-content;
+}
+
+.reviews-marquee-left {
+  animation: reviewsScrollLeft 48s linear infinite;
+}
+
+.reviews-marquee-right {
+  animation: reviewsScrollRight 48s linear infinite;
+}
+
+.reviews-marquee-row:hover {
+  animation-play-state: paused;
+}
+
+@keyframes reviewsScrollLeft {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes reviewsScrollRight {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.review-marquee-card {
+  width: 380px;
+  max-width: 85vw;
+  flex-shrink: 0;
+  background: rgba(239, 236, 226, 0.75);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid var(--line-strong);
+  padding: 18px 20px;
+  box-shadow: 0 4px 16px rgba(27, 40, 34, 0.04);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  text-align: left;
+}
+
+.review-marquee-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px -4px rgba(27, 40, 34, 0.12);
+  border-color: var(--brand);
+  background: rgba(246, 244, 238, 0.95);
+}
+
+/* ============================================================
+   底部召唤 CTA Banner (去除绿色背景，回归温润学术纯净质感)
    ============================================================ */
 .landing-cta-section {
   max-width: 1280px;
-  margin: 80px auto;
+  margin: 60px auto 80px;
   padding: 0 24px;
 }
 
 .landing-cta-card {
   position: relative;
-  border-radius: 28px;
-  background: linear-gradient(140deg, #0b1a13 0%, #132b20 40%, #19382b 75%, #0b1c14 100%);
-  border: 1px solid rgba(80, 195, 145, 0.28);
-  box-shadow: 0 28px 70px -15px rgba(10, 26, 19, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background: rgba(239, 236, 226, 0.5);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 10px 32px -12px rgba(31, 42, 36, 0.08);
   overflow: hidden;
-  padding: 72px 40px;
+  padding: 64px 32px;
   text-align: center;
-}
-
-/* 动态背景光晕与粒子/网格点 */
-.cta-ambient-glow {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(80px);
-}
-.cta-ambient-glow.glow-1 {
-  width: 520px;
-  height: 520px;
-  top: -160px;
-  left: -120px;
-  background: radial-gradient(circle, rgba(27, 160, 115, 0.4) 0%, transparent 70%);
-}
-.cta-ambient-glow.glow-2 {
-  width: 440px;
-  height: 440px;
-  bottom: -140px;
-  right: -90px;
-  background: radial-gradient(circle, rgba(212, 143, 56, 0.22) 0%, transparent 70%);
-}
-
-.cta-grid-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 26px 26px;
-  pointer-events: none;
 }
 
 .cta-content {
   position: relative;
   z-index: 2;
-  max-width: 860px;
+  max-width: 780px;
   margin: 0 auto;
-}
-
-.cta-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 18px;
-  border-radius: 999px;
-  background: rgba(39, 174, 96, 0.15);
-  border: 1px solid rgba(80, 200, 150, 0.3);
-  color: #6fe5b1;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 24px;
-  backdrop-filter: blur(8px);
-}
-
-.cta-pill-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #2ecc71;
-  box-shadow: 0 0 10px #2ecc71;
-  animation: pulseDot 2s infinite ease-in-out;
-}
-
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(0.75); }
 }
 
 .cta-title {
   font-family: var(--font-serif);
-  font-size: clamp(26px, 3.8vw, 42px);
+  font-size: clamp(24px, 3.5vw, 38px);
   font-weight: 800;
-  line-height: 1.28;
-  color: #ffffff;
-  margin: 0 0 18px;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 0 0 28px;
   letter-spacing: -0.01em;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4);
-}
-
-.cta-sub {
-  font-size: clamp(15px, 1.8vw, 17.5px);
-  line-height: 1.7;
-  color: #b8d4c6;
-  max-width: 680px;
-  margin: 0 auto 36px;
 }
 
 .cta-actions {
@@ -849,28 +847,27 @@
   justify-content: center;
   gap: 18px;
   flex-wrap: wrap;
-  margin-bottom: 38px;
 }
 
 .cta-btn-primary {
-  padding: 16px 36px;
-  font-size: 16px;
+  padding: 16px 42px;
+  font-size: 16.5px;
   font-weight: 700;
   border-radius: 14px;
-  background: linear-gradient(135deg, #2ecc71 0%, #1b7a5e 100%);
+  background: var(--brand);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 10px 30px rgba(39, 174, 96, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 28px -4px rgba(27, 122, 94, 0.38);
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .cta-btn-primary:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 16px 42px rgba(39, 174, 96, 0.55);
-  background: linear-gradient(135deg, #38d67c 0%, #1f8b6c 100%);
+  background: var(--brand-strong);
+  box-shadow: 0 14px 36px -4px rgba(27, 122, 94, 0.5);
 }
 .cta-btn-primary .cta-btn-icon {
   display: inline-flex;
