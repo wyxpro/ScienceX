@@ -93,9 +93,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
               }}
             >
               {m.role === 'user' ? (
-                <div className="chat-bubble-user">{m.content}</div>
+                <div className="chat-bubble-user lobster-bubble-user">{m.content}</div>
               ) : (
-                <div className="chat-bubble-ai" style={{ width: '100%', maxWidth: '880px' }}>
+                <div className="chat-bubble-ai lobster-bubble-ai" style={{ width: '100%', maxWidth: '900px' }}>
                   {/* 记忆注入横幅 */}
                   {m.memory_injected && m.memory_injected.count > 0 && (
                     <div

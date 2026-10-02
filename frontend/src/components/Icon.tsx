@@ -55,6 +55,13 @@ const P: Record<string, JSX.Element> = {
   key: <><circle cx="7.5" cy="15.5" r="4.5" /><path d="m11 12 9-9M17 6l3 3M14 9l2 2" /></>,
   history: <><path d="M3 3v6h6" /><path d="M3.5 9A9 9 0 1 1 3 15" /><path d="M12 7v5l3 2" /></>,
   paperclip: <><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></>,
+  grid: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></>,
+  arrowUp: <><path d="m5 12 7-7 7 7M12 19V5" /></>,
+  bot: <><rect width="16" height="12" x="4" y="8" rx="2.5" /><path d="M12 8V4M9 4h6M9 13v2M15 13v2M2 14h2M20 14h2" /></>,
+  folder: <><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /></>,
+  layoutSidebar: <><rect width="18" height="18" x="3" y="3" rx="2.5" /><path d="M9 3v18" /></>,
+  sparkles: <><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5zM19 15l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5z" /></>,
+  lobster: <><path d="M12 2a4 4 0 0 0-4 4c0 1.3.6 2.5 1.5 3.3A5.5 5.5 0 0 0 8 13.5c0 1.5.6 2.8 1.6 3.8L9 22h6l-.6-4.7c1-1 1.6-2.3 1.6-3.8 0-1.7-.8-3.2-2-4.1.9-.8 1.5-2 1.5-3.4a4 4 0 0 0-4-4z" /><path d="M6 7c-2 1-3 3-3 5 0 2.5 2 4.5 4 4.5M18 7c2 1 3 3 3 5 0 2.5-2 4.5-4 4.5" /></>,
 };
 
 export type IconName = keyof typeof P;
