@@ -59,7 +59,7 @@ export default function AppLayout() {
 
   const sidebar = (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
-      <div className="sb-logo">
+      <div className="sb-logo" style={{ cursor: 'pointer' }} onClick={() => nav('/landing')} title="前往官网宣传页">
         <div className="sb-logo-mark"><Icon name="flask" size={19} /></div>
         <div>
           <div className="sb-logo-name">ScienceX</div>

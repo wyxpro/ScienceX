@@ -5,6 +5,7 @@ import { useAuth } from '../stores/auth';
 import { PageLoading } from '../components/ui';
 import AppLayout from '../layouts/AppLayout';
 
+const Landing = lazy(() => import('../pages/Landing'));
 const Login = lazy(() => import('../pages/Login'));
 const Chat = lazy(() => import('../pages/Chat'));
 const Topic = lazy(() => import('../pages/Topic'));
@@ -30,6 +31,7 @@ export default function Router() {
     <BrowserRouter>
       <Suspense fallback={<PageLoading />}>
         <Routes>
+          <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route element={<Guard><AppLayout /></Guard>}>
             <Route path="/" element={<Navigate to="/chat" replace />} />

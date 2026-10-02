@@ -44,7 +44,7 @@ export default function Login() {
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
         <div style={{ position: 'relative', maxWidth: 520 }}>
-          <div className="row g-2 mb-3 anim-in">
+          <div className="row g-2 mb-3 anim-in" style={{ cursor: 'pointer' }} onClick={() => nav('/landing')} title="返回官网宣传页">
             <div className="sb-logo-mark" style={{ width: 44, height: 44 }}><Icon name="flask" size={22} /></div>
             <div>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 26, fontWeight: 700, letterSpacing: 0.5 }}>ScienceX</div>
@@ -80,7 +80,7 @@ export default function Login() {
       {/* 表单区 */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div className="anim-in" style={{ width: 'min(400px, 100%)' }}>
-          <div className="row g-2 mb-3" style={{ justifyContent: 'center' }}>
+          <div className="row g-2 mb-3" style={{ justifyContent: 'center', cursor: 'pointer' }} onClick={() => nav('/landing')} title="返回官网宣传页">
             <div className="sb-logo-mark" style={{ width: 40, height: 40, background: 'linear-gradient(145deg,#237a5c,#0e4a37)' }}><Icon name="flask" size={20} /></div>
           </div>
           <h2 className="text-serif" style={{ textAlign: 'center', fontSize: 22 }}>{mode === 'login' ? '登录 ScienceX' : '创建科研账号'}</h2>
