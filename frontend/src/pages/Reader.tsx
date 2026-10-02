@@ -5,6 +5,7 @@ import DocViewer, { detectKind } from '../components/DocViewer';
 import Icon from '../components/Icon';
 import Markdown from '../components/Markdown';
 import { CitationGraph, Mindmap } from '../components/viz';
+import { CitationGraph3D } from '../components/CitationGraph3D';
 import { useToast } from '../components/ui';
 import { TaskRunner } from '../components/TaskRunner';
 import ImmersiveReader from './reader/ImmersiveReader';
@@ -219,7 +220,13 @@ export default function Reader() {
         const r = await api<{ items: any[] }>('/documents');
         if (!active) return;
         setDocs(r.items);
-        if (r.items.length) await loadDoc(r.items[0].id);
+        const defaultSurveyDoc = r.items.find(
+          (it) =>
+            it.title?.includes('Micro-expression Recognition: A Survey') ||
+            it.title?.toLowerCase().includes('micro-expression recognition: a survey')
+        );
+        const targetId = defaultSurveyDoc ? defaultSurveyDoc.id : r.items[0]?.id;
+        if (targetId) await loadDoc(targetId);
       } catch (error: any) {
         if (active) {
           setDocs([]);
@@ -597,95 +604,82 @@ export default function Reader() {
                   </span>
                 </div>
 
-                {/* 模式切换与文献库弹窗触发按钮 */}
+                {/* 文献导入与全文检索批注工具栏 */}
                 <div className="row g-1 items-center" style={{ flexShrink: 0 }}>
                   <button
-                    className={`tag ${leftMode === 'file' ? 'tag-green' : 'tag-gray'}`}
-                    style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
-                    onClick={() => setLeftMode(leftMode === 'file' ? 'read' : 'file')}
-                    title="在结构化正文阅读与源文件视图间切换"
-                  >
-                    <Icon name="doc" size={11} /> {leftMode === 'file' ? '返回正文' : '源文件预览'}
-                    {fileMap[doc.id] ? `（${detectKind(fileMap[doc.id].name).toUpperCase()}）` : ''}
-                  </button>
-                  <button
                     className="tag tag-amber"
-                    style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
+                    style={{ cursor: 'pointer', border: 'none', padding: '4px 9px', fontWeight: 600 }}
                     onClick={() => setUploadOpen(true)}
                     title="点击打开学术文献管理与导入弹窗"
                   >
-                    <Icon name="upload" size={11} /> 文献库 / 导入
+                    <Icon name="upload" size={11} /> 文献导入
                   </button>
 
-                  {/* 全文检索与批注：置于“文献库 / 导入”按钮右侧 */}
-                  {leftMode === 'read' && (
-                    <>
-                      <div
-                        className="row g-1"
-                        style={{
-                          alignItems: 'center',
-                          marginLeft: 4,
-                          background: '#ffffff',
-                          border: '1px solid var(--line)',
-                          borderRadius: 6,
-                          padding: '1px 6px',
-                        }}
-                      >
-                        <Icon name="search" size={12} className="text-muted" />
-                        <input
-                          className="input"
-                          style={{
-                            width: 86,
-                            fontSize: 12,
-                            padding: '2px 4px',
-                            border: 'none',
-                            background: 'transparent',
-                            boxShadow: 'none',
-                          }}
-                          value={readerQuery}
-                          onChange={(e) => {
-                            setReaderQuery(e.target.value);
-                            setReaderMatchIdx(0);
-                          }}
-                          placeholder="全文检索…"
-                        />
-                        {readerQuery && (
-                          <span className="row g-1" style={{ alignItems: 'center' }}>
-                            <span className="text-xs text-muted" style={{ fontSize: 10.5 }}>
-                              {readerMatchesCount ? `${readerMatchIdx + 1}/${readerMatchesCount}` : '0 处'}
-                            </span>
-                            <button
-                              className="btn btn-ghost btn-icon"
-                              style={{ width: 18, height: 18, padding: 0 }}
-                              onClick={() => handleStepMatch(-1)}
-                              disabled={!readerMatchesCount}
-                              title="上一处匹配"
-                            >
-                              <Icon name="chevronDown" size={10} style={{ transform: 'rotate(180deg)' }} />
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-icon"
-                              style={{ width: 18, height: 18, padding: 0 }}
-                              onClick={() => handleStepMatch(1)}
-                              disabled={!readerMatchesCount}
-                              title="下一处匹配"
-                            >
-                              <Icon name="chevronDown" size={10} />
-                            </button>
-                          </span>
-                        )}
-                      </div>
+                  {/* 全文检索与批注：置于“文献导入”按钮右侧 */}
+                  <div
+                    className="row g-1"
+                    style={{
+                      alignItems: 'center',
+                      marginLeft: 4,
+                      background: '#ffffff',
+                      border: '1px solid var(--line)',
+                      borderRadius: 6,
+                      padding: '1px 6px',
+                    }}
+                  >
+                    <Icon name="search" size={12} className="text-muted" />
+                    <input
+                      className="input"
+                      style={{
+                        width: 86,
+                        fontSize: 12,
+                        padding: '2px 4px',
+                        border: 'none',
+                        background: 'transparent',
+                        boxShadow: 'none',
+                      }}
+                      value={readerQuery}
+                      onChange={(e) => {
+                        setReaderQuery(e.target.value);
+                        setReaderMatchIdx(0);
+                      }}
+                      placeholder="全文检索…"
+                    />
+                    {readerQuery && (
+                      <span className="row g-1" style={{ alignItems: 'center' }}>
+                        <span className="text-xs text-muted" style={{ fontSize: 10.5 }}>
+                          {readerMatchesCount ? `${readerMatchIdx + 1}/${readerMatchesCount}` : '0 处'}
+                        </span>
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          style={{ width: 18, height: 18, padding: 0 }}
+                          onClick={() => handleStepMatch(-1)}
+                          disabled={!readerMatchesCount}
+                          title="上一处匹配"
+                        >
+                          <Icon name="chevronDown" size={10} style={{ transform: 'rotate(180deg)' }} />
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          style={{ width: 18, height: 18, padding: 0 }}
+                          onClick={() => handleStepMatch(1)}
+                          disabled={!readerMatchesCount}
+                          title="下一处匹配"
+                        >
+                          <Icon name="chevronDown" size={10} />
+                        </button>
+                      </span>
+                    )}
+                  </div>
 
-                      <button
-                        className={`tag ${readerNotesOpen ? 'tag-amber' : 'tag-gray'}`}
-                        style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
-                        onClick={() => setReaderNotesOpen((v) => !v)}
-                        title="高亮与批注管理"
-                      >
-                        <Icon name="pen" size={11} /> 批注 {readerHighlightsCount > 0 && `(${readerHighlightsCount})`}
-                      </button>
-                    </>
-                  )}
+                  <button
+                    className={`tag ${readerNotesOpen ? 'tag-amber' : 'tag-gray'}`}
+                    style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
+                    onClick={() => setReaderNotesOpen((v) => !v)}
+                    title="高亮与批注管理"
+                  >
+                    <Icon name="pen" size={11} /> 批注 {readerHighlightsCount > 0 && `(${readerHighlightsCount})`}
+                  </button>
                 </div>
               </div>
 
@@ -731,7 +725,7 @@ export default function Reader() {
                     支持 PDF / Word / Excel / PPT / TXT 在线解析预览
                   </div>
                   <button className="btn btn-primary btn-sm mt-2" onClick={() => setUploadOpen(true)}>
-                    导入学术文献
+                    <Icon name="upload" size={13} /> 文献导入
                   </button>
                 </div>
               )}
@@ -962,7 +956,7 @@ export default function Reader() {
 
             {/* 2. 思维导图功能（自动分析呈现） */}
             {midTab === 'mindmap' && (
-              <div className="anim-in col g-3">
+              <div className="anim-in col g-3" style={{ flex: 1, minHeight: 620, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div className="row-between items-center wrap g-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                   <div>
                     <strong style={{ fontSize: 15, color: 'var(--ink)' }}>论文逻辑架构交互思维导图</strong>
@@ -973,11 +967,11 @@ export default function Reader() {
                   </button>
                 </div>
                 {doc?.mindmap ? (
-                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 12, border: '1px solid var(--line)' }}>
+                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 12, border: '1px solid var(--line)', flex: 1, minHeight: 560, display: 'flex', flexDirection: 'column' }}>
                     <Mindmap data={doc.mindmap} />
                   </div>
                 ) : (
-                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 16, border: '1px solid var(--line)' }}>
+                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 16, border: '1px solid var(--line)', flex: 1, minHeight: 560, display: 'flex', flexDirection: 'column' }}>
                     <div className="row g-2 items-center mb-2">
                       <span className="dot dot-green dot-pulse" />
                       <span className="text-small fw-bold">已自动基于左侧文献完成架构切片与思维导图生成</span>
@@ -1103,43 +1097,21 @@ export default function Reader() {
               </div>
             )}
 
-            {/* 4. 引用图谱功能 */}
+            {/* 4. 引用图谱功能（3D 可交互全景拓扑） */}
             {midTab === 'graph' && (
-              <div className="anim-in col g-3">
+              <div className="anim-in col g-3" style={{ flex: 1, minHeight: 620, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div className="row-between items-center wrap g-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                   <div>
-                    <strong style={{ fontSize: 15, color: 'var(--ink)' }}>文献引用拓扑图谱</strong>
-                    <div className="text-xs text-muted mt-1">涵盖奠基文献 ➔ 当前成果 ➔ 下游衍生工作</div>
+                    <strong style={{ fontSize: 15, color: 'var(--ink)' }}>文献引用拓扑图谱 (3D 交互星系)</strong>
+                    <div className="text-xs text-muted mt-1">涵盖奠基文献 ➔ 当前成果 ➔ 下游衍生工作 · 拖拽旋转 / 悬浮查看详情</div>
                   </div>
                   <button className="btn btn-soft btn-sm" onClick={() => toast('已导出引用图谱关系包 (JSON/DOT)', 'ok')}>
                     <Icon name="link" size={13} /> 导出关系数据
                   </button>
                 </div>
-                {doc?.citation_graph ? (
-                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 12, border: '1px solid var(--line)' }}>
-                    <CitationGraph nodes={doc.citation_graph.nodes} edges={doc.citation_graph.edges} />
-                  </div>
-                ) : (
-                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 14, border: '1px solid var(--line)' }}>
-                    <div className="row g-2 items-center mb-2">
-                      <span className="dot dot-green dot-pulse" />
-                      <span className="text-small fw-bold">已自动检索并构建文献引用拓扑关联</span>
-                    </div>
-                    <CitationGraph
-                      nodes={[
-                        { id: '1', label: 'Vaswani et al. (Attention)', type: 'cited', year: 2017, citations: 95400 },
-                        { id: '2', label: doc?.title?.slice(0, 26) || '本文成果', type: 'self', year: 2026, citations: 12 },
-                        { id: '3', label: 'GraphAU (CVPR 2023)', type: 'cited', year: 2023, citations: 140 },
-                        { id: '4', label: 'Mamba / SSM (2024)', type: 'citing', year: 2024, citations: 520 },
-                      ]}
-                      edges={[
-                        { source: '1', target: '2' },
-                        { source: '3', target: '2' },
-                        { source: '2', target: '4' },
-                      ]}
-                    />
-                  </div>
-                )}
+                <div style={{ flex: 1, minHeight: 560, display: 'flex', flexDirection: 'column' }}>
+                  <CitationGraph3D currentTitle={doc?.title} />
+                </div>
               </div>
             )}
 
@@ -1588,35 +1560,248 @@ export default function Reader() {
         </div>
       </section>
 
-      {/* 学术文献库与导入功能弹窗（类似源文件预览弹窗，集中管理文献切换与导入） */}
+      {/* 学术文献导入与管理弹窗（现代化学术科研拟态设计，支持 PDF/Word/PPT/Excel/TXT 多格式解析） */}
       {uploadOpen && (
         <div
           className="modal-scrim"
+          style={{ background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(6px)', zIndex: 9999 }}
           onMouseDown={(e) => e.target === e.currentTarget && setUploadOpen(false)}
         >
-          <div className="modal" style={{ maxWidth: 540, width: '92%' }}>
-            <div className="modal-head">
-              <div className="modal-title">学术文献库管理与导入</div>
-              <button className="btn btn-ghost btn-icon modal-x" onClick={() => setUploadOpen(false)}>
+          <div
+            className="modal anim-in"
+            style={{
+              maxWidth: 620,
+              width: '92%',
+              background: '#ffffff',
+              borderRadius: 16,
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+              overflow: 'hidden',
+            }}
+          >
+            {/* 弹窗头部 */}
+            <div
+              className="row-between items-center"
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid #e2e8f0',
+                background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+              }}
+            >
+              <div className="row g-2 items-center">
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: 'rgba(27, 122, 94, 0.1)',
+                    color: '#1b7a5e',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name="upload" size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                    学术文献导入与知识解析
+                  </h3>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                    支持真实 PDF · Word (DOCX) · PPTX · Excel · Markdown · TXT 文献解析
+                  </div>
+                </div>
+              </div>
+              <button
+                className="btn btn-ghost btn-icon"
+                style={{ borderRadius: 8, width: 32, height: 32 }}
+                onClick={() => setUploadOpen(false)}
+              >
                 <Icon name="x" size={16} />
               </button>
             </div>
-            <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
-              {/* 已有文献库切换列表 */}
+
+            {/* 弹窗内容 */}
+            <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto', padding: '20px 24px' }}>
+              {/* 文件上传拖拽区 */}
+              <div
+                style={{
+                  border: uploadFile ? '2px solid #1b7a5e' : '2px dashed #cbd5e1',
+                  borderRadius: 14,
+                  padding: uploadFile ? '18px' : '28px 20px',
+                  background: uploadFile ? '#f0fdf4' : '#f8fafc',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.2s ease',
+                }}
+                onClick={() => document.getElementById('academic-file-input')?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const f = e.dataTransfer?.files?.[0];
+                  if (f) {
+                    setUploadFile(f);
+                    setUploadName(f.name);
+                  }
+                }}
+              >
+                <input
+                  id="academic-file-input"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.tex"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    setUploadFile(f);
+                    if (f) setUploadName(f.name);
+                  }}
+                />
+
+                {!uploadFile ? (
+                  <>
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 12,
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        color: '#1b7a5e',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 12,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+                      }}
+                    >
+                      <Icon name="upload" size={22} />
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>
+                      点击选择本地文献，或将文献文件拖拽至此
+                    </div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                      单文件最大支持 50MB，自动提取目录结构、段落与图表数据
+                    </div>
+
+                    {/* 格式标签展示 */}
+                    <div className="row g-2 justify-center wrap" style={{ marginTop: 14 }}>
+                      <span className="tag" style={{ background: '#fee2e2', color: '#dc2626', fontWeight: 600, fontSize: 11 }}>
+                        PDF 论文
+                      </span>
+                      <span className="tag" style={{ background: '#dbeafe', color: '#2563eb', fontWeight: 600, fontSize: 11 }}>
+                        Word (.docx)
+                      </span>
+                      <span className="tag" style={{ background: '#ffedd5', color: '#ea580c', fontWeight: 600, fontSize: 11 }}>
+                        PPT 演示稿
+                      </span>
+                      <span className="tag" style={{ background: '#dcfce7', color: '#16a34a', fontWeight: 600, fontSize: 11 }}>
+                        Excel 数据表
+                      </span>
+                      <span className="tag" style={{ background: '#f3e8ff', color: '#9333ea', fontWeight: 600, fontSize: 11 }}>
+                        TXT / MD
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="row-between items-center" style={{ textAlign: 'left' }}>
+                    <div className="row g-3 items-center" style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 10,
+                          background: '#1b7a5e',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon name="file" size={20} />
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          style={{
+                            fontSize: 13.5,
+                            fontWeight: 700,
+                            color: '#0f172a',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {uploadFile.name}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>
+                          文件大小：{(uploadFile.size / 1024).toFixed(0)} KB · 格式验证通过 · 点击可更换
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: '#ef4444' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadFile(null);
+                        setUploadName('');
+                      }}
+                    >
+                      移除
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* URL 导入输入 */}
+              <div style={{ marginTop: 18 }}>
+                <label style={{ fontSize: 12.5, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 6 }}>
+                  或输入公网文献链接 / ArXiv 地址：
+                </label>
+                <div className="row g-2 items-center">
+                  <input
+                    className="input grow"
+                    style={{ fontSize: 13, background: '#f8fafc', border: '1px solid #cbd5e1' }}
+                    value={uploadName}
+                    onChange={(e) => {
+                      setUploadName(e.target.value);
+                      if (uploadFile) setUploadFile(null);
+                    }}
+                    placeholder="https://arxiv.org/pdf/2303.xxxxx.pdf 或文献文件名…"
+                  />
+                  {uploadName && (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => {
+                        setUploadName('');
+                        setUploadFile(null);
+                      }}
+                    >
+                      清空
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 已有文献库快速切换 */}
               {docs && docs.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <label className="field-label" style={{ marginBottom: 6 }}>
-                    选择正在研读的学术文献：
-                  </label>
+                <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid #e2e8f0' }}>
+                  <div className="row-between items-center mb-2">
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: '#334155' }}>
+                      课题文献库（点击直接切换研读）：
+                    </span>
+                    <span style={{ fontSize: 11.5, color: '#94a3b8' }}>共 {docs.length} 篇文献</span>
+                  </div>
                   <div
-                    className="col g-1"
+                    className="col g-2"
                     style={{
-                      maxHeight: 160,
+                      maxHeight: 180,
                       overflowY: 'auto',
-                      border: '1px solid var(--line)',
-                      borderRadius: 8,
-                      padding: 6,
-                      background: 'var(--bg-deep)',
+                      padding: 4,
                     }}
                   >
                     {docs.map((d) => (
@@ -1624,10 +1809,10 @@ export default function Reader() {
                         key={d.id}
                         className="row-between items-center"
                         style={{
-                          padding: '7px 10px',
-                          borderRadius: 6,
-                          background: docId === d.id ? 'var(--brand-soft)' : '#ffffff',
-                          border: docId === d.id ? '1px solid var(--brand)' : '1px solid transparent',
+                          padding: '9px 12px',
+                          borderRadius: 10,
+                          background: docId === d.id ? '#ecfdf5' : '#f8fafc',
+                          border: docId === d.id ? '1px solid #10b981' : '1px solid #e2e8f0',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
                         }}
@@ -1637,74 +1822,69 @@ export default function Reader() {
                           toast(`已切换至《${d.title}》`, 'ok');
                         }}
                       >
-                        <div className="row g-2 items-center" style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                          <Icon name="file" size={13} />
-                          <span
-                            style={{
-                              fontSize: 12.5,
-                              fontWeight: docId === d.id ? 700 : 500,
-                              color: docId === d.id ? 'var(--brand-deep)' : 'var(--ink)',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {d.title}
-                          </span>
+                        <div className="row g-2 items-center" style={{ minWidth: 0, flex: 1 }}>
+                          <Icon name="file" size={14} style={{ color: docId === d.id ? '#059669' : '#64748b' }} />
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div
+                              style={{
+                                fontSize: 12.5,
+                                fontWeight: docId === d.id ? 700 : 500,
+                                color: docId === d.id ? '#065f46' : '#1e293b',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {d.title}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>
+                              {d.venue || 'IEEE / ACM 顶刊'} · {d.year || 2026}
+                            </div>
+                          </div>
                         </div>
-                        {docId === d.id && (
-                          <span className="tag tag-green" style={{ fontSize: 10, padding: '1px 6px' }}>
-                            当前精读
+                        {docId === d.id ? (
+                          <span className="tag tag-green" style={{ fontSize: 10.5, padding: '2px 8px' }}>
+                            正在研读
                           </span>
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#64748b' }}>切换 ➔</span>
                         )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* 导入新文献区域 */}
-              <div style={{ borderTop: docs && docs.length > 0 ? '1px solid var(--line)' : 'none', paddingTop: docs && docs.length > 0 ? 12 : 0 }}>
-                <label className="field-label">导入新文献：选择本地文件（PDF / Word / Excel / PPT / TXT）</label>
-                <input
-                  className="input"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] || null;
-                    setUploadFile(f);
-                    if (f) setUploadName(f.name);
-                  }}
-                />
-                {uploadFile && (
-                  <div className="text-xs text-muted mt-1">
-                    <Icon name="file" size={11} /> 已选择：{uploadFile.name}（{(uploadFile.size / 1024).toFixed(0)} KB）
-                  </div>
-                )}
-                <label className="field-label" style={{ marginTop: 12 }}>
-                  或输入文件名 / 公网可访问 URL
-                </label>
-                <input
-                  className="input"
-                  value={uploadName}
-                  onChange={(e) => {
-                    setUploadName(e.target.value);
-                    setUploadFile(null);
-                  }}
-                  placeholder="mer-transformer-2026.pdf 或 https://arxiv.org/pdf/…"
-                />
-                <div className="text-xs text-muted mt-2">
-                  PDF 本地文件可直接预览 · 分片上传 · 扫描件自动 OCR · 公式 LaTeX 化
-                </div>
-              </div>
             </div>
-            <div className="modal-foot">
-              <button className="btn btn-ghost" onClick={() => setUploadOpen(false)}>
-                取消
-              </button>
-              <button className="btn btn-primary" onClick={upload}>
-                提交解析
-              </button>
+
+            {/* 弹窗底部操作栏 */}
+            <div
+              className="row-between items-center"
+              style={{
+                padding: '14px 24px',
+                borderTop: '1px solid #e2e8f0',
+                background: '#f8fafc',
+              }}
+            >
+              <span style={{ fontSize: 11.5, color: '#64748b' }}>
+                ⚡ 提交后系统自动完成目录解析、版面切分与知识图谱对齐
+              </span>
+              <div className="row g-2">
+                <button className="btn btn-ghost" onClick={() => setUploadOpen(false)}>
+                  取消
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={upload}
+                  disabled={!uploadFile && !uploadName.trim()}
+                  style={{
+                    padding: '8px 20px',
+                    fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(27, 122, 94, 0.25)',
+                  }}
+                >
+                  <Icon name="check" size={14} /> 导入并解析
+                </button>
+              </div>
             </div>
           </div>
         </div>

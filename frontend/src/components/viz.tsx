@@ -8,7 +8,7 @@ interface MindNode { title: string; children?: MindNode[] }
 export function Mindmap({ data }: { data: MindNode }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-  const rowH = 32, colW = 176, rootW = 150;
+  const rowH = 36, colW = 190, rootW = 160;
 
   // 第一遍：计算每个可见节点的行数（用于分配 y 坐标）
   const leavesOf = (n: MindNode, path: string): number => {
@@ -16,7 +16,7 @@ export function Mindmap({ data }: { data: MindNode }) {
     return n.children.reduce((a, c, i) => a + leavesOf(c, `${path}/${i}`), 0);
   };
   const totalRows = Math.max(1, data.children?.reduce((a, c, i) => a + leavesOf(c, `r${i}`), 0) ?? 1);
-  const H = Math.max(200, totalRows * rowH + 36);
+  const H = Math.max(560, totalRows * rowH + 80);
 
   // 动态计算最大可见层级深度，确保导图在任何层级下均能完全完整显示
   const getDepth = (n: MindNode, path: string, currentDepth: number): number => {
@@ -24,28 +24,28 @@ export function Mindmap({ data }: { data: MindNode }) {
     return Math.max(currentDepth, ...n.children.map((c, i) => getDepth(c, `${path}/${i}`, currentDepth + 1)));
   };
   const maxDepth = Math.max(1, getDepth(data, 'root', 0));
-  const W = Math.max(760, rootW + maxDepth * colW + 120);
+  const W = Math.max(820, rootW + maxDepth * colW + 140);
 
   // 第二遍：分配坐标并产出 SVG 元素
   type Box = { path: string; node: MindNode; depth: number; x: number; y: number; w: number; hasKids: boolean; collapsed: boolean };
   const boxes: Box[] = [];
   const links: { x1: number; y1: number; x2: number; y2: number; depth: number }[] = [];
-  let cursor = 18;
+  let cursor = 24;
 
   const place = (n: MindNode, depth: number, path: string, parent?: Box) => {
     const x = depth === 0 ? 8 : 10 + depth * colW;
-    const w = depth === 0 ? rootW : Math.max(76, Math.min(150, 20 + n.title.length * 11));
+    const w = depth === 0 ? rootW : Math.max(86, Math.min(170, 24 + n.title.length * 11));
     const leaves = leavesOf(n, path);
     let y: number;
     if (depth === 0) {
-      y = H / 2 - 13;
+      y = H / 2 - 14;
     } else {
       y = cursor + ((leaves - 1) * rowH) / 2;
     }
     const box: Box = { path, node: n, depth, x, y, w, hasKids: !!n.children?.length, collapsed: !!collapsed[path] };
     boxes.push(box);
     if (parent) {
-      links.push({ x1: parent.x + parent.w, y1: parent.y + 13, x2: x, y2: y + 13, depth });
+      links.push({ x1: parent.x + parent.w, y1: parent.y + 14, x2: x, y2: y + 14, depth });
     }
     if (n.children?.length && !collapsed[path]) {
       for (let i = 0; i < n.children.length; i++) place(n.children[i], depth + 1, `${path}/${i}`, box);
@@ -60,13 +60,13 @@ export function Mindmap({ data }: { data: MindNode }) {
   const offsetY = (totalRows - occupied) * rowH / 2;
   if (offsetY !== 0 && firstCol.length) {
     // 重新放置（简单做法：重置游标并整体平移第一列子树）
-    boxes.length = 0; links.length = 0; cursor = 18 + offsetY;
+    boxes.length = 0; links.length = 0; cursor = 24 + offsetY;
     place(data, 0, 'root');
   }
 
   return (
-    <div style={{ overflowX: 'auto', background: '#fdfcf9', borderRadius: 12, border: '1px solid var(--line)' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 620, height: H }}>
+    <div style={{ overflowX: 'auto', overflowY: 'auto', background: '#fdfcf9', borderRadius: 12, border: '1px solid var(--line)', flex: 1, minHeight: 560, height: '100%', display: 'flex', alignItems: 'center' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 620, height: H, display: 'block' }}>
         {links.map((l, i) => (
           <path key={i}
             d={`M ${l.x1} ${l.y1} C ${l.x1 + (l.x2 - l.x1) * 0.5} ${l.y1}, ${l.x1 + (l.x2 - l.x1) * 0.5} ${l.y2}, ${l.x2} ${l.y2}`}

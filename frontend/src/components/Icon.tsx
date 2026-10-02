@@ -57,6 +57,7 @@ const P: Record<string, JSX.Element> = {
   paperclip: <><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></>,
   arrowUp: <><path d="M12 19V5M5 12l7-7 7 7" /></>,
   grid: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></>,
+  terminal: <><path d="m4 17 6-6-6-6" /><path d="M12 19h8" /></>,
 };
 
 export type IconName = keyof typeof P;

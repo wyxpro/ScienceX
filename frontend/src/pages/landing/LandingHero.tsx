@@ -38,7 +38,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onExploreFeatures }) =
           <span style={{ color: 'var(--accent)' }}>★</span> 2026 新一代 AI 原生科研生产力中枢
         </div>
         <h1 className="hero-title">
-          一个入口，<span className="hero-title-gradient">闭环科研</span>
+          <span className="hero-title-gradient">让科研更简单</span>
         </h1>
         <p className="hero-desc">
           覆盖「选题 ➔ 文献 ➔ 实验 ➔ 分析 ➔ 写作 ➔ 投稿 ➔ 协作」科研全生命周期。

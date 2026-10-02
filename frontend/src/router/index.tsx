@@ -16,6 +16,7 @@ const Writing = lazy(() => import('../pages/Writing'));
 const Submission = lazy(() => import('../pages/Submission'));
 const Meeting = lazy(() => import('../pages/Meeting'));
 const Review = lazy(() => import('../pages/Review'));
+const Reproduce = lazy(() => import('../pages/Reproduce'));
 const Projects = lazy(() => import('../pages/Projects'));
 const Account = lazy(() => import('../pages/Account'));
 
@@ -48,6 +49,7 @@ export default function Router() {
             <Route path="/tools/submission" element={<Submission />} />
             <Route path="/features/meeting" element={<Meeting />} />
             <Route path="/features/review" element={<Review />} />
+            <Route path="/features/reproduce" element={<Reproduce />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/account" element={<Account />} />
           </Route>

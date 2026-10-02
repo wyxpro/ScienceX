@@ -250,35 +250,11 @@ export default function Chat() {
 
   return (
     <div className="chat-workbench">
-      {/* ===== 左侧会话侧边栏（可折叠） ===== */}
-      <ChatSidebar
-        convs={convs}
-        filteredConvs={filteredConvs}
-        activeConv={activeConv}
-        keyword={keyword}
-        onKeywordChange={setKeyword}
-        onNewConv={newConv}
-        onOpenConv={openConv}
-        onRenameConv={renameConv}
-        onRemoveConv={removeConv}
-        collapsed={!sidebarOpen}
-      />
-
       {/* ===== 主工作区视窗 ===== */}
       <div className="chat-main-stage">
         {/* 顶部轻量状态栏 */}
         <div className="chat-stage-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              type="button"
-              className="chat-tool-btn"
-              onClick={() => setSidebarOpen((v) => !v)}
-              title={sidebarOpen ? '收起会话列表' : '展开会话列表'}
-              aria-label="切换侧边栏"
-            >
-              <Icon name="menu" size={16} />
-            </button>
-
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <div
                 style={{
@@ -313,6 +289,21 @@ export default function Chat() {
             <div style={{ fontSize: 12, color: '#64748b' }}>
               今日已用 <strong style={{ color: '#0f172a' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</strong> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
             </div>
+
+            {/* 右侧会话记录栏开关按钮 */}
+            <button
+              type="button"
+              className="chat-tool-btn"
+              onClick={() => setSidebarOpen((v) => !v)}
+              title={sidebarOpen ? '收起右侧历史会话' : '展开右侧历史会话'}
+              aria-label="切换历史会话侧边栏"
+              style={{
+                background: sidebarOpen ? '#f1f5f9' : 'transparent',
+                color: sidebarOpen ? '#059669' : '#64748b',
+              }}
+            >
+              <Icon name="chat" size={16} />
+            </button>
           </div>
         </div>
 
@@ -403,6 +394,20 @@ export default function Chat() {
           </>
         )}
       </div>
+
+      {/* ===== 右侧会话侧边栏（可折叠） ===== */}
+      <ChatSidebar
+        convs={convs}
+        filteredConvs={filteredConvs}
+        activeConv={activeConv}
+        keyword={keyword}
+        onKeywordChange={setKeyword}
+        onNewConv={newConv}
+        onOpenConv={openConv}
+        onRenameConv={renameConv}
+        onRemoveConv={removeConv}
+        collapsed={!sidebarOpen}
+      />
 
       {/* 课题组三层记忆抽屉 */}
       <MemoryDrawer
