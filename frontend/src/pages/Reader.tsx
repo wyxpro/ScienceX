@@ -796,7 +796,6 @@ export default function Reader() {
                 ['seven', 'doc', '七段总结'],
                 ['reproduce', 'code', '代码复现'],
                 ['graph', 'link', '引用图谱'],
-                ['kb', 'db', '知识库'],
               ] as const
             ).map(([k, ic, label]) => (
               <button
@@ -1431,25 +1430,6 @@ export default function Reader() {
               ))}
               <div ref={chatBottom} />
             </div>
-
-            {/* 引用溯源展示 */}
-            {references.length > 0 && (
-              <div style={{ marginTop: 12, padding: '8px 10px', background: 'var(--bg-deep)', borderRadius: 8 }}>
-                <div className="text-xs text-muted mb-1" style={{ fontWeight: 700 }}>
-                  <Icon name="quote" size={11} /> 论文原文引用锚点溯源：
-                </div>
-                {references.map((r: any) => (
-                  <div
-                    key={r.chunk_id}
-                    className="tag tag-green mb-1"
-                    style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}
-                    onClick={() => toast(`正在中栏高亮 P.${r.page} 对应段落`, 'info')}
-                  >
-                    <Icon name="file" size={11} /> {r.title?.slice(0, 24)} · 第 {r.page} 页
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* 底部输入框（带文档附件与语音输入，去除了上方的快捷问题标签） */}

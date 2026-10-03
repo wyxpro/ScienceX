@@ -36,7 +36,7 @@ export default function Router() {
     <BrowserRouter>
       <Suspense fallback={<PageLoading />}>
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Login />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route element={<Guard><AppLayout /></Guard>}>

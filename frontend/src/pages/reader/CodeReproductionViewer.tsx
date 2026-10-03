@@ -241,53 +241,21 @@ export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ 
 
   return (
     <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* 顶部标题与操作栏 */}
+      {/* 顶部操作栏 */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           flexWrap: 'wrap',
-          gap: 12,
-          padding: '12px 16px',
+          gap: 8,
+          padding: '8px 12px',
           background: '#ffffff',
-          borderRadius: 12,
+          borderRadius: 10,
           border: '1px solid var(--line)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)',
-            }}
-          >
-            <Icon name="code" size={17} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 14.5, fontWeight: 700, color: '#0f172a' }}>
-                论文核心代码复现
-              </span>
-              <span className="tag tag-green" style={{ fontSize: 11, padding: '2px 8px' }}>
-                PyTorch 2.4 · 官方对齐
-              </span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-              {paperTitle ? `针对文献「${paperTitle}」核心算法与拓扑算子提取复现` : fileData.desc}
-            </div>
-          </div>
-        </div>
-
-        {/* 右侧工具按钮 */}
+        {/* 工具按钮 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             type="button"
