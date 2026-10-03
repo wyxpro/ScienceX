@@ -38,7 +38,7 @@ const TITLES: Record<string, [string, string]> = {
   '/tools/topic': ['选题灵感', '多源检索 · 选题推荐 · 可行性评估 · 开题报告'],
   '/tools/reader': ['文献阅读', '三栏联动 · 翻译 · 思维导图 · 引用图谱'],
   '/tools/experiment': ['实验设计', '参数看板 · GPU 监控 · 方案生成 · SOTA 对标'],
-  '/tools/analysis': ['数据分析', '科研图表生成 · 示例库 · AI 解读'],
+  '/tools/analysis': ['数据分析', '科研图工作台 · 两阶段生成 · 示例图表库'],
   '/tools/writing': ['论文写作', '对照阅读 · 互译 · 润色 · 查重 · 降重'],
   '/tools/submission': ['投稿助手', 'CCF 期刊大全 · 倒计时 · 匹配推荐'],
   '/features/meeting': ['组会汇报', 'PPT 一键生成 · 导师建议记录'],

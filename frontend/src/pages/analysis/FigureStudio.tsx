@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, taskStream } from '../../api/client';
 import { useToast } from '../../components/ui';
 import Icon from '../../components/Icon';
-import '../styles/figure-studio.css';
+import '../../styles/figure-studio.css';
 
 type Kind = 'diagram' | 'plot';
 type Pane = 'templates' | 'result';
