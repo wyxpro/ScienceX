@@ -829,7 +829,32 @@ up9 Baseline & \\checkmark & $\\times$ & 0.6464 $\\pm$ 0.005 & 0.6414 \\\\
  * 模式 8: 🧠 通用科研对话 (General)
  */
 async function runGeneralMode(send, query, memoryCtx, model) {
-  // 结合三层记忆
+  const aiModule = require('../../ai');
+  if (aiModule.config.hasKey()) {
+    try {
+      const memoryPrompt = memoryCtx?.injectedPrompt
+        ? `\n${memoryCtx.injectedPrompt}\n`
+        : '\n【课题组三层记忆】核心基线：up9 系列，评测协议：CASME II / SAMM (LOSO)。\n';
+
+      const messages = [
+        {
+          role: 'system',
+          content: `你是 ScienceX AI 科研对话中枢的高级科研助手。${memoryPrompt}请结合上述课题组科研背景与记忆，针对用户的科研问题给出学术规范、逻辑严谨、有理论深度且有实操价值的专业回答。在论述时，结论先行，逻辑清晰。`
+        },
+        { role: 'user', content: query }
+      ];
+
+      await aiModule.client.streamChatCompletion(messages, {
+        onThought: (chunk) => send('thought', { text: chunk }),
+        onDelta: (chunk) => send('delta', { text: chunk }),
+      }, { model: 'DeepSeek-Flash', temperature: 0.3 });
+      return;
+    } catch (err) {
+      console.warn('[LingXiAgent] DeepSeek 流式对话异常，回退本地模板:', err.message);
+    }
+  }
+
+  // 结合三层记忆本地回退
   const reply = `结合课题组长期沉淀的科研记忆（核心基线：**up9** 系列，协议：**CASME II / SAMM (LOSO)**）：
 
 针对你的问题「**${query}**」，我的建议如下：

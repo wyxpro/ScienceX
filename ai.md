@@ -123,15 +123,15 @@ flowchart TB
 
 | 能力点（ScienceX 场景） | 当前实现 | 推荐对接模型（主 / 备） | 参考调用价格（每百万 token，入/出） | 优先级 |
 | :--- | :--- | :--- | :--- | :--- |
-| **生成 / 推理**：对话中枢、综述大纲、选题推荐、可行性评估、润色、降重、审稿意见 | 模板回退 + 网关 | GPT-4o / Claude 3.7 Sonnet；经济档 DeepSeek-V3、Gemini 2.0 Flash、Qwen-Max | GPT-4o ≈ \$2.5/\$10；Claude 3.7 ≈ \$3/\$15；Gemini 2.0 Flash ≈ \$0.1/\$0.4；DeepSeek-V3 ≈ \$0.27/\$1.10；Qwen-Max ≈ \$1.6/\$6.4 | P0 |
-| **长上下文 / RAG 问答**：论文全文问答、知识库溯源、多人讨论 | 拼接上下文回退 | Claude 3.7（200K）/ Gemini 2.0（1M）/ GPT-4o（128K）+ RAG | 同上；配 RAG 检索可显著降 input token | P0 |
+| **生成 / 推理**：对话中枢、综述大纲、选题推荐、可行性评估、润色、降重、审稿意见 | **已对接生效（DeepSeek V4.1 Flash，见 `backend/src/ai/`）** + 本地回退 | **DeepSeek V4.1 Flash (`DeepSeek-Flash`) [已实装]** / GPT-4o / Claude 3.7 Sonnet | DeepSeek-Flash 极速低价；GPT-4o ≈ \$2.5/\$10；Claude 3.7 ≈ \$3/\$15 | P0 |
+| **长上下文 / RAG 问答**：论文全文问答、知识库溯源、多人讨论 | **已对接生效（DeepSeek V4.1 Flash，见 `backend/src/ai/`）** | **DeepSeek-Flash [已实装]** / Claude 3.7 / Gemini 2.0 / GPT-4o | 同上；配 RAG 检索可显著降 input token | P0 |
 | **Embedding 向量化**：文献去重、知识库检索、查重相似度、期刊匹配 | 规则 / 演示 | text-embedding-3-small / -large / bge-m3（自建） | 3-small ≈ \$0.02；3-large ≈ \$0.13；bge 自建免费 | P0 |
 | **Rerank 重排序**：检索结果相关性精排 | 无（预留） | Cohere Rerank / bge-reranker-v2（自建） | Cohere ≈ \$2.0/1000 次查询；自建免费 | P1 |
 | **代码生成与执行（CodeAct）**：消融数据分析、绘图脚本沙箱 | 内置伪执行器（返回固定图） | 代码 LLM（DeepSeek-Coder / GPT-4o）+ 受控 Python 沙箱（Docker/Firecracker） | 代码生成按 LLM token；沙箱仅算力 | P1 |
-| **结构化输出 / Function Calling**：JSON spec、Text2SQL、LaTeX 三线表、审稿矩阵 | 模板 + JSON 解析回退 | 支持 JSON Mode / Tools 的模型（GPT-4o / Claude / DeepSeek） | 同 LLM 价；建议 temperature 0–0.2 | P0 |
-| **多智能体编排**：专家评审团（5 角色）、Plan-Execute 规划流 | lingxiEngine 模拟 | 编排框架（LangGraph / 自研）+ 上述 LLM | ≈ N 个 Agent × 单 Agent token | P1 |
-| **翻译**：段落级中英互译、术语对齐 | 网关 + 回退 | GPT-4o mini / Gemini Flash / Qwen（中文优） | 4o-mini ≈ \$0.15/\$0.60；Gemini Flash 极低 | P0 |
-| **提示词增强**：一键优化用户 prompt | 规则模板（`/prompt/enhance`） | 小模型 / 规则 + 元提示（meta-prompt） | mini 档，成本可忽略 | P1 |
+| **结构化输出 / Function Calling**：JSON spec、Text2SQL、LaTeX 三线表、审稿矩阵 | **已对接生效（DeepSeek V4.1 Flash，见 `backend/src/ai/`）** | **DeepSeek-Flash [已实装]** / GPT-4o / Claude | 同 LLM 价；建议 temperature 0–0.2 | P0 |
+| **多智能体编排**：专家评审团（5 角色）、Plan-Execute 规划流 | lingxiEngine 调度 + DeepSeek 驱动 | **DeepSeek-Flash [已实装]** + 编排引擎 (LingXi) | ≈ N 个 Agent × 单 Agent token | P1 |
+| **翻译**：段落级中英互译、术语对齐 | **已对接生效（DeepSeek V4.1 Flash，见 `backend/src/ai/`）** | **DeepSeek-Flash [已实装]** / GPT-4o mini / Gemini Flash | 极低成本，支持保留公式与引用 | P0 |
+| **提示词增强**：一键优化用户 prompt | **已对接生效（DeepSeek V4.1 Flash，见 `backend/src/ai/`）** | **DeepSeek-Flash [已实装]**（`/api/v1/prompt/enhance`） | 毫秒级极速响应 | P1 |
 
 #### 3.1.2 图片模态（视觉 / Vision）
 
@@ -164,6 +164,7 @@ flowchart TB
 
 | 模型 ID | 名称 | 厂商 | 定位标签 | 上下文 |
 | :--- | :--- | :--- | :--- | :--- |
+| m-deepseek-flash | DeepSeek V4.1 Flash | DeepSeek (Sophnet) | 极速推理 · 默认推荐 | 64K |
 | m-gpt4o | GPT-4o | OpenAI | 通用最强 | 128K |
 | m-claude | Claude 3.7 Sonnet | Anthropic | 长文写作 | 200K |
 | m-gemini | Gemini 2.0 Flash | Google | 高速低价 | 1M |

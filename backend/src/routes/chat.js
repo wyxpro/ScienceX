@@ -142,14 +142,26 @@ router.post('/mcp/:id/connect', auth, (req, res) => {
 });
 
 /* ---------- 提示词增强 REQ-CHAT-03 ---------- */
-router.post('/prompt/enhance', auth, (req, res) => {
+router.post('/prompt/enhance', auth, asyncHandler(async (req, res) => {
   const raw = String(req.body?.prompt || '');
   if (!raw) return errors.param(res, 'prompt 不能为空');
+  try {
+    const aiModule = require('../ai');
+    if (aiModule.config.hasKey()) {
+      const user = store.users.find((u) => u.id === req.user.id);
+      const researchCtx = user?.research_tags?.length ? `研究方向: ${user.research_tags.join(', ')}` : '微表情识别与情感计算，AU 先验 Transformer';
+      const enhanced = await aiModule.textModality.enhanceScholarlyPrompt({ rawPrompt: raw, researchContext: researchCtx });
+      return ok(res, { enhanced, version: 'deepseek-v4.1-flash', mode: 'live' }, '提示词已增强');
+    }
+  } catch (err) {
+    console.warn('[Prompt Enhance] DeepSeek 增强异常，回退模板:', err.message);
+  }
   ok(res, {
     enhanced: `请以资深科研顾问的角色回答以下问题，要求：\n1. 结论先行，分点展开；\n2. 引用近三年代表性工作并标注出处；\n3. 给出可直接执行的行动建议。\n\n我的问题：${raw}\n\n我的背景：研究方向为微表情识别与情感计算，当前正在迭代基于 AU 先验的 Transformer 模型。`,
-    version: 'v2',
+    version: 'v2-fallback',
+    mode: 'demo-fallback',
   }, '提示词已增强');
-});
+}));
 
 /* ---------- 课题组三层记忆引擎 (Three-Tier Memory) REQ-LINGXI-MEM ---------- */
 router.get('/chat/memories', auth, (req, res) => {

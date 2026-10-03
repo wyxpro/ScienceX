@@ -61,10 +61,11 @@
   display: grid;
   min-width: 0;
   gap: var(--fx-gap);
-  grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1fr);
+  grid-template-columns: minmax(340px, 0.92fr) minmax(0, 1fr);
   align-items: start;
 }
-@media (max-width: 1080px) {
+/* 断点下调至 880px：使常见窗口宽度（含内置预览 ~911px）仍保持两栏，避免过早堆叠成单列而显得杂乱 */
+@media (max-width: 880px) {
   .fx-work { grid-template-columns: minmax(0, 1fr); }
 }
 

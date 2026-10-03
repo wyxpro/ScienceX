@@ -46,6 +46,7 @@ function readAsBase64(file: File): Promise<string> {
 
 /* AI模型选项列表 */
 const AI_MODELS = [
+  { id: 'deepseek-flash', name: 'DeepSeek V4.1 Flash', desc: '极速推理 · 3.1.1 文本核心引擎', badge: '闪电' },
   { id: 'gpt-4o', name: 'GPT-4o 顶刊精读', desc: '综合推理 · 全文架构多模态深度解析', badge: '推荐' },
   { id: 'claude-3-5', name: 'Claude 3.5 Sonnet', desc: '长篇文献精读 · 学术写作推敲', badge: '长文' },
   { id: 'deepseek-r1', name: 'DeepSeek-R1 深度推理', desc: '数学公式推导 · 逻辑严密反思', badge: '推理' },

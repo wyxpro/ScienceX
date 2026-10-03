@@ -17,6 +17,7 @@ const documentsRoutes = require('./routes/documents');
 const researchRoutes = require('./routes/research');
 const publishRoutes = require('./routes/publish');
 const dreampaperRoutes = require('./routes/dreampaper');
+const aiModule = require('./ai');
 
 const app = express();
 const allowedOrigins = new Set((process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map((origin) => origin.trim()).filter(Boolean));
@@ -45,6 +46,31 @@ app.use('/api/v1/literature', rateLimit({ windowMs: 60000, max: 60 }));
 
 // 健康检查
 app.get(['/health', '/api/health', '/api/v1/health'], (req, res) => ok(res, { service: 'sciencex-backend', version: '1.0.0', ts: new Date().toISOString() }));
+
+// AI 模块能力状态与连通性验证 (3.1.1 文本模态)
+app.get('/api/v1/ai/status', (req, res) => {
+  ok(res, {
+    active: aiModule.config.hasKey(),
+    model: aiModule.config.model,
+    model_name: aiModule.config.modelDisplayName,
+    endpoint: aiModule.config.baseUrl,
+    modality: '3.1.1 文本模态（Text）',
+    capabilities: [
+      '对话中枢 (Chat Completions)',
+      '长上下文 / RAG 问答 (Document QA)',
+      '学术中英互译 (Academic Translation)',
+      '学术润色 (Academic Polish)',
+      'AI 降重 (Paraphrase)',
+      '科研提示词增强 (Prompt Enhancement)',
+      '多智能体专家评审团 (Review Council)',
+    ],
+  });
+});
+
+app.post('/api/v1/ai/test', async (req, res) => {
+  const result = await aiModule.client.testConnection();
+  ok(res, result);
+});
 
 // 业务路由（统一前缀 /api/v1）
 app.use('/api/v1', accountRoutes.router);

@@ -27,6 +27,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local environment and secret configs
+.env
+.env.*
+*.env
+!.env.example
+
 # OS and Editor
 .DS_Store
 Thumbs.db
