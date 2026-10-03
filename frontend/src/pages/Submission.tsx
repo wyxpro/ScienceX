@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import Icon from '../components/Icon';
 import { Countdown, Empty, ScoreRing, Skeleton, Tag, useToast } from '../components/ui';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const CCF_TAG_STYLES: Record<string, { bg: string; color: string; border: string }> = {
   A: { bg: '#fef2f2', color: '#dc2626', border: 'rgba(239, 68, 68, 0.2)' },
@@ -28,6 +29,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Submission() {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState<'journals' | 'tracks' | 'match'>('journals');
   const [loading, setLoading] = useState(true);
   const [journals, setJournals] = useState<any[]>([]);
@@ -139,10 +141,12 @@ export default function Submission() {
       <div
         className="card card-pad"
         style={{
-          padding: '12px 20px',
+          padding: isMobile ? '10px 12px' : '12px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: isMobile ? 'wrap' : undefined,
+          rowGap: isMobile ? 8 : undefined,
           background: '#ffffff',
           borderRadius: 14,
         }}
@@ -171,7 +175,7 @@ export default function Submission() {
         <div
           className="card card-pad anim-in"
           style={{
-            padding: '14px 20px',
+            padding: isMobile ? '12px 12px' : '14px 20px',
             display: 'flex',
             alignItems: 'center',
             flexWrap: 'wrap',
@@ -217,7 +221,7 @@ export default function Submission() {
           </div>
 
           {/* 搜索会议 / 期刊 输入框 */}
-          <div style={{ position: 'relative', width: 230 }}>
+          <div style={{ position: 'relative', width: isMobile ? '100%' : 230 }}>
             <input
               className="input"
               style={{ width: '100%', height: 34, fontSize: 13, paddingLeft: 30, borderRadius: 8 }}
@@ -239,10 +243,10 @@ export default function Submission() {
             </span>
           </div>
 
-          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 2px' }} />
+          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 2px', display: isMobile ? 'none' : undefined }} />
 
           {/* CCF 等级筛选胶囊 (全部 CCF / CCF-A / CCF-B / CCF-C) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {[
               { key: '', label: '全部 CCF' },
               { key: 'A', label: 'CCF-A' },
@@ -270,10 +274,10 @@ export default function Submission() {
             ))}
           </div>
 
-          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 2px' }} />
+          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 2px', display: isMobile ? 'none' : undefined }} />
 
           {/* 截稿时间范围快捷筛选 (全部时间 / 30天内 / 90天内) - 紧靠 CCF-C 右侧显示 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {[
               { key: 'all', label: '全部时间' },
               { key: '30', label: '30 天内' },
@@ -315,7 +319,7 @@ export default function Submission() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(max(31%, 320px), 1fr))',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(max(31%, 320px), 1fr))',
                 rowGap: 20,
                 columnGap: 18,
               }}
@@ -529,7 +533,7 @@ export default function Submission() {
                   key={t.id}
                   className="row-between wrap g-2"
                   style={{
-                    padding: '13px 18px',
+                    padding: isMobile ? '12px 12px' : '13px 18px',
                     borderTop: i ? '1px solid var(--line)' : 'none',
                     transition: 'background .15s',
                   }}
@@ -569,7 +573,7 @@ export default function Submission() {
       {tab === 'match' && (
         <div
           className="anim-in"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, alignItems: 'start' }}
+          style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, alignItems: 'start' }}
         >
           <div className="card card-pad">
             <div className="fw-bold mb-1" style={{ fontSize: 14 }}>
@@ -652,7 +656,7 @@ export default function Submission() {
             {/* 弹窗头部 */}
             <div
               style={{
-                padding: '24px 28px 18px',
+                padding: isMobile ? '18px 16px 14px' : '24px 28px 18px',
                 borderBottom: '1px solid var(--line)',
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -660,7 +664,7 @@ export default function Submission() {
                 background: 'linear-gradient(175deg, #f8fafc 0%, #ffffff 100%)',
               }}
             >
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flex: isMobile ? 1 : undefined, minWidth: isMobile ? 0 : undefined }}>
                 <div
                   style={{
                     width: 52,
@@ -716,6 +720,7 @@ export default function Submission() {
                   color: 'var(--muted)',
                   padding: 6,
                   borderRadius: 8,
+                  flexShrink: 0,
                 }}
                 title="关闭弹窗"
               >
@@ -724,11 +729,11 @@ export default function Submission() {
             </div>
 
             {/* 弹窗核心数据 4 维看板 */}
-            <div style={{ padding: '20px 28px' }}>
+            <div style={{ padding: isMobile ? '14px 16px' : '20px 28px' }}>
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
                   gap: 12,
                   marginBottom: 20,
                 }}
@@ -864,6 +869,8 @@ export default function Submission() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  flexWrap: isMobile ? 'wrap' : undefined,
+                  rowGap: isMobile ? 6 : undefined,
                   padding: '10px 14px',
                   background: '#f1f5f9',
                   borderRadius: 10,
@@ -886,11 +893,13 @@ export default function Submission() {
             {/* 弹窗底部操作条 */}
             <div
               style={{
-                padding: '16px 28px',
+                padding: isMobile ? '12px 16px' : '16px 28px',
                 borderTop: '1px solid var(--line)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                flexWrap: isMobile ? 'wrap' : undefined,
+                rowGap: isMobile ? 8 : undefined,
                 background: '#f8fafc',
               }}
             >

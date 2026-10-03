@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Icon from '../../components/Icon';
 import { useToast } from '../../components/ui';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface CodeActResultCardProps {
   chartData: any;
@@ -14,6 +15,7 @@ export const CodeActResultCard: React.FC<CodeActResultCardProps> = ({
   stdout,
 }) => {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState<'chart' | 'code' | 'log'>('chart');
 
   if (!chartData && !code) return null;
@@ -41,6 +43,7 @@ export const CodeActResultCard: React.FC<CodeActResultCardProps> = ({
     >
       {/* 选项卡栏 */}
       <div
+        className="chat-card-head"
         style={{
           padding: '6px 12px',
           background: 'var(--panel)',
@@ -50,7 +53,7 @@ export const CodeActResultCard: React.FC<CodeActResultCardProps> = ({
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div className="chat-card-head" style={{ display: 'flex', gap: 4 }}>
           <button
             type="button"
             className="btn btn-ghost btn-sm"
@@ -174,7 +177,7 @@ export const CodeActResultCard: React.FC<CodeActResultCardProps> = ({
                     <div key={config} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div
                         style={{
-                          width: 150,
+                          width: isMobile ? 96 : 150,
                           fontSize: 12,
                           fontWeight: 600,
                           textAlign: 'right',
@@ -270,7 +273,7 @@ export const CodeActResultCard: React.FC<CodeActResultCardProps> = ({
 
           {/* 混淆矩阵热力图 */}
           {isConfusionMatrix && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '100%', overflowX: 'auto' }}>
               <div
                 style={{
                   display: 'grid',

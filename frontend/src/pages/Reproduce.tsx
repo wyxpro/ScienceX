@@ -1,6 +1,7 @@
 /* 论文复现 —— 特色功能：新增复现（选择论文 / 上传文档 / 执行课题组）→ 五阶段复现流水线 → 指标比对报告 */
 import { useEffect, useRef, useState } from 'react';
 import Icon from '../components/Icon';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { Empty, Modal, Progress, Tag, useToast } from '../components/ui';
 import { api } from '../api/client';
 import type { TeamItem } from '../types';
@@ -153,6 +154,7 @@ function makeDocCandidate(name: string): Candidate {
 
 export default function Reproduce() {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [pickedId, setPickedId] = useState(CANDIDATES[0].id);
   const [extras, setExtras] = useState<Candidate[]>([]);
   const picked = [...CANDIDATES, ...extras].find((c) => c.id === pickedId)!;
@@ -248,7 +250,7 @@ export default function Reproduce() {
       </div>
 
       {/* ===== 流水线 + 实时日志 ===== */}
-      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 4fr)', alignItems: 'start', flex: 'none' }}>
+      <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 5fr) minmax(0, 4fr)', alignItems: 'start', flex: 'none' }}>
         {/* 左：五阶段步骤条 */}
         <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="row g-2 wrap" style={{ alignItems: 'center' }}>
@@ -328,7 +330,7 @@ export default function Reproduce() {
               <span className="text-xs text-muted mono">{running ? 'streaming…' : logs.length ? 'idle' : 'waiting'}</span>
             </span>
           </div>
-          <div ref={logBox} style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', background: '#101a16', fontFamily: 'var(--font-mono)', fontSize: 11.8, lineHeight: 1.9, color: '#9fd3b8' }}>
+          <div ref={logBox} style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '12px 14px', background: '#101a16', fontFamily: 'var(--font-mono)', fontSize: 11.8, lineHeight: 1.9, color: '#9fd3b8' }}>
             {logs.length === 0 ? (
               <div style={{ color: '#4c6357' }}>$ 等待启动复现流水线…<br />$ 日志将在此实时输出（沙箱隔离环境）</div>
             ) : logs.map((l, i) => (
@@ -351,7 +353,7 @@ export default function Reproduce() {
             </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
-            <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="table" style={{ width: '100%', minWidth: isMobile ? 560 : undefined, borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ textAlign: 'left', color: 'var(--muted)', fontSize: 12 }}>
                   {['评测指标', '论文原文', '本次复现', '偏差', '允许容差', '判定'].map((h) => (
@@ -426,7 +428,7 @@ export default function Reproduce() {
               >
                 <span className="row g-1" style={{ alignItems: 'center' }}>
                   <span className="tag tag-outline" style={{ flex: 'none' }}><Icon name="book" size={11} /> {c.venue} {c.year}</span>
-                  <span className="text-xs text-muted mono ellipsis">{c.codeUrl}</span>
+                  <span className="text-xs text-muted mono ellipsis" style={{ minWidth: 0, flex: 1 }}>{c.codeUrl}</span>
                   {on && <span className="tag tag-green" style={{ marginLeft: 'auto', flex: 'none' }}><Icon name="check" size={11} /> 已选择</span>}
                 </span>
                 <span className="text-small fw-bold clamp2">{c.title}</span>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import Icon from '../components/Icon';
 import { Empty, Skeleton, Tag, useToast } from '../components/ui';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { TaskRunner } from '../components/TaskRunner';
 
 const STATUS_META: Record<string, { label: string; color: string; icon: string }> = {
@@ -14,6 +15,7 @@ const NEXT: Record<string, string> = { todo: 'doing', doing: 'done', done: 'todo
 
 export default function Meeting() {
   const toast = useToast();
+  const isMobile = useIsMobile();
   /* PPT 生成 */
   const [source, setSource] = useState('up9 baseline 多数据集验证进展');
   const [template, setTemplate] = useState('academic');
@@ -75,7 +77,7 @@ export default function Meeting() {
   return (
     <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* ===== 上：PPT 生成 ===== */}
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', flex: 'none' }}>
+      <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', flex: 'none' }}>
         <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="fw-bold" style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icon name="play" size={15} /> 组会 PPT 一键生成

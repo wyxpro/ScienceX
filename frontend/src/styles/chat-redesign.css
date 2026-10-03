@@ -665,3 +665,174 @@
   max-width: 1080px;
   margin: 0 auto;
 }
+
+/* 历史会话抽屉遮罩：桌面端永不显示，仅 ≤768px 由媒体查询激活 */
+.chat-sidebar-scrim {
+  display: none;
+}
+
+/* ============================================================
+   移动端适配（≤768px）：AI 工作台响应式布局
+   仅在此媒体查询内生效，桌面端（>768px）渲染保持原样
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 工作台整体：考虑移动端全局 topbar 高度，收窄外边距 */
+  .chat-workbench {
+    height: calc(100vh - var(--topbar-h, 60px) - 20px);
+    height: calc(100dvh - var(--topbar-h, 60px) - 20px);
+    margin: 10px 8px;
+    gap: 0;
+    max-width: 100%;
+  }
+
+  /* 顶部状态栏：允许换行，标题 ellipsis 截断，次要信息配合 .desktop-only 隐藏 */
+  .chat-stage-header {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 10px 12px;
+  }
+  .chat-stage-header > div:first-child {
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .chat-stage-title-group {
+    flex: 1;
+    min-width: 0;
+  }
+  .chat-stage-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chat-stage-header-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* 空状态 Hero 与快捷推荐指令 */
+  .chat-hero-container {
+    padding: 16px 12px 32px;
+  }
+  .chat-hero-title {
+    font-size: 22px;
+  }
+  .chat-hero-subtitle {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .chat-quick-tags {
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .chat-quick-tag {
+    padding: 7px 12px;
+    font-size: 12.5px;
+  }
+
+  /* 悬浮指令中枢：宽度自适应 100%，按钮组可换行 */
+  .chat-command-dock {
+    max-width: 100%;
+  }
+  .chat-dock-main {
+    padding: 12px 12px 8px;
+  }
+  .chat-dock-textarea {
+    min-height: 56px;
+    font-size: 14px;
+  }
+  .chat-dock-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chat-dock-left-tools {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .chat-dock-sticky-container {
+    padding: 10px 8px 14px;
+  }
+
+  /* 对话流：收窄留白，取消桌面端两侧大缩进，气泡卡片防溢出 */
+  .chat-conversation-scroll {
+    padding: 14px 10px 128px;
+  }
+  .chat-user-row {
+    padding-left: 0;
+  }
+  .chat-ai-row {
+    padding-right: 0;
+  }
+  .chat-user-bubble {
+    max-width: 88%;
+  }
+  .chat-ai-body {
+    padding: 12px 14px;
+    border-radius: 14px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .chat-ai-body pre {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  .chat-ai-body table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  .chat-ai-body p,
+  .chat-ai-body li,
+  .chat-ai-body td,
+  .chat-ai-body th {
+    word-break: break-word;
+  }
+
+  /* 右侧历史会话侧边栏：覆盖式抽屉（fixed + scrim），不挤压对话主区 */
+  .chat-sidebar-card {
+    position: fixed;
+    top: var(--topbar-h, 60px);
+    right: 0;
+    bottom: 0;
+    width: min(84vw, 320px);
+    z-index: 1150;
+    border-radius: 18px 0 0 0;
+    box-shadow: -12px 0 36px -6px rgba(15, 23, 42, 0.25);
+    transition: none;
+  }
+  .chat-sidebar-card.collapsed {
+    display: none;
+  }
+  .chat-sidebar-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1140;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+  }
+  /* 移动端无 hover：会话操作按钮常显 */
+  .chat-conv-actions {
+    opacity: 1;
+  }
+
+  /* 消息卡片通用：头部与元信息行允许换行，防横向溢出 */
+  .chat-card-head {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chat-paper-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chat-paper-meta {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .chat-msg-meta {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+}

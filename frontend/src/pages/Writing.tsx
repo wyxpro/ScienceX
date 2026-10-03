@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import Icon from '../components/Icon';
 import { Modal, Progress, Tag, useToast } from '../components/ui';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 type Tool = 'translate' | 'polish' | 'plagiarism' | 'paraphrase';
 
@@ -20,6 +21,7 @@ const EXAMPLES: Record<Tool, string> = {
 
 export default function Writing() {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [ms, setMs] = useState<any>(null);
   const [content, setContent] = useState('');
   const [saved, setSaved] = useState(true);
@@ -99,9 +101,18 @@ export default function Writing() {
   ];
 
   return (
-    <div className="page page-full" style={{ gap: 14, padding: '16px 20px', flexWrap: 'wrap' }}>
+    <div
+      className="page page-full"
+      style={{
+        gap: 14,
+        padding: isMobile ? '12px 12px 24px' : '16px 20px',
+        flexWrap: 'wrap',
+        flexDirection: isMobile ? 'column' : undefined,
+        height: isMobile ? 'auto' : undefined,
+      }}
+    >
       {/* ===== 左：稿件编辑器 ===== */}
-      <section style={{ flex: '1.3 1 380px', minWidth: 300, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '100%' }}>
+      <section style={{ flex: isMobile ? 'none' : '1.3 1 380px', minWidth: isMobile ? 0 : 300, width: isMobile ? '100%' : undefined, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: isMobile ? 'none' : '100%' }}>
         <div className="card card-pad" style={{ flex: 'none' }}>
           <div className="row-between wrap g-2">
             <div className="grow" style={{ minWidth: 220 }}>
@@ -113,7 +124,7 @@ export default function Writing() {
                 {saved ? <Tag color="green">已保存</Tag> : <Tag color="red">未保存</Tag>}
               </div>
             </div>
-            <div className="row g-1">
+            <div className="row g-1" style={{ flexWrap: 'wrap' }}>
               <button className="btn btn-ghost btn-sm" onClick={() => setRefOpen(true)}><Icon name="book" size={13} />对照阅读</button>
               <button className="btn btn-primary btn-sm" onClick={save} disabled={saved}><Icon name="download" size={13} />{saved ? '已保存' : '保存'}</button>
             </div>
@@ -125,7 +136,7 @@ export default function Writing() {
             onChange={(e) => { setContent(e.target.value); setSaved(false); }}
             spellCheck={false}
             style={{
-              flex: 1, width: '100%', border: 'none', outline: 'none', resize: 'none', padding: '22px 26px',
+              flex: 1, width: '100%', border: 'none', outline: 'none', resize: 'none', padding: '22px 26px', minHeight: isMobile ? 300 : undefined,
               fontFamily: 'var(--font-serif)', fontSize: 14.5, lineHeight: 2, color: 'var(--ink)', background: 'transparent',
             }}
           />
@@ -137,7 +148,7 @@ export default function Writing() {
       </section>
 
       {/* ===== 右：写作工具 ===== */}
-      <section style={{ flex: '1 1 330px', minWidth: 300, display: 'flex', flexDirection: 'column', maxHeight: '100%', overflow: 'hidden' }}>
+      <section style={{ flex: isMobile ? 'none' : '1 1 330px', minWidth: isMobile ? 0 : 300, width: isMobile ? '100%' : undefined, display: 'flex', flexDirection: 'column', maxHeight: isMobile ? 'none' : '100%', overflow: 'hidden' }}>
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* 工具箱标题栏 */}
           <div
@@ -169,7 +180,7 @@ export default function Writing() {
           </div>
 
           {/* 工具选择：一行四卡 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, padding: '10px 12px', borderBottom: '1px solid var(--line)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, minmax(0, 1fr))' : 'repeat(4, 1fr)', gap: 8, padding: '10px 12px', borderBottom: '1px solid var(--line)' }}>
             {TOOLS.map((t) => {
               const active = tool === t.key;
               return (
@@ -244,7 +255,7 @@ export default function Writing() {
                 {tool === 'translate' && (
                   <div className="card card-pad" style={{ background: 'var(--brand-softer)' }}>
                     <div className="text-xs text-muted mb-1">译文</div>
-                    <p className="text-small" style={{ lineHeight: 1.9 }}>{result.translated}</p>
+                    <p className="text-small" style={{ lineHeight: 1.9, wordBreak: 'break-word' }}>{result.translated}</p>
                     <div className="row g-1 mt-2 wrap">{result.glossary.map((g: any) => <Tag key={g.en} color="gray">{g.en} → {g.zh}</Tag>)}</div>
                   </div>
                 )}
@@ -253,7 +264,7 @@ export default function Writing() {
                   <>
                     <div className="card card-pad" style={{ background: 'var(--brand-softer)' }}>
                       <div className="text-xs text-muted mb-1">润色后</div>
-                      <p className="text-small" style={{ lineHeight: 1.9 }}>{result.polished}</p>
+                      <p className="text-small" style={{ lineHeight: 1.9, wordBreak: 'break-word' }}>{result.polished}</p>
                     </div>
                     <div className="card card-pad mt-2">
                       <div className="text-xs text-muted mb-1">修改说明（{result.changes.length} 处）</div>
@@ -303,7 +314,7 @@ export default function Writing() {
                   <>
                     <div className="card card-pad" style={{ background: 'var(--brand-softer)' }}>
                       <div className="text-xs text-muted mb-1">降重后</div>
-                      <p className="text-small" style={{ lineHeight: 1.9, fontFamily: 'var(--font-serif)' }}>{result.paraphrased}</p>
+                      <p className="text-small" style={{ lineHeight: 1.9, fontFamily: 'var(--font-serif)', wordBreak: 'break-word' }}>{result.paraphrased}</p>
                       <div className="row g-1 mt-2 wrap">
                         <Tag color="red">相似度 {result.before_similarity}% → </Tag>
                         <Tag color="green">{result.after_similarity}%</Tag>

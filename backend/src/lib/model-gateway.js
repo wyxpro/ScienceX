@@ -1,3 +1,4 @@
+require('../ai/config');
 const store = require('./store');
 const { decryptSecret } = require('./security');
 const { canAccess } = require('./access');
@@ -61,13 +62,23 @@ function gatewayConfig(modelId, userId) {
   const explicitModel = modelId !== undefined && modelId !== null && String(modelId).trim() !== '';
   // Never reinterpret an unknown or unauthorized explicit model as the global default.
   if (explicitModel && !model) return { model: null, baseUrl: '', apiKey: '', modelName: '' };
-  const baseUrl = model?.base_url || process.env.OPENAI_BASE_URL || '';
+
+  const isDeepSeek = model?.provider === 'deepseek' || model?.id === 'm-deepseek-flash' || model?.id === 'm-deepseek' || model?.model_name === 'DeepSeek-Flash';
+  const defaultBaseUrl = isDeepSeek
+    ? (process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://www.sophnet.com/api/open-apis/v1')
+    : (process.env.OPENAI_BASE_URL || process.env.DEEPSEEK_BASE_URL || 'https://www.sophnet.com/api/open-apis/v1');
+
+  const defaultApiKey = isDeepSeek
+    ? (process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '')
+    : (process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY || '');
+
+  const baseUrl = model?.base_url || defaultBaseUrl;
   const apiKey = model?.builtin
-    ? process.env.OPENAI_API_KEY || ''
+    ? defaultApiKey
     : model
       ? (model.api_key_encrypted ? decryptSecret(model.api_key_encrypted) : '')
-      : process.env.OPENAI_API_KEY || '';
-  const modelName = model?.model_name || process.env.OPENAI_MODEL || model?.name || modelId;
+      : defaultApiKey;
+  const modelName = model?.model_name || (isDeepSeek ? (process.env.DEEPSEEK_MODEL || 'DeepSeek-Flash') : (process.env.OPENAI_MODEL || 'DeepSeek-Flash'));
   return { model, baseUrl: baseUrl.replace(/\/$/, ''), apiKey, modelName };
 }
 

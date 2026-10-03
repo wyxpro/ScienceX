@@ -61,10 +61,11 @@
   display: grid;
   min-width: 0;
   gap: var(--fx-gap);
-  grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1fr);
+  grid-template-columns: minmax(340px, 0.92fr) minmax(0, 1fr);
   align-items: start;
 }
-@media (max-width: 1080px) {
+/* 断点下调至 880px：使常见窗口宽度（含内置预览 ~911px）仍保持两栏，避免过早堆叠成单列而显得杂乱 */
+@media (max-width: 880px) {
   .fx-work { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -333,3 +334,24 @@
 .fx-result-tag { font-size: 11px; padding: 2px 9px; border-radius: var(--fx-r-pill); background: var(--fx-accent-soft); color: var(--fx-accent-ink); }
 .fx-svg { width: 100%; background: #fff; border: 1px solid var(--fx-hairline); border-radius: 10px; }
 .fx-result-actions { display: flex; gap: 8px; }
+
+/* ---------- 移动端适配（≤768px）：单列堆叠、控件防溢出、长文本折行 ---------- */
+@media (max-width: 768px) {
+  .fx-studio { --fx-pad: 14px; --fx-gap: 10px; gap: 12px; }
+  .fx-intro { padding: 12px 14px; }
+  .fx-work { grid-template-columns: minmax(0, 1fr); }
+  .fx-card-head { flex-wrap: wrap; min-height: 0; padding-top: 8px; padding-bottom: 8px; }
+  .fx-head-tools { flex: 1 1 100%; }
+  .fx-head-tools .fx-search { flex: 1 1 auto; width: auto; min-width: 0; }
+  .fx-row.three { grid-template-columns: minmax(0, 1fr); }
+  .fx-card-foot { flex-wrap: wrap; min-height: 0; padding-top: 10px; padding-bottom: 10px; }
+  .fx-foot-side { flex-wrap: wrap; }
+  .fx-foot-side .fx-mini { max-width: 150px; }
+  .fx-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fx-result-actions { flex-wrap: wrap; }
+  .fx-diag-kv { flex-wrap: wrap; }
+  .fx-diag-kv span:last-child { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+  .fx-stage { white-space: normal; word-break: break-word; }
+  .fx-result-title { word-break: break-word; }
+  .fx-svg, .fx-tile img { max-width: 100%; }
+}

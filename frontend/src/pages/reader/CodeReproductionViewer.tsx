@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Icon from '../../components/Icon';
 import { useToast } from '../../components/ui';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface CodeReproductionViewerProps {
   paperTitle?: string;
@@ -214,6 +215,7 @@ rich>=13.7.0
 
 export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ paperTitle }) => {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [activeFile, setActiveFile] = useState<string>('model.py');
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [running, setRunning] = useState(false);
@@ -240,7 +242,7 @@ export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ 
   };
 
   return (
-    <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
+    <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 14, height: isMobile ? 'auto' : '100%', minWidth: 0 }}>
       {/* 顶部操作栏 */}
       <div
         style={{
@@ -459,6 +461,8 @@ export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: isMobile ? 'wrap' : undefined,
+            rowGap: 4,
             background: '#11111b',
             borderTop: '1px solid #313244',
             padding: '5px 14px',

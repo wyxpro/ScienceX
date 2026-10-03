@@ -4,27 +4,12 @@ import Icon from '../../components/Icon';
 
 export const LandingCTA: React.FC = () => {
   const nav = useNavigate();
-
   return (
-    <section className="landing-cta-section">
-      <div className="cta-content">
-        <h2 className="cta-title">
-          准备好让 AI 成为你的终身科研协同伴侣了吗？
-        </h2>
-
-        <div className="cta-actions">
-          <button
-            className="cta-btn-primary"
-            onClick={() => nav('/login')}
-            id="cta-start-btn"
-            aria-label="立即开启科研之旅 · 免费使用"
-          >
-            <span>立即开启科研之旅 · 免费使用</span>
-            <span className="cta-btn-icon">
-              <Icon name="arrowRight" size={18} />
-            </span>
-          </button>
-        </div>
+    <section className="landing-cta-section" aria-label="开启科研之旅">
+      <div className="closing-card">
+        <div className="closing-orbit closing-orbit-one" aria-hidden="true" /><div className="closing-orbit closing-orbit-two" aria-hidden="true" />
+        <div className="closing-symbol" aria-hidden="true"><Icon name="spark" size={35} strokeWidth={1.2} /></div>
+        <div className="closing-actions"><button className="closing-primary" onClick={() => nav('/login')} id="cta-start-btn">立即开启科研之旅 · 免费使用 <Icon name="arrowRight" size={18} /></button></div>
       </div>
     </section>
   );

@@ -1,10 +1,11 @@
 /** 文档导入 / 结构化 / 分析 / 引用图谱 / 论文问答 / 知识库 —— REQ-READ-01~04 */
 const express = require('express');
 const store = require('../lib/store');
-const { ok, errors } = require('../lib/respond');
+const { ok, errors, asyncHandler } = require('../lib/respond');
 const ai = require('../lib/ai');
 const { auth } = require('./account');
 const { canAccess } = require('../lib/access');
+const parser = require('../lib/parser');
 
 const router = express.Router();
 
@@ -16,36 +17,39 @@ router.get('/documents', auth, (req, res) => {
   ok(res, { items, total: items.length });
 });
 
-router.post('/documents/upload', auth, async (req, res) => {
-  const { file_name, url, content, file_content, project_id = 'p1' } = req.body || {};
-  if (!file_name && !url) return errors.param(res, '请提供文件名或 URL');
-  if (!canAccess(store.projects.find((project) => project.id === project_id), req.user.id)) return errors.forbidden(res, '无权向该项目上传文档');
-  const name = file_name || url.split('/').pop();
-  let extractedText = String(content || '');
-  if (!extractedText && file_content) {
-    try { extractedText = Buffer.from(String(file_content), 'base64').toString('utf8'); } catch { return errors.param(res, 'file_content 必须是 Base64 编码'); }
-  }
-  if (extractedText.length > 5 * 1024 * 1024) return errors.param(res, '文件内容不能超过 5MB');
-  const paragraphs = extractedText.split(/\n{2,}|(?<=[。！？.!?])\s+/).map((item) => item.trim()).filter(Boolean).slice(0, 500);
-  const docTitle = name.replace(/\.(pdf|docx?|xlsx?|pptx?|txt|tex|md)$/i, '');
+/* 依据文件扩展名解析出可直接用于分析的纯文本（含 URL 抓取场景的降级） */
+function buildStructuredFromText({ fileName, text, baseName }) {
+  const paragraphs = String(text || '')
+    .split(/\n{2,}/)
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 500);
+  const docTitle = baseName || String(fileName || '').replace(/\.(pdf|docx?|caj|md|markdown|txt|tex)$/i, '');
   const sections = [];
   if (paragraphs.length) {
-    if (paragraphs.length <= 3) {
-      sections.push({ id: 's1', title: '1. Overview & Content', page: 1, paragraphs });
-    } else {
-      const step = Math.ceil(paragraphs.length / 3);
-      sections.push({ id: 's1', title: '1. Introduction & Background', page: 1, paragraphs: paragraphs.slice(0, step) });
-      sections.push({ id: 's2', title: '2. Methods & System Framework', page: 3, paragraphs: paragraphs.slice(step, step * 2) });
-      sections.push({ id: 's3', title: '3. Empirical Results & Discussion', page: 6, paragraphs: paragraphs.slice(step * 2) });
-    }
-  } else {
+    const headingRe = /^(?:\d+(?:\.\d+)*[.、)]?\s+|第\s*[一二三四五六七八九十0-9]+\s*[章节部分])/;
+    let current = { id: 's1', title: '1. 正文', page: 1, paragraphs: [] };
+    let seq = 1;
+    paragraphs.forEach((p) => {
+      const shortHeading = p.length <= 90 && (headingRe.test(p) || /^(Abstract|摘要|Introduction|引言|Method|方法|Experiment|实验|Conclusion|结论|References|参考文献)/i.test(p));
+      if (shortHeading && current.paragraphs.length) {
+        sections.push(current);
+        seq += 1;
+        current = { id: `s${seq}`, title: p, page: Math.max(1, seq), paragraphs: [] };
+      } else {
+        current.paragraphs.push(p);
+      }
+    });
+    if (current.paragraphs.length) sections.push(current);
+  }
+  if (!sections.length) {
     sections.push(
       {
         id: 's1',
         title: '1. Document Overview (文档概览)',
         page: 1,
         paragraphs: [
-          `本文档《${docTitle}》已成功导入 ScienceX 科研解析系统。系统已完成版面切分、文字层多模态提取与公式层识别。`,
+          `文档《${docTitle}》已成功导入 ScienceX 科研解析系统。系统已完成版面切分、文字层多模态提取与公式层识别。`,
           '在学术研读模式下，系统支持双语段落精翻、知识库切片检索、3D 引用拓扑引溯与 AI Agent 沉浸式伴读。',
         ],
       },
@@ -54,32 +58,143 @@ router.post('/documents/upload', auth, async (req, res) => {
         title: '2. Methodology & Findings (核心方法与发现)',
         page: 2,
         paragraphs: [
-          '解析引擎从该文献中提取出关键实验指标与理论假设，构建了层次化逻辑树，可无缝配合右侧 GPT-4o 顶刊精读模型进行深度研讨。',
+          '解析引擎从该文献中提取出关键实验指标与理论假设，构建了层次化逻辑树，可无缝配合右侧顶刊精读模型进行深度研讨。',
           '通过结构化正文，可自由进行划词高亮、中英术语对照与论文问答溯源。',
         ],
       }
     );
   }
+  return { docTitle, paragraphs, sections };
+}
+
+/**
+ * 文档导入 —— 支持 PDF / Word(.docx) / Markdown / CAJ
+ * 前端以 base64（file_content）或已解码文本（content）提交文件，后端完成结构化解析。
+ */
+router.post('/documents/upload', auth, asyncHandler(async (req, res) => {
+  const { file_name, url, content, file_content, project_id = 'p1' } = req.body || {};
+  if (!file_name && !url) return errors.param(res, '请提供文件名或 URL');
+  if (!canAccess(store.projects.find((project) => project.id === project_id), req.user.id)) return errors.forbidden(res, '无权向该项目上传文档');
+  const name = file_name || url.split('/').pop() || 'untitled';
+  const isUrl = /^https?:\/\//i.test(String(url || '')) && !file_name;
+
+  let buffer = Buffer.alloc(0);
+  let predecodedText = '';
+  if (file_content) {
+    try {
+      buffer = Buffer.from(String(file_content), 'base64');
+    } catch {
+      return errors.param(res, 'file_content 必须是 Base64 编码');
+    }
+  } else if (typeof content === 'string' && content) {
+    buffer = Buffer.from(content, 'utf8');
+    predecodedText = content;
+  }
+
+  if (buffer.length > parser.MAX_FILE_BYTES) {
+    return errors.param(res, `文件大小 ${(buffer.length / 1024 / 1024).toFixed(1)}MB 超过 50MB 单文件上限`);
+  }
+
+  let parsed;
+  const baseName = name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || '未命名文献';
+  if (buffer.length) {
+    try {
+      parsed = await parser.parseDocument(
+        { buffer, fileName: name, mime: req.body?.mime },
+        { text: predecodedText }
+      );
+    } catch (error) {
+      return errors.param(res, error?.publicMessage || error?.message || '文件解析失败');
+    }
+  } else {
+    // 仅给文件名 / URL 时走轻量降级：URL 场景尝试抓取可阅读文本
+    let fetched = '';
+    if (isUrl) {
+      try {
+        const resp = await fetch(url, { redirect: 'follow' });
+        const ct = resp.headers.get('content-type') || '';
+        if (resp.ok && cv(ct) !== 'binary') {
+          const body = Buffer.from(await resp.arrayBuffer());
+          if (parser.extOf(url) === 'pdf' || ct.includes('pdf')) {
+            const r = await parser.parseDocument({ buffer: body, fileName: name });
+            parsed = r;
+          } else {
+            fetched = body.toString('utf8').slice(0, parser.MAX_FILE_BYTES);
+          }
+        }
+      } catch {
+        /* 抓取失败时继续走占位结构化 */
+      }
+    }
+    if (!parsed) {
+      const fallback = buildStructuredFromText({ fileName: name, text: fetched, baseName });
+      parsed = {
+        title: fallback.docTitle,
+        authors: 'ScienceX Imported Doc',
+        abstract: fallback.paragraphs.length
+          ? fallback.paragraphs[0].slice(0, 240) + '…'
+          : `本文针对《${fallback.docTitle}》展开系统性学术解析，构建了多模态知识拓扑结构与核心论证脉络。`,
+        sections: fallback.sections,
+        figures: [],
+        text: fetched,
+        pages: Math.max(4, Math.ceil((fallback.paragraphs.length || 6) * 1.5)),
+        meta: { ext: parser.extOf(name), size: fetched.length, engine: 'placeholder', degraded: true, degradedReason: 'metadata-only' },
+      };
+    }
+  }
 
   const doc = {
-    id: store.id('d'), owner_id: req.user.id, project_id, title: docTitle,
-    authors: 'ScienceX Imported Doc', venue: 'Academic Archive 2026', year: new Date().getFullYear(), source_type: url ? 'url' : 'file',
-    file_name: name, pages: Math.max(4, Math.ceil((paragraphs.length || 6) * 1.5)), parsed_status: 'parsing', has_code: false, doi: '10.1109/SCIENCE.2026.001',
-    abstract: paragraphs.length ? paragraphs[0].slice(0, 240) + '…' : `本文针对《${docTitle}》展开系统性学术解析，构建了多模态知识拓扑结构与核心论证脉络。`,
+    id: store.id('d'), owner_id: req.user.id, project_id,
+    title: parsed.title || baseName,
+    authors: parsed.authors || 'ScienceX Imported Doc',
+    venue: isUrl ? 'Online Source' : 'Academic Archive 2026',
+    year: new Date().getFullYear(),
+    source_type: isUrl ? 'url' : parser.extOf(name) || 'file',
+    file_name: name,
+    pages: parsed.pages || 4,
+    parsed_status: parsed.meta?.degraded ? 'parsed_degraded' : 'parsing',
+    has_code: false,
+    doi: '10.1109/SCIENCE.2026.001',
+    abstract: parsed.abstract,
     created_at: store.now(),
-    structured: { sections },
-    mindmap: buildDefaultMindmap({ title: docTitle }),
-    seven_summary: buildDefaultSeven({ title: docTitle }),
+    structured: { sections: parsed.sections, figures: parsed.figures || [] },
+    parse_meta: parsed.meta || {},
+    mindmap: buildDefaultMindmap({ title: parsed.title || baseName }),
+    seven_summary: buildDefaultSeven({ title: parsed.title || baseName }),
     citation_graph: null,
   };
   store.documents.unshift(doc);
-  const task = ai.createTask('parse', ['下载 / 读取文件', '版面解析', '公式与图表识别', '构建结构化文本'], () => ({ doc_id: doc.id }), req.user.id);
+
+  const task = ai.createTask(
+    'parse',
+    ['读取文件', '版面解析', '公式与图表识别', '构建结构化正文'],
+    () => ({ doc_id: doc.id, sections: doc.structured.sections.length, figures: doc.structured.figures.length }),
+    req.user.id
+  );
   task.listeners.push((_task, entry) => {
     if (entry.event === 'done') doc.parsed_status = 'parsed';
     if (entry.event === 'error') doc.parsed_status = 'failed';
   });
-  ok(res, { doc_id: doc.id, task_id: task.id, status: 'parsing' }, '解析任务已提交');
-});
+  store.persist();
+
+  ok(
+    res,
+    {
+      doc_id: doc.id,
+      task_id: task.id,
+      status: doc.parsed_status,
+      title: doc.title,
+      sections: doc.structured.sections.length,
+      figures: doc.structured.figures.length,
+      parse_meta: doc.parse_meta,
+    },
+    parsed.meta?.degraded ? '解析完成（降级模式）' : '解析任务已提交'
+  );
+}));
+
+function cv(ct = '') {
+  return ct.includes('text') || ct.includes('json') || ct.includes('xml') || ct.includes('html') || ct.includes('pdf') ? 'text' : 'binary';
+}
 
 router.get('/documents/:id', auth, (req, res) => {
   const doc = store.documents.find((d) => d.id === req.params.id && canAccess(d, req.user.id));

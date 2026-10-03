@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../../components/Icon';
 import { useToast } from '../../components/ui';
 import { api } from '../../api/client';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import type { ResearchMemoryFact } from '../../types';
 
 interface MemoryDrawerProps {
@@ -18,6 +19,7 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
   onMemoryChanged,
 }) => {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [facts, setFacts] = useState<ResearchMemoryFact[]>([]);
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
@@ -138,7 +140,7 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
     >
       <div
         style={{
-          width: 'min(480px, 94vw)',
+          width: isMobile ? 'calc(100vw - 12px)' : 'min(480px, 94vw)',
           height: '100%',
           background: '#ffffff',
           boxShadow: '-12px 0 36px -4px rgba(15, 23, 42, 0.22)',
@@ -153,7 +155,7 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
         {/* 抽屉头部 */}
         <div
           style={{
-            padding: '18px 22px',
+            padding: isMobile ? '14px 14px' : '18px 22px',
             borderBottom: '1px solid #e2e8f0',
             display: 'flex',
             alignItems: 'center',
@@ -198,7 +200,7 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
         </div>
 
         {/* 抽屉主体 */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 18, background: '#f8fafc' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px' : '18px 22px', display: 'flex', flexDirection: 'column', gap: 18, background: '#f8fafc' }}>
           {/* 第一层：会话短期内存 */}
           <div
             style={{
@@ -415,7 +417,7 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
         {/* 抽屉底部 */}
         <div
           style={{
-            padding: '14px 22px',
+            padding: isMobile ? '12px 14px' : '14px 22px',
             borderTop: '1px solid #e2e8f0',
             background: '#ffffff',
             fontSize: 11.5,

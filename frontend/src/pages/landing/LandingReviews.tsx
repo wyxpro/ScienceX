@@ -12,7 +12,7 @@ interface ReviewItem {
   stars: number;
 }
 
-// 上排：向左滚动（内容聚焦微表情识别、AUFormer、消融实验、组会PPTX）
+// 评价内容均取材于本项目真实功能场景：文献精读、消融实验、组会汇报、专家评审团、期刊匹配、项目空间
 const ROW_TOP: ReviewItem[] = [
   {
     id: 'r1',
@@ -60,7 +60,6 @@ const ROW_TOP: ReviewItem[] = [
   },
 ];
 
-// 下排：向右滚动（内容聚焦每日文献速递、CCF期刊匹配、学术润色与项目空间）
 const ROW_BOTTOM: ReviewItem[] = [
   {
     id: 'r5',
@@ -108,156 +107,35 @@ const ROW_BOTTOM: ReviewItem[] = [
   },
 ];
 
+const ReviewCard: React.FC<{ item: ReviewItem; hidden?: boolean }> = ({ item, hidden }) => (
+  <article className="testimonial-card" aria-hidden={hidden || undefined}>
+    <div className="testimonial-card-top">
+      <span className="testimonial-topic"><Icon name="book" size={14} />{item.targetBadge}</span>
+      <span className="testimonial-stars" aria-label={`${item.stars} 星评价`}>{Array.from({ length: item.stars }, (_, i) => <Icon name="star" size={13} key={i} />)}</span>
+    </div>
+    <blockquote>{item.quote.replace(/^[“”]|[“”]$/g, '')}</blockquote>
+    <div className="testimonial-author">
+      <span className="testimonial-avatar" style={{ background: item.avatarBg }}>{item.avatarLetter}</span>
+      <div><strong>{item.author}</strong><p>{item.affiliation}</p></div>
+    </div>
+  </article>
+);
+
 export const LandingReviews: React.FC = () => {
-  return (
-    <section id="reviews" className="landing-section" style={{ maxWidth: 1400, margin: '0 auto', padding: '60px 0' }}>
-      <div className="section-head text-center" style={{ padding: '0 24px', marginBottom: 36 }}>
-        <div className="section-badge">Academic Testimonials</div>
-        <h2 className="section-title" style={{ fontSize: 'clamp(26px, 3.2vw, 36px)', marginTop: 8 }}>
-          真实科研项目落地口碑
-        </h2>
-        <p className="section-sub" style={{ maxWidth: 720, margin: '10px auto 0', color: 'var(--muted)', fontSize: 15.5 }}>
-          来自真实微表情识别（MER）与前沿科研攻关团队的实测反馈，陪伴学者从开题、实验到顶会顶刊接收。
-        </p>
+  const renderRow = (items: ReviewItem[], reverse?: boolean) => (
+    <div className="testimonial-track-wrap">
+      <div className={`testimonial-track${reverse ? ' is-reverse' : ''}`}>
+        {items.map(item => <ReviewCard key={item.id} item={item} />)}
+        {items.map(item => <ReviewCard key={`${item.id}-dup`} item={item} hidden />)}
       </div>
-
-      {/* 双层轮播容器 */}
-      <div className="reviews-marquee-container">
-        {/* 上排：向左滚动 */}
-        <div className="reviews-marquee-row reviews-marquee-left">
-          {[...ROW_TOP, ...ROW_TOP].map((item, idx) => (
-            <div key={`${item.id}-${idx}`} className="review-marquee-card">
-              <div className="row-between items-center" style={{ marginBottom: 10 }}>
-                <span style={{ color: 'var(--gold)', letterSpacing: 2, fontSize: 13 }}>
-                  {'★'.repeat(item.stars)}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    background: 'var(--bg-deep)',
-                    color: 'var(--brand-strong)',
-                  }}
-                >
-                  {item.targetBadge}
-                </span>
-              </div>
-
-              <p
-                style={{
-                  fontSize: 13.5,
-                  lineHeight: 1.62,
-                  color: 'var(--ink)',
-                  margin: '0 0 14px',
-                  flex: 1,
-                }}
-              >
-                {item.quote}
-              </p>
-
-              <div
-                className="row g-2 items-center"
-                style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 'auto' }}
-              >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: '50%',
-                    background: item.avatarBg,
-                    color: 'var(--ink)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: 13,
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.avatarLetter}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div className="ellipsis" style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>
-                    {item.author}
-                  </div>
-                  <div className="ellipsis text-xs text-muted" style={{ marginTop: 1 }}>
-                    {item.affiliation}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 下排：向右滚动 */}
-        <div className="reviews-marquee-row reviews-marquee-right">
-          {[...ROW_BOTTOM, ...ROW_BOTTOM].map((item, idx) => (
-            <div key={`${item.id}-${idx}`} className="review-marquee-card">
-              <div className="row-between items-center" style={{ marginBottom: 10 }}>
-                <span style={{ color: 'var(--gold)', letterSpacing: 2, fontSize: 13 }}>
-                  {'★'.repeat(item.stars)}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    background: 'var(--bg-deep)',
-                    color: 'var(--brand-strong)',
-                  }}
-                >
-                  {item.targetBadge}
-                </span>
-              </div>
-
-              <p
-                style={{
-                  fontSize: 13.5,
-                  lineHeight: 1.62,
-                  color: 'var(--ink)',
-                  margin: '0 0 14px',
-                  flex: 1,
-                }}
-              >
-                {item.quote}
-              </p>
-
-              <div
-                className="row g-2 items-center"
-                style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 'auto' }}
-              >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: '50%',
-                    background: item.avatarBg,
-                    color: 'var(--ink)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: 13,
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.avatarLetter}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div className="ellipsis" style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>
-                    {item.author}
-                  </div>
-                  <div className="ellipsis text-xs text-muted" style={{ marginTop: 1 }}>
-                    {item.affiliation}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    </div>
+  );
+  return (
+    <section id="reviews" className="landing-section testimonials-section">
+      <div className="section-head"><div className="section-badge">Academic Testimonials</div><h2 className="section-title">真实科研项目落地口碑</h2><p className="section-sub">好的工具，藏在一次次具体的研究进展里。<br />听听学者们如何把 ScienceX 用进日常科研。</p></div>
+      <div className="testimonial-marquee" aria-label="学者真实评价轮播">
+        {renderRow(ROW_TOP)}
+        {renderRow(ROW_BOTTOM, true)}
       </div>
     </section>
   );

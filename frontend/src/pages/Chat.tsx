@@ -7,6 +7,7 @@ import { api, chatStream } from '../api/client';
 import Icon, { type IconName } from '../components/Icon';
 import { useToast } from '../components/ui';
 import { useAuth } from '../stores/auth';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { AgentMode, ChatMessage, Conversation, SkillItem } from '../types';
 import { ChatCommandDock } from './chat/ChatCommandDock';
 import { ChatMessages } from './chat/ChatMessages';
@@ -31,6 +32,7 @@ const QUICK_PROMPTS: QuickPrompt[] = [
 export default function Chat() {
   const { user } = useAuth();
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [convs, setConvs] = useState<Conversation[] | null>(null);
   const [activeConv, setActiveConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -83,6 +85,7 @@ export default function Chat() {
     setActiveConv(id);
     const { items } = await api<{ items: ChatMessage[] }>(`/conversations/${id}/messages`);
     setMessages(items.map((m) => ({ ...m })));
+    if (isMobile) setSidebarOpen(false); // 移动端抽屉：选中会话后自动收起
   };
 
   const newConv = async () => {
@@ -90,6 +93,7 @@ export default function Chat() {
     setConvs((x) => [c, ...(x || [])]);
     setActiveConv(c.id);
     setMessages([]);
+    if (isMobile) setSidebarOpen(false); // 移动端抽屉：新建会话后自动收起
   };
 
   const removeConv = async (id: string, e: React.MouseEvent) => {
@@ -259,8 +263,8 @@ export default function Chat() {
       <div className="chat-main-stage">
         {/* 顶部轻量状态栏 */}
         <div className="chat-stage-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+            <div className="chat-stage-title-group" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <div
                 style={{
                   width: 24,
@@ -271,27 +275,28 @@ export default function Chat() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#ffffff',
+                  flexShrink: 0,
                 }}
               >
                 <Icon name="flask" size={13} />
               </div>
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+              <span className="chat-stage-title" style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
                 {activeConv ? convs?.find((c) => c.id === activeConv)?.title || '科研对话' : 'AI 对话中枢'}
               </span>
             </div>
 
-            <div className="chat-header-pill" style={{ color: '#059669', background: '#ecfdf5', borderColor: '#a7f3d0' }}>
+            <div className="chat-header-pill" style={{ color: '#059669', background: '#ecfdf5', borderColor: '#a7f3d0', flexShrink: 0 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
               <span>{model} 在线</span>
             </div>
 
-            <div className="chat-header-pill" style={{ color: '#4f46e5', background: '#e0e7ff', borderColor: '#c7d2fe' }}>
+            <div className="chat-header-pill desktop-only" style={{ color: '#4f46e5', background: '#e0e7ff', borderColor: '#c7d2fe' }}>
               <span>灵犀 Agent 引擎</span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ fontSize: 12, color: '#64748b' }}>
+          <div className="chat-stage-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className="desktop-only" style={{ fontSize: 12, color: '#64748b' }}>
               今日已用 <strong style={{ color: '#0f172a' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</strong> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
             </div>
 
@@ -461,7 +466,7 @@ export default function Chat() {
         )}
       </div>
 
-      {/* ===== 右侧会话侧边栏（可折叠） ===== */}
+      {/* ===== 右侧会话侧边栏（可折叠；移动端为覆盖式抽屉） ===== */}
       <ChatSidebar
         convs={convs}
         filteredConvs={filteredConvs}
@@ -473,6 +478,7 @@ export default function Chat() {
         onRenameConv={renameConv}
         onRemoveConv={removeConv}
         collapsed={!sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* 课题组三层记忆抽屉 */}

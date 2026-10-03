@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Icon, { type IconName } from '../components/Icon';
 import { useAuth } from '../stores/auth';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface NavItem { to: string; label: string; icon: IconName }
 interface NavGroup { title?: string; items: NavItem[] }
@@ -53,6 +54,7 @@ export default function AppLayout() {
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => { setOpen(false); }, [loc.pathname]);
   useEffect(() => {
@@ -191,7 +193,7 @@ export default function AppLayout() {
       {sidebar}
       {open && <div className="scrim mobile-only" onClick={() => setOpen(false)} />}
       <div className="main-area">
-        {loc.pathname !== '/chat' && (
+        {(loc.pathname !== '/chat' || isMobile) && (
           <header className="topbar">
             <button className="btn btn-ghost btn-icon hamburger" onClick={() => setOpen(true)}><Icon name="menu" size={19} /></button>
             

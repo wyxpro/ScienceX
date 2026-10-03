@@ -22,6 +22,7 @@ export const ReActThoughtBox: React.FC<ReActThoughtBoxProps> = ({ thoughts }) =>
       }}
     >
       <div
+        className="chat-card-head"
         style={{
           padding: '8px 12px',
           display: 'flex',
@@ -33,7 +34,7 @@ export const ReActThoughtBox: React.FC<ReActThoughtBoxProps> = ({ thoughts }) =>
         }}
         onClick={() => setOpen(!open)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div
             style={{
               width: 22,
