@@ -10,7 +10,6 @@ interface NavGroup { title?: string; items: NavItem[] }
 const GROUPS: NavGroup[] = [
   {
     items: [
-      { to: '/projects', label: '课题空间', icon: 'layers' },
       { to: '/chat', label: 'AI 工作台', icon: 'chat' },
     ],
   },
@@ -94,6 +93,18 @@ export default function AppLayout() {
           </div>
         ))}
       </nav>
+
+      {/* 课题空间入口：固定在左下角用户信息上方 */}
+      <div style={{ padding: '0 10px' }}>
+        <NavLink
+          to="/projects"
+          className={({ isActive }) => `sb-item ${isActive ? 'active' : ''}`}
+          title={collapsed ? '课题空间' : undefined}
+        >
+          <span className="sb-ic"><Icon name="layers" size={17} /></span>
+          {!collapsed && <span>课题空间</span>}
+        </NavLink>
+      </div>
 
       <div className="sb-user" onClick={() => nav('/account')} title={collapsed ? '设置与管理' : undefined}>
         <div className="avatar" style={{ width: 30, height: 30, fontSize: 12.5, borderWidth: 0 }}>{user?.name?.[0] || '研'}</div>

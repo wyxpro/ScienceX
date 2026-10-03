@@ -73,7 +73,7 @@ export default function Meeting() {
   const shown = filter === 'all' ? advice : advice.filter((a) => a.status === filter);
 
   return (
-    <div className="page" style={{ gap: 14 }}>
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* ===== 上：PPT 生成 ===== */}
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', flex: 'none' }}>
         <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

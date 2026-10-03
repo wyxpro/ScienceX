@@ -66,6 +66,17 @@ export default function Projects() {
     return `${p.name} ${p.description || ''}`.toLowerCase().includes(q);
   }), [projects, filter, query]);
 
+  const stats = useMemo(() => {
+    const totalDocs = projects.reduce((s, p) => s + (p.stats?.documents ?? 0), 0);
+    const totalExps = projects.reduce((s, p) => s + (p.stats?.experiments ?? 0), 0);
+    const totalCharts = projects.reduce((s, p) => s + (p.stats?.charts ?? 0), 0);
+    const totalMss = projects.reduce((s, p) => s + (p.stats?.manuscripts ?? 0), 0);
+    const avgProgress = projects.length
+      ? Math.round(projects.reduce((s, p) => s + overallOf(p), 0) / projects.length)
+      : 0;
+    return { totalDocs, totalExps, totalCharts, totalMss, avgProgress };
+  }, [projects]);
+
   const openDetail = async (id: string) => {
     try {
       const r = await api<any>(`/projects/${id}`);
@@ -119,7 +130,54 @@ export default function Projects() {
   }
 
   return (
-    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 60 }}>
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 60 }}>
+      {/* ===== 顶部 KPI 概览统计条 ===== */}
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, flex: 'none' }}>
+        {[
+          { label: '科研项目', value: projects.length, icon: 'layers', hint: `平均进度 ${stats.avgProgress}%` },
+          { label: '文献资产', value: stats.totalDocs, icon: 'book', hint: `${stats.totalMss} 篇关联稿件` },
+          { label: '实验 / 图表', value: `${stats.totalExps} / ${stats.totalCharts}`, icon: 'flask', hint: '含消融与 SOTA 对标' },
+          { label: '整体推进率', value: `${stats.avgProgress}%`, icon: 'zap', hint: '全流程里程碑达成' },
+        ].map((s, i) => (
+          <div
+            key={s.label}
+            className="card anim-in"
+            style={{
+              padding: '16px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              animationDelay: `${i * 40}ms`,
+              borderRadius: 14,
+              border: '1px solid var(--line)',
+              background: 'var(--surface)',
+              boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
+            }}
+          >
+            <span
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: 'var(--brand-soft)',
+                color: 'var(--brand-strong)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 'none',
+              }}
+            >
+              <Icon name={s.icon as IconName} size={18} />
+            </span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div className="text-xs text-muted" style={{ fontWeight: 500, marginBottom: 2 }}>{s.label}</div>
+              <div className="mono fw-bold" style={{ fontSize: 20, lineHeight: 1.2, color: 'var(--ink)' }}>{s.value}</div>
+              <div className="text-xs text-muted ellipsis" style={{ fontSize: 11, marginTop: 3 }}>{s.hint}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* ===== 项目空间工具栏 ===== */}
       <div
         className="card"
