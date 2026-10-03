@@ -53,7 +53,7 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
         desc: '开源实验代码环境配置繁琐、基线复现屡屡失败，消融实验缺乏规范的对比维度。',
       },
     ],
-    keywords: ['开题调研', '文献精读', 'Baseline 对比', '消融实验', '查重降重'],
+    keywords: ['开题调研', '文献精读', 'Baseline 对比', '消融实验'],
   },
   {
     id: 'teacher',

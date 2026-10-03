@@ -134,16 +134,17 @@ export default function Submission() {
   });
 
   return (
-    <div className="page" style={{ gap: 20 }}>
-      {/* ===== 页头三大 Tab 栏 ===== */}
+    <div className="page" style={{ gap: 16 }}>
+      {/* ===== 顶部主 Tabs 栏 ===== */}
       <div
         className="card card-pad"
         style={{
+          padding: '10px 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 18px',
-          flex: 'none',
+          background: '#ffffff',
+          borderRadius: 14,
         }}
       >
         <div className="tabs" style={{ background: 'transparent', padding: 0, margin: 0 }}>
@@ -157,25 +158,31 @@ export default function Submission() {
             </button>
           ))}
         </div>
+
+        {tab === 'journals' && (
+          <div className="text-xs text-muted">
+            共收录 <strong style={{ color: 'var(--brand-strong)' }}>{filteredJournals.length}</strong> 份 CCF 顶级期刊与学术会议
+          </div>
+        )}
       </div>
 
-      {/* ===== 期刊会议大全专属筛选栏（点击“期刊会议大全”时在下方单独显示） ===== */}
+      {/* ===== 点击“期刊会议大全”时在下方展示的筛选工具条（与下方卡片间距合理匀称） ===== */}
       {tab === 'journals' && (
         <div
           className="card card-pad anim-in"
           style={{
+            padding: '12px 18px',
             display: 'flex',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 14,
-            padding: '14px 20px',
+            gap: 12,
+            background: '#ffffff',
             borderRadius: 14,
             border: '1px solid #e2e8f0',
-            background: '#ffffff',
-            boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
           }}
         >
-          {/* 会议/期刊快速切换 */}
+          {/* 会议 / 期刊 快速类型切换 */}
           <div
             style={{
               display: 'flex',
@@ -191,7 +198,7 @@ export default function Submission() {
                 type="button"
                 onClick={() => setTypeFilter(t)}
                 style={{
-                  padding: '4px 12px',
+                  padding: '5px 13px',
                   fontSize: 12.5,
                   fontWeight: typeFilter === t ? 700 : 500,
                   borderRadius: 6,
@@ -208,12 +215,12 @@ export default function Submission() {
             ))}
           </div>
 
-          {/* 搜索框 */}
-          <div style={{ position: 'relative', width: 220 }}>
+          {/* 搜索会议 / 期刊 输入框 */}
+          <div style={{ position: 'relative', width: 230 }}>
             <input
               className="input"
               style={{ width: '100%', height: 34, fontSize: 13, paddingLeft: 30, borderRadius: 8 }}
-              placeholder="搜索会议 / 期刊…"
+              placeholder="搜索会议 / 期刊 (如 CVPR、TPAMI)…"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
             />
@@ -231,7 +238,9 @@ export default function Submission() {
             </span>
           </div>
 
-          {/* CCF 等级胶囊按钮 */}
+          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 4px' }} />
+
+          {/* CCF 等级筛选胶囊 (全部 CCF / CCF-A / CCF-B / CCF-C) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {[
               { key: '', label: '全部 CCF' },
@@ -245,7 +254,7 @@ export default function Submission() {
                 onClick={() => setCcf(c.key)}
                 style={{
                   padding: '5px 12px',
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontWeight: ccf === c.key ? 700 : 500,
                   borderRadius: 7,
                   border: ccf === c.key ? '1px solid var(--brand)' : '1px solid var(--line)',
@@ -260,22 +269,22 @@ export default function Submission() {
             ))}
           </div>
 
-          {/* 截稿时间快速筛选 */}
+          {/* 截稿时间范围快捷筛选 (全部时间 / 30天内 / 90天内) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
             {[
               { key: 'all', label: '全部时间' },
-              { key: '30', label: '30天内' },
-              { key: '90', label: '90天内' },
+              { key: '30', label: '30 天内' },
+              { key: '90', label: '90 天内' },
             ].map((tm) => (
               <button
                 key={tm.key}
                 type="button"
                 onClick={() => setTimeFilter(tm.key as any)}
                 style={{
-                  padding: '5px 11px',
+                  padding: '5px 12px',
                   fontSize: 12,
                   fontWeight: timeFilter === tm.key ? 700 : 500,
-                  borderRadius: 6,
+                  borderRadius: 7,
                   border: timeFilter === tm.key ? '1px solid #94a3b8' : '1px solid var(--line)',
                   background: timeFilter === tm.key ? '#f1f5f9' : '#ffffff',
                   color: timeFilter === tm.key ? '#0f172a' : 'var(--muted)',

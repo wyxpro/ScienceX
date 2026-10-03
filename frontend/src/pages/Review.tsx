@@ -184,24 +184,24 @@ export default function Review() {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 1360, margin: '0 auto', gap: 26, padding: '24px 28px' }}>
+    <div className="page" style={{ maxWidth: 1320, margin: '0 auto', gap: 16 }}>
       {/* 顶部控制操作条 */}
       <div
         className="card row-between wrap items-center"
         style={{
-          padding: '14px 22px',
+          padding: '12px 18px',
           background: '#ffffff',
           borderRadius: 14,
           border: '1px solid #e2e8f0',
         }}
       >
         <div className="row g-2 items-center">
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>评阅目标稿件：</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>评阅目标稿件：</span>
           <select
             className="select"
             value={msId}
             onChange={(e) => setMsId(e.target.value)}
-            style={{ width: 320, fontSize: 13, padding: '7px 12px' }}
+            style={{ width: 280, fontSize: 12.5, padding: '6px 10px' }}
           >
             {manuscripts.length ? (
               manuscripts.map((m) => (
@@ -219,16 +219,16 @@ export default function Review() {
           <button
             className="btn btn-primary btn-sm"
             onClick={launch}
-            style={{ padding: '8px 18px', fontSize: 13 }}
+            style={{ padding: '6px 16px', fontSize: 12.5 }}
           >
-            <Icon name="zap" size={14} /> 重新发起五角色合议
+            <Icon name="zap" size={13} /> 重新发起五角色合议
           </button>
           <button
             className="btn btn-ghost btn-sm"
             onClick={() => toast('审稿决策报告已导出为学术 PDF', 'ok')}
-            style={{ padding: '8px 16px', fontSize: 13 }}
+            style={{ fontSize: 12.5 }}
           >
-            <Icon name="download" size={14} /> 导出合议报告
+            <Icon name="download" size={13} /> 导出合议报告
           </button>
         </div>
       </div>
@@ -238,7 +238,7 @@ export default function Review() {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: 20,
+          gap: 16,
         }}
       >
         {/* 卡片 1: 会议决议 */}
@@ -247,12 +247,12 @@ export default function Review() {
           style={{
             background: '#ffffff',
             borderRadius: 14,
-            padding: '18px 22px',
+            padding: '16px 20px',
             border: '1px solid #e2e8f0',
             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
           }}
         >
-          <div className="row-between items-center mb-2">
+          <div className="row-between items-center mb-1">
             <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>会议决议</span>
             <div
               style={{
@@ -283,12 +283,12 @@ export default function Review() {
           style={{
             background: '#ffffff',
             borderRadius: 14,
-            padding: '18px 22px',
+            padding: '16px 20px',
             border: '1px solid #e2e8f0',
             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
           }}
         >
-          <div className="row-between items-center mb-2">
+          <div className="row-between items-center mb-1">
             <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>审稿人平均得分</span>
             <div
               style={{
@@ -318,12 +318,12 @@ export default function Review() {
           style={{
             background: '#ffffff',
             borderRadius: 14,
-            padding: '18px 22px',
+            padding: '16px 20px',
             border: '1px solid #e2e8f0',
             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
           }}
         >
-          <div className="row-between items-center mb-2">
+          <div className="row-between items-center mb-1">
             <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>目标venue</span>
             <div
               style={{
@@ -354,12 +354,12 @@ export default function Review() {
           style={{
             background: '#ffffff',
             borderRadius: 14,
-            padding: '18px 22px',
+            padding: '16px 20px',
             border: '1px solid #e2e8f0',
             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
           }}
         >
-          <div className="row-between items-center mb-2">
+          <div className="row-between items-center mb-1">
             <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>严格度</span>
             <div
               style={{
@@ -398,13 +398,13 @@ export default function Review() {
         {/* 顶部橙红色装饰线条 */}
         <div
           style={{
-            height: 4,
+            height: 3.5,
             width: '100%',
             background: 'linear-gradient(90deg, #ea580c 0%, #f97316 50%, #fb923c 100%)',
           }}
         />
 
-        <div style={{ padding: '24px 28px' }}>
+        <div style={{ padding: '20px 24px' }}>
           {/* 标题栏与小修胶囊标签 */}
           <div className="row-between items-center mb-3">
             <div className="row g-2 items-center">
@@ -463,10 +463,10 @@ export default function Review() {
           </div>
 
           {/* ===== 模块三：多维度评阅画像（分左右两栏：雷达图 + 环形指标与研判） ===== */}
-          <div style={{ marginTop: 28, paddingTop: 6 }}>
-            <div className="row g-2 items-center mb-4">
-              <Icon name="target" size={17} style={{ color: '#059669' }} />
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+          <div style={{ marginTop: 22 }}>
+            <div className="row g-2 items-center mb-3">
+              <Icon name="target" size={16} style={{ color: '#059669' }} />
+              <span style={{ fontSize: 14.5, fontWeight: 700, color: '#0f172a' }}>
                 多维度评阅画像
               </span>
             </div>
@@ -475,9 +475,9 @@ export default function Review() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
-                gap: 32,
+                gap: 24,
                 alignItems: 'center',
-                padding: '12px 16px',
+                padding: '10px 12px',
               }}
             >
               {/* 左侧：五维学术雷达图 */}
@@ -486,11 +486,11 @@ export default function Review() {
               </div>
 
               {/* 右侧：环形进度与综合研判 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                   {/* 环形评分环 */}
-                  <div style={{ position: 'relative', width: 82, height: 82, flexShrink: 0 }}>
-                    <svg width="82" height="82" viewBox="0 0 78 78">
+                  <div style={{ position: 'relative', width: 78, height: 78, flexShrink: 0 }}>
+                    <svg width="78" height="78" viewBox="0 0 78 78">
                       <circle
                         cx="39"
                         cy="39"
@@ -519,7 +519,7 @@ export default function Review() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 19,
+                        fontSize: 18,
                         fontWeight: 800,
                         color: '#0f172a',
                       }}
@@ -528,7 +528,7 @@ export default function Review() {
                     </div>
                   </div>
 
-                  <div style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155' }}>
+                  <div style={{ fontSize: 13, lineHeight: 1.68, color: '#334155' }}>
                     {activeReviewData.ringSummary}
                   </div>
                 </div>
@@ -539,8 +539,8 @@ export default function Review() {
                     <span
                       key={idx}
                       style={{
-                        fontSize: 12,
-                        padding: '5px 12px',
+                        fontSize: 11.5,
+                        padding: '4px 10px',
                         background: '#f1f5f9',
                         color: '#475569',
                         borderRadius: 6,
@@ -559,17 +559,17 @@ export default function Review() {
       </div>
 
       {/* ===== 模块四：五位审稿 Agent 独立意见卡片（可展开折叠） ===== */}
-      <div>
-        <div className="row-between items-center mb-3">
-          <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+      <div style={{ marginTop: 8 }}>
+        <div className="row-between items-center mb-2">
+          <span style={{ fontSize: 14.5, fontWeight: 700, color: '#0f172a' }}>
             五角色并行独立审稿意见
           </span>
-          <span style={{ fontSize: 12.5, color: '#64748b' }}>
+          <span style={{ fontSize: 12, color: '#64748b' }}>
             理论 / 方法 / 实验 / 写作 / 伦理 并行独立评阅
           </span>
         </div>
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {(report?.roles || [
             {
               role: '理论审稿人',
@@ -622,10 +622,9 @@ export default function Review() {
                 className="card"
                 style={{
                   background: '#ffffff',
-                  borderRadius: 14,
-                  padding: '18px 20px',
+                  borderRadius: 12,
+                  padding: '14px 16px',
                   border: '1px solid #e2e8f0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                 }}
               >
                 <div className="row-between items-center mb-2">
