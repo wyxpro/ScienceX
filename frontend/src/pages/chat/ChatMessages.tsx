@@ -26,6 +26,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             return (
               <div key={m.id} className="chat-user-row">
                 <div className="chat-user-bubble">{m.content}</div>
+                {/* 用户头像标识 */}
+                <div className="chat-user-avatar" title={user?.name || '我的提问'}>
+                  {user?.name?.[0] || '研'}
+                </div>
               </div>
             );
           }
