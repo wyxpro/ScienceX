@@ -8,6 +8,10 @@ backend/.port
 **/pnpm-lock.yaml
 **/pnpm-workspace.yaml
 
+# Presentation build artifacts
+.pptx-build/
+.pptx-output/演示文稿1（ScienceX路演更新版）.pptx
+
 # 外部参考仓库（hexo-document-viewer 对接源码，不入库）
 .vendor/
 
