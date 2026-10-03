@@ -8,6 +8,7 @@ import { BillingSection } from './account/BillingSection';
 import { ModelsSection } from './account/ModelsSection';
 import { ProfileSection } from './account/ProfileSection';
 import { SecuritySection } from './account/SecuritySection';
+import { TeamSection } from './account/TeamSection';
 import { UsageSection } from './account/UsageSection';
 
 export default function Account() {
@@ -181,6 +182,7 @@ export default function Account() {
           { key: 'models', label: <><Icon name="cpu" size={13} /> 模型管理</> },
           { key: 'usage', label: <><Icon name="chart" size={13} /> 用量统计</> },
           { key: 'billing', label: <><Icon name="card" size={13} /> 订阅计费</> },
+          { key: 'teams', label: <><Icon name="users" size={13} /> 课题组</> },
           { key: 'security', label: <><Icon name="shield" size={13} /> 安全</> },
         ]}
       />
@@ -226,6 +228,9 @@ export default function Account() {
           onBuy={buy}
         />
       )}
+
+      {/* ===== 课题组 ===== */}
+      {tab === 'teams' && <TeamSection />}
 
       {/* ===== 安全 ===== */}
       {tab === 'security' && security && (

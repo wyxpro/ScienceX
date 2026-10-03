@@ -34,7 +34,7 @@ const GROUPS: NavGroup[] = [
 ];
 
 const TITLES: Record<string, [string, string]> = {
-  '/projects': ['课题空间', '项目空间 · 课题组 · RAG 知识库'],
+  '/projects': ['课题空间', '项目空间 · 进度与资产'],
   '/chat': ['AI 工作台', '对话即工作台 · 工具即智能体'],
   '/tools/topic': ['选题灵感', '多源检索 · 选题推荐 · 可行性评估 · 开题报告'],
   '/tools/reader': ['文献阅读', '三栏联动 · 翻译 · 思维导图 · 引用图谱'],
@@ -45,7 +45,7 @@ const TITLES: Record<string, [string, string]> = {
   '/features/meeting': ['组会汇报', 'PPT 一键生成 · 导师建议记录'],
   '/features/review': ['多智能体专家评审团', '五角色并行评审 · 冲突分析 · 审稿报告'],
   '/features/reproduce': ['论文复现', '代码解析 · 环境搭建 · 基线对齐 · 结果比对'],
-  '/account': ['设置与管理', '资料偏好 · 模型管理 · 用量 · 订阅 · 安全'],
+  '/account': ['设置与管理', '资料偏好 · 模型管理 · 用量 · 订阅 · 课题组 · 安全'],
 };
 
 export default function AppLayout() {
