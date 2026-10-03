@@ -228,52 +228,94 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                   <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>
                     主流与专有科研大模型
                   </div>
-                  {models.builtin?.map((m: any) => (
-                    <div
-                      key={m.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        background: model === m.name ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => { if (model !== m.name) e.currentTarget.style.background = '#f1f5f9'; }}
-                      onMouseLeave={(e) => { if (model !== m.name) e.currentTarget.style.background = 'transparent'; }}
-                      onClick={() => onSelectModel(m.name)}
-                    >
-                      <Icon name="cpu" size={13} style={{ color: '#059669' }} />
-                      <span style={{ fontWeight: model === m.name ? 600 : 400 }}>{m.name}</span>
-                      <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 'auto' }}>{m.tag}</span>
-                    </div>
-                  ))}
-                  {models.custom?.map((m: any) => (
-                    <div
-                      key={m.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        background: model === m.name ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => { if (model !== m.name) e.currentTarget.style.background = '#f1f5f9'; }}
-                      onMouseLeave={(e) => { if (model !== m.name) e.currentTarget.style.background = 'transparent'; }}
-                      onClick={() => onSelectModel(m.name)}
-                    >
-                      <Icon name="key" size={13} style={{ color: '#10b981' }} />
-                      <span style={{ fontWeight: model === m.name ? 600 : 400 }}>{m.name}</span>
-                      <span style={{ fontSize: 11, color: '#10b981', marginLeft: 'auto' }}>自定义</span>
-                    </div>
-                  ))}
+                  {models.builtin?.map((m: any) => {
+                    const isSelected = model === m.name || model === m.id;
+                    return (
+                      <div
+                        key={m.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '8px 10px',
+                          borderRadius: 8,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          background: isSelected ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                          color: isSelected ? '#047857' : '#1e293b',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f1f5f9'; }}
+                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectModel(m.name);
+                          setActiveMenu(null);
+                        }}
+                      >
+                        <Icon name="cpu" size={13} style={{ color: isSelected ? '#059669' : '#64748b' }} />
+                        <span style={{ fontWeight: isSelected ? 700 : 400 }}>{m.name}</span>
+                        {m.tag && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: isSelected ? '#059669' : 'var(--muted)',
+                              background: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(0, 0, 0, 0.04)',
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              marginLeft: 'auto',
+                            }}
+                          >
+                            {m.tag}
+                          </span>
+                        )}
+                        {isSelected && <Icon name="check" size={13} style={{ color: '#059669', marginLeft: 4 }} />}
+                      </div>
+                    );
+                  })}
+                  {models.custom?.map((m: any) => {
+                    const isSelected = model === m.name || model === m.id;
+                    return (
+                      <div
+                        key={m.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '8px 10px',
+                          borderRadius: 8,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          background: isSelected ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                          color: isSelected ? '#047857' : '#1e293b',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f1f5f9'; }}
+                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectModel(m.name);
+                          setActiveMenu(null);
+                        }}
+                      >
+                        <Icon name="key" size={13} style={{ color: '#10b981' }} />
+                        <span style={{ fontWeight: isSelected ? 700 : 400 }}>{m.name}</span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: '#10b981',
+                            background: 'rgba(16, 185, 129, 0.12)',
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            marginLeft: 'auto',
+                          }}
+                        >
+                          自定义
+                        </span>
+                        {isSelected && <Icon name="check" size={13} style={{ color: '#059669', marginLeft: 4 }} />}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

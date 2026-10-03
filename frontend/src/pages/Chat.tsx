@@ -29,6 +29,18 @@ const QUICK_PROMPTS: QuickPrompt[] = [
   { id: 'chart', icon: 'chart', label: '科研图表生成', prompt: '帮我用 Python 生成一份多指标消融对比的学术柱状图' },
 ];
 
+const DEFAULT_MODELS = {
+  builtin: [
+    { id: 'm-deepseek-flash', name: 'DeepSeek V4.1 Flash', model_name: 'DeepSeek-Flash', provider: 'deepseek', tag: '极速推理 · 推荐', context: '64K' },
+    { id: 'm-gpt4o', name: 'GPT-4o', provider: 'openai', tag: '通用最强', context: '128K' },
+    { id: 'm-claude', name: 'Claude 3.7 Sonnet', provider: 'anthropic', tag: '长文写作', context: '200K' },
+    { id: 'm-gemini', name: 'Gemini 2.0 Flash', provider: 'google', tag: '高速低价', context: '1M' },
+    { id: 'm-deepseek', name: 'DeepSeek-V3', provider: 'deepseek', tag: '代码 / 推理', context: '64K' },
+    { id: 'm-qwen', name: 'Qwen-Max', provider: 'qwen', tag: '中文优化', context: '128K' },
+  ],
+  custom: [],
+};
+
 export default function Chat() {
   const { user } = useAuth();
   const toast = useToast();
@@ -38,8 +50,14 @@ export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
-  const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>({ builtin: [], custom: [] });
-  const [model, setModel] = useState('DeepSeek V4.1 Flash');
+  const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>(DEFAULT_MODELS);
+  const [model, setModel] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('sciencex_chat_model');
+      if (saved && saved !== 'DeepSeek-V3') return saved;
+    } catch {}
+    return 'DeepSeek V4.1 Flash';
+  });
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [keyword, setKeyword] = useState('');
   const [recording, setRecording] = useState(false);
@@ -54,6 +72,14 @@ export default function Chat() {
     today_usage: { tokens: 38400, calls: 26, cost: 1.24 },
   });
 
+  const handleSelectModel = useCallback((selectedModelName: string) => {
+    setModel(selectedModelName);
+    try {
+      localStorage.setItem('sciencex_chat_model', selectedModelName);
+    } catch {}
+    toast(`已切换至模型：${selectedModelName}`, 'ok');
+  }, [toast]);
+
   const loadData = useCallback(async () => {
     try {
       const [c, m, d, s, mem] = await Promise.all([
@@ -64,12 +90,27 @@ export default function Chat() {
         api<{ total: number }>('/chat/memories').catch(() => ({ total: 4 })),
       ]);
       setConvs((c as any)?.items || (Array.isArray(c) ? c : []));
-      const loadedModels = m || { builtin: [], custom: [] };
+      const loadedModels = (m && m.builtin && m.builtin.length > 0) ? m : DEFAULT_MODELS;
       setModels(loadedModels);
-      const flashModel = loadedModels.builtin?.find((item: any) => item.name?.includes('DeepSeek'))?.name;
-      if (flashModel) {
-        setModel(flashModel);
+
+      // 模型选择优先级：用户主动选择 > DeepSeek V4.1 Flash 默认
+      const allModelNames = [
+        ...(loadedModels.builtin || []).map((x: any) => x.name),
+        ...(loadedModels.custom || []).map((x: any) => x.name),
+      ];
+      try {
+        const saved = localStorage.getItem('sciencex_chat_model');
+        if (saved && saved !== 'DeepSeek-V3' && allModelNames.includes(saved)) {
+          setModel(saved);
+        } else {
+          const defaultFlash = loadedModels.builtin?.find((item: any) => item.name === 'DeepSeek V4.1 Flash' || item.id === 'm-deepseek-flash')?.name || 'DeepSeek V4.1 Flash';
+          setModel(defaultFlash);
+          localStorage.setItem('sciencex_chat_model', defaultFlash);
+        }
+      } catch {
+        setModel('DeepSeek V4.1 Flash');
       }
+
       if (d) setDashboard(d);
       setSkills(Array.isArray(s) ? s : ((s as any)?.items || []));
       if (mem && typeof mem.total === 'number') setMemoryCount(mem.total);
@@ -414,7 +455,7 @@ export default function Chat() {
               onUploadClick={handleUpload}
               onEnhancePrompt={enhancePrompt}
               model={model}
-              onSelectModel={setModel}
+              onSelectModel={handleSelectModel}
               models={models}
               skills={skills}
               onInvokeSkill={invokeSkill}
@@ -459,7 +500,7 @@ export default function Chat() {
                 onUploadClick={handleUpload}
                 onEnhancePrompt={enhancePrompt}
                 model={model}
-                onSelectModel={setModel}
+                onSelectModel={handleSelectModel}
                 models={models}
                 skills={skills}
                 onInvokeSkill={invokeSkill}
