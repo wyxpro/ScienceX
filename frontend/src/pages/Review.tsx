@@ -524,7 +524,7 @@ export default function Review() {
                         color: '#0f172a',
                       }}
                     >
-                      {activeReviewData.ringScore.toFixed(1)}
+                      {typeof activeReviewData?.ringScore === 'number' ? activeReviewData.ringScore.toFixed(1) : (activeReviewData?.avgScore ?? '7.0')}
                     </div>
                   </div>
 
@@ -603,6 +603,19 @@ export default function Review() {
             },
           ]).map((r: any, idx: number) => {
             const meta = ROLE_META[r.role] || { en: 'Reviewer', icon: 'bulb', color: '#059669', bg: '#ecfdf5' };
+            const scoreVal =
+              typeof r.score === 'number'
+                ? r.score
+                : r.verdict === 'accept'
+                ? 9.0
+                : r.verdict === 'weak_accept'
+                ? 8.0
+                : r.verdict === 'borderline'
+                ? 6.8
+                : r.verdict === 'weak_reject'
+                ? 5.5
+                : 4.0;
+
             return (
               <div
                 key={idx}
@@ -636,7 +649,7 @@ export default function Review() {
                     </div>
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: meta.color }}>
-                    {r.score.toFixed(1)}
+                    {scoreVal.toFixed(1)}
                   </div>
                 </div>
                 <div style={{ fontSize: 12.5, lineHeight: 1.65, color: '#334155' }}>

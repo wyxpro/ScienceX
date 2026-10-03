@@ -76,20 +76,7 @@ export default function AppLayout() {
         )}
       </div>
 
-      {/* 边栏折叠/展开快捷切换手柄 */}
-      <div style={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-end', padding: collapsed ? '4px 0 2px' : '4px 10px 2px' }}>
-        <button
-          type="button"
-          className="btn btn-ghost btn-icon btn-sm"
-          style={{ width: 24, height: 24, color: 'var(--sb-text-dim)', borderRadius: 6, padding: 0 }}
-          onClick={() => setCollapsed((v) => !v)}
-          title={collapsed ? '展开左侧边栏' : '折叠收起左侧边栏'}
-        >
-          <Icon name="chevronDown" size={13} style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(90deg)' }} />
-        </button>
-      </div>
-
-      <nav className="sb-scroll" style={{ paddingTop: 4 }}>
+      <nav className="sb-scroll" style={{ paddingTop: 8 }}>
         {GROUPS.map((g, idx) => (
           <div className="sb-group" key={g.title || idx}>
             {!collapsed && g.title && <div className="sb-group-title">{g.title}</div>}

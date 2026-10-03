@@ -51,9 +51,9 @@ export default function Landing() {
           </div>
 
           <nav className="landing-nav-links" aria-label="官网快捷导航">
-            <span className="landing-nav-link" onClick={() => scrollTo('radar')}>专家评审雷达</span>
             <span className="landing-nav-link" onClick={() => scrollTo('personas')}>用户画像与场景</span>
             <span className="landing-nav-link" onClick={() => scrollTo('compare')}>竞品全景对比</span>
+            <span className="landing-nav-link" onClick={() => scrollTo('radar')}>专家评审雷达</span>
             <span className="landing-nav-link" onClick={() => scrollTo('reviews')}>学者口碑</span>
             <span className="landing-nav-link" onClick={() => scrollTo('pricing')}>会员方案</span>
           </nav>
@@ -78,9 +78,9 @@ export default function Landing() {
       <main>
         <LandingHero onExploreFeatures={() => scrollTo('personas')} />
         <LandingMarquee />
-        <LandingRadar />
         <LandingPersonas />
         <LandingCompare />
+        <LandingRadar />
         <LandingReviews />
         <LandingPricing />
         <LandingCTA />
