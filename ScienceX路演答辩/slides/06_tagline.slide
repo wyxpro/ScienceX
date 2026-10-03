@@ -1,0 +1,63 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', padding: '20px 60px 8px', gap: 14 }}>
+    <Box style={{ width: 4, height: 40, background: '#1B7A5E', borderRadius: 2 }} />
+    <Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Box style={{ background: '#1B7A5E', borderRadius: 4, padding: '3px 10px' }}><Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 600 }}>PART 02 · 品牌文案</Text></Box>
+        <Text style={{ fontSize: 13, color: '#8A948D' }}>「不是 X，而是 X」×「帮助我们 X」</Text>
+      </Box>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 6 }}>两种句式，让品牌被记住</Text>
+    </Box>
+  </Box>
+  <Box style={{ padding: '4px 60px 0', height: 470, gap: 14 }}>
+    {/* 上半区：两大句式卡片 */}
+    <Box style={{ flexDirection: 'row', gap: 24, height: 248 }}>
+      <Box style={{ flex: 1, background: '#FFFFFF', borderRadius: 14, border: '1px solid #E6E2D6', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', padding: '16px 20px', borderTop: '5px solid #1B7A5E' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1B7A5E', fontFamily: 'Noto Serif SC, Georgia, serif' }}>句式一 ·「不是 X，而是 X」</Text>
+        <Text style={{ fontSize: 12.5, color: '#8A948D', marginBottom: 8 }}>重定义认知，制造差异记忆点</Text>
+        {[
+          '不是单点工具的堆砌，而是科研全流程的闭环工作台。',
+          '不是让 AI 替你做科研，而是让 AI 成为你的科研搭档。',
+          'AI 不只是「写内容」，而是理解→检索→分析→生成→校验→协作的全链路。',
+        ].map((t, i) => (
+          <Box key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 8, alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 14, color: '#C2762B', fontWeight: 'bold' }}>✦</Text>
+            <Text style={{ fontSize: 14, color: '#4A554F', lineHeight: 1.55 }}>{t}</Text>
+          </Box>
+        ))}
+      </Box>
+      <Box style={{ flex: 1, background: '#FFFFFF', borderRadius: 14, border: '1px solid #E6E2D6', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', padding: '16px 20px', borderTop: '5px solid #C2762B' }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#C2762B', fontFamily: 'Noto Serif SC, Georgia, serif' }}>句式二 ·「帮助我们 X」</Text>
+        <Text style={{ fontSize: 12.5, color: '#8A948D', marginBottom: 8 }}>强调协作立场，AI 是搭档</Text>
+        {[
+          '帮我们把重复劳动交给 AI，让我们专注提出好问题。',
+          '帮我们读懂每一篇英文文献，从第一篇走到下一次突破。',
+          '帮我们在投稿前先「过一遍审」，避免 3 个月大修拒稿风险。',
+        ].map((t, i) => (
+          <Box key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 8, alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 14, color: '#1B7A5E', fontWeight: 'bold' }}>✦</Text>
+            <Text style={{ fontSize: 14, color: '#4A554F', lineHeight: 1.55 }}>{t}</Text>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+    {/* 下半区：金句瀑布 */}
+    <Box style={{ gap: 10 }}>
+      {[
+        { t: '「对话即工作台，工具即智能体。」', s: '产品形态主张', c: '#1B7A5E' },
+        { t: '「把散落的工具，连接成连贯的研究体验。」', s: '竞争差异化', c: '#C2762B' },
+        { t: '「让个人的发现，成为团队的积累。」', s: '课题组协作价值', c: '#1B7A5E' },
+        { t: '「让科研更简单，一站式科研 AI 搭子。」', s: '品牌终极愿景', c: '#C2762B' },
+      ].map((q, i) => (
+        <Box key={i} style={{ flexDirection: 'row', alignItems: 'center', background: '#FFFFFF', borderRadius: 10, border: '1px solid #EFECE2', borderLeft: `4px solid ${q.c}`, padding: '9px 16px', gap: 14 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif' }}>{q.t}</Text>
+          <Text style={{ fontSize: 12, color: '#8A948D', marginLeft: 'auto' }}>— {q.s}</Text>
+        </Box>
+      ))}
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', height: 40, marginTop: 6 }}>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>ScienceX · AI 科研工作台</Text>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>06 / 22</Text>
+  </Box>
+</Slide>

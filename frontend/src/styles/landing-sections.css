@@ -117,20 +117,111 @@
 .testimonial-author strong { display: block; font-size: 11px; font-weight: 600; color: #567045; }
 .testimonial-author p { font-size: 10px; color: #8a987c; margin: 5px 0 0; }
 
-/* 收尾行动区 */
-.landing-cta-section { max-width: 1280px; margin: 10px auto 76px; padding: 0 32px; text-align: center; }
-.closing-card { background: #193d2e; border: 1px solid #294e37; border-radius: 18px; padding: 48px 32px; position: relative; overflow: hidden; color: #f2f6e9; isolation: isolate; }
-.closing-card::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 0, #65894e33, transparent 65%); pointer-events: none; }
-.closing-orbit { position: absolute; left: 50%; top: -150px; border: 1px solid #c6ddb015; border-radius: 50%; transform: translateX(-50%); z-index: -1; pointer-events: none; }
-.closing-orbit-one { width: 680px; height: 680px; }
-.closing-orbit-two { width: 870px; height: 870px; top: -245px; }
-.closing-symbol { display: grid; place-items: center; margin: 0 auto 24px; height: 55px; width: 55px; border: 1px solid #ccdfb82b; border-radius: 15px; background: #c3d8ab0a; color: #b7d291; transform: rotate(-7deg); transition: transform .3s; }
-.closing-card:hover .closing-symbol { transform: rotate(7deg); }
-.closing-actions { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
-.closing-primary { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 15px 22px; border-radius: 8px; border: 1px solid #d4e6b8; background: #d4e6b8; color: #2e4d31; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px #0a221b30; transition: transform .2s, background .2s, box-shadow .2s; }
-.closing-primary:hover { transform: translateY(-3px); background: #e2efce; box-shadow: 0 12px 25px #061e1545; }
-.closing-primary svg { transition: transform .2s; }
-.closing-primary:hover svg { transform: translateX(4px); }
+/* 收尾行动区 —— 极简通透背景 × 典雅墨绿微光胶囊CTA */
+.landing-cta-section { 
+  max-width: 1280px; 
+  margin: 20px auto 90px; 
+  padding: 0 32px; 
+  text-align: center; 
+}
+.closing-card { 
+  background: transparent; 
+  border: none; 
+  border-radius: 0; 
+  padding: 20px 20px 28px; 
+  position: relative; 
+  color: var(--ink); 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.closing-symbol { 
+  display: grid; 
+  place-items: center; 
+  margin: 0 auto 24px; 
+  height: 48px; 
+  width: 48px; 
+  border: 1px solid rgba(27, 122, 94, 0.16); 
+  border-radius: 14px; 
+  background: rgba(27, 122, 94, 0.05); 
+  color: var(--brand); 
+  transform: rotate(-6deg); 
+  transition: transform .35s cubic-bezier(0.34, 1.56, 0.64, 1), background .3s, border-color .3s, box-shadow .3s; 
+  box-shadow: 0 4px 14px rgba(27, 122, 94, 0.06); 
+}
+.closing-card:hover .closing-symbol { 
+  transform: rotate(6deg) scale(1.08); 
+  background: rgba(27, 122, 94, 0.09); 
+  border-color: rgba(27, 122, 94, 0.28); 
+  box-shadow: 0 6px 20px rgba(27, 122, 94, 0.12); 
+}
+.closing-actions { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  position: relative; 
+}
+.closing-primary { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 16px; 
+  padding: 16px 36px 16px 40px; 
+  border-radius: 9999px; 
+  border: 1px solid rgba(255, 255, 255, 0.24); 
+  background: linear-gradient(135deg, #1b7a5e 0%, #156950 50%, #0f503c 100%); 
+  color: #ffffff; 
+  font-size: 15px; 
+  font-weight: 600; 
+  letter-spacing: 0.35px; 
+  cursor: pointer; 
+  box-shadow: 0 4px 16px -2px rgba(27, 122, 94, 0.32), 0 12px 32px -4px rgba(20, 98, 74, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35); 
+  position: relative; 
+  overflow: hidden; 
+  transition: transform .28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .28s ease, background .28s ease; 
+  user-select: none; 
+}
+.closing-primary::before { 
+  content: ''; 
+  position: absolute; 
+  top: 0; 
+  left: -120%; 
+  width: 60%; 
+  height: 100%; 
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); 
+  transform: skewX(-22deg); 
+  pointer-events: none; 
+  transition: left 0.75s ease; 
+}
+.closing-primary:hover { 
+  transform: translateY(-3px) scale(1.02); 
+  background: linear-gradient(135deg, #229372 0%, #17775b 50%, #115741 100%); 
+  box-shadow: 0 8px 24px -2px rgba(27, 122, 94, 0.45), 0 20px 42px -6px rgba(20, 98, 74, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.45); 
+}
+.closing-primary:hover::before { 
+  left: 140%; 
+}
+.closing-primary:active { 
+  transform: translateY(-1px) scale(0.99); 
+  box-shadow: 0 4px 12px -2px rgba(27, 122, 94, 0.3), 0 8px 20px -4px rgba(20, 98, 74, 0.25); 
+}
+.closing-arrow-icon { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 28px; 
+  height: 28px; 
+  border-radius: 50%; 
+  background: rgba(255, 255, 255, 0.16); 
+  color: #ffffff; 
+  transition: transform .25s cubic-bezier(0.34, 1.56, 0.64, 1), background .2s; 
+  flex: none; 
+}
+.closing-primary:hover .closing-arrow-icon { 
+  transform: translateX(4px); 
+  background: rgba(255, 255, 255, 0.28); 
+}
 
 @media (max-width: 1100px) {
   .persona-photo { height: 205px; }
@@ -191,10 +282,11 @@
   .testimonial-avatar { width: 32px; height: 32px; font-size: 12px; }
   .testimonial-author strong { font-size: 10px; }
   .testimonial-author p { font-size: 9px; }
-  .landing-cta-section { padding: 0 16px; margin-bottom: 40px; }
-  .closing-card { padding: 32px 22px; }
-  .closing-symbol { height: 46px; width: 46px; margin-bottom: 18px; }
-  .closing-primary { padding: 14px 13px; font-size: 11px; gap: 9px; }
+  .landing-cta-section { padding: 0 16px; margin: 10px auto 56px; }
+  .closing-card { padding: 16px 12px 24px; }
+  .closing-symbol { height: 44px; width: 44px; margin-bottom: 18px; }
+  .closing-primary { padding: 14px 24px 14px 28px; font-size: 13.5px; gap: 12px; }
+  .closing-arrow-icon { width: 24px; height: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .persona-choice:hover, .persona-choice.is-selected img, .persona-choice:hover img, .closing-primary:hover, .closing-card:hover .closing-symbol { transform: none; }

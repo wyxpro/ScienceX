@@ -119,7 +119,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>模型: {m.model || 'GPT-4o'}</span>
+                      <span>模型: {m.model || 'DeepSeek V4.1 Flash'}</span>
                       {m.agent_mode && <span>· 范式: {m.agent_mode}</span>}
                     </div>
                     <div>学术可复现性验证通过</div>

@@ -1,0 +1,58 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', padding: '18px 60px 6px', gap: 14 }}>
+    <Box style={{ width: 4, height: 40, background: '#1B7A5E', borderRadius: 2 }} />
+    <Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Box style={{ background: '#1B7A5E', borderRadius: 4, padding: '3px 10px' }}><Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 600 }}>PART 03 · 技术架构</Text></Box>
+        <Text style={{ fontSize: 13, color: '#8A948D' }}>五层堆叠 · As-Is 与 To-Be 诚实区分</Text>
+      </Box>
+      <Text style={{ fontSize: 27, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 4 }}>双轨混合架构：业务稳定域 + AI 敏捷域</Text>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', padding: '4px 60px 0', height: 478, gap: 22 }}>
+    {/* 左：五层分层架构横带 */}
+    <Box style={{ flex: 1.5, flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
+      {[
+        { n: '前端层', d: 'React 18.3 · TypeScript 5.5 · Vite 5.4 · React Router 6', e: '自研 SVG 图表引擎 · 3D 引用图谱 · SSE 流式解码 · 移动端自适应', c: '#E3F1EA', t: '#0E4A37' },
+        { n: '接入层', d: '统一 /api/v1 契约 · 限流中间件 · X-Request-Id 链路追踪', e: '', c: '#D2E8DC', t: '#0E4A37' },
+        { n: '后端层', d: 'Node.js 18 + Express 4.19（演示态）', e: '目标态：Java 21 Spring Boot 3.3 业务域 + Python FastAPI AI 域', c: '#BBDCCB', t: '#0E4A37', tobe: true },
+        { n: 'AI 层', d: '灵犀引擎 8 类 Agent 编排 · 三层记忆引擎 · 模型网关（OpenAI 兼容）', e: 'DeepSeek V4.1 Flash · SSE 7 类事件流 · DreamPaper 流水线', c: '#9CC9B4', t: '#0E4A37' },
+        { n: '数据层', d: 'JSON 持久化 Store（演示态）', e: '目标态：PostgreSQL 16 + Redis 7 + pgvector/Milvus + MinIO', c: '#1B7A5E', t: '#FFFFFF', tobe: true },
+      ].map((L, i) => (
+        <Box key={i} style={{ background: L.c, borderRadius: 10, padding: '11px 18px', flexDirection: 'row', alignItems: 'center', gap: 16, border: '1px solid rgba(0,0,0,0.05)' }}>
+          <Box style={{ width: 92, flexShrink: 0 }}>
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: L.t, fontFamily: 'Noto Serif SC, Georgia, serif' }}>{L.n}</Text>
+          </Box>
+          <Box style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13.5, color: L.t, fontWeight: 600, lineHeight: 1.4 }}>{L.d}</Text>
+            {L.e ? (
+              <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                {L.tobe && <Box style={{ background: '#C2762B', borderRadius: 8, padding: '1px 7px' }}><Text style={{ fontSize: 10, color: '#fff', fontWeight: 700 }}>目标态</Text></Box>}
+                <Text style={{ fontSize: 11.5, color: L.t, opacity: 0.78, fontFamily: 'Consolas, monospace' }}>{L.e}</Text>
+              </Box>
+            ) : null}
+          </Box>
+          {i < 4 && <Box style={{ position: 'relative' }} />}
+        </Box>
+      ))}
+    </Box>
+    {/* 右：三个架构亮点徽章 */}
+    <Box style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', gap: 14 }}>
+      {[
+        { n: '①', t: '双轨混合架构', d: '业务稳定域与 AI 敏捷域各取所长' },
+        { n: '②', t: '模型中立网关', d: '任意 OpenAI 兼容模型即插即用，无密钥自动降级演示' },
+        { n: '③', t: '契约 100% 对齐', d: '统一响应结构 + 分级错误码体系，前后端一致' },
+      ].map((b, i) => (
+        <Box key={i} style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', borderLeft: '4px solid #1B7A5E', padding: '14px 16px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#C2762B', fontFamily: 'Noto Serif SC, Georgia, serif', lineHeight: 1 }}>{b.n}</Text>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1F2A26', marginTop: 6, fontFamily: 'Noto Serif SC, Georgia, serif' }}>{b.t}</Text>
+          <Text style={{ fontSize: 12.5, color: '#4A554F', marginTop: 4, lineHeight: 1.55 }}>{b.d}</Text>
+        </Box>
+      ))}
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', height: 40, marginTop: 4 }}>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>ScienceX · AI 科研工作台</Text>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>13 / 22</Text>
+  </Box>
+</Slide>

@@ -1,0 +1,33 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', width: '100%', height: '100%' }}>
+    {/* 左侧竖排 CONTENTS */}
+    <Box style={{ width: '34%', height: '100%', padding: '72px 24px 64px 64px', justifyContent: 'space-between' }}>
+      <Box>
+        <Text style={{ fontSize: 15, color: '#C2762B', letterSpacing: 4, fontWeight: 600 }}>CONTENTS</Text>
+        <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 12, lineHeight: 1.2 }}>目录</Text>
+        <Box style={{ width: 56, height: 4, background: '#1B7A5E', marginTop: 18, borderRadius: 2 }} />
+      </Box>
+      <Text style={{ fontSize: 13, color: '#8A948D', lineHeight: 1.7 }}>四个章节，<br />由需求到价值，<br />层层递进。</Text>
+    </Box>
+    {/* 右侧四个章节条目 */}
+    <Box style={{ width: '66%', height: '100%', padding: '72px 64px 64px 24px', justifyContent: 'center', gap: 4 }}>
+      {[
+        { n: '01', t: '需求洞察', d: '科研人的真实痛点，与我们给出的答案', ic: 'lightbulb' },
+        { n: '02', t: '团队及产品介绍', d: '我们是谁 · 产品是什么 · 凭什么是我们', ic: 'users' },
+        { n: '03', t: '技术解析及亮点', d: '前端 / 后端 / AI 能力的深度拆解', ic: 'cog' },
+        { n: '04', t: '商业模式及创新', d: '成本 / 收益 / 市场 / 行业价值 / 公益计划', ic: 'chart-line' },
+      ].map((it, i) => (
+        <Box key={i} style={{ flexDirection: 'row', alignItems: 'center', padding: '20px 8px', borderBottom: i < 3 ? '1px solid #E6E2D6' : 'none', gap: 24 }}>
+          <Text style={{ fontSize: 52, fontWeight: 'bold', color: '#C2762B', fontFamily: 'Noto Serif SC, Georgia, serif', width: 92, lineHeight: 1 }}>{it.n}</Text>
+          <Box style={{ flex: 1 }}>
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif' }}>{it.t}</Text>
+            <Text style={{ fontSize: 14, color: '#8A948D', marginTop: 4 }}>{it.d}</Text>
+          </Box>
+          <Box style={{ width: 46, height: 46, borderRadius: 12, background: '#E3F1EA', justifyContent: 'center', alignItems: 'center' }}>
+            <FAIcon name={it.ic} style={{ fill: '#1B7A5E', width: 20, height: 20 }} />
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  </Box>
+</Slide>
