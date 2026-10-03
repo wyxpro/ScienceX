@@ -157,7 +157,7 @@ export default function Account() {
   };
 
   return (
-    <div className="page" style={{ gap: 14 }}>
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="card card-pad" style={{ flex: 'none' }}>
         <div className="row g-3 wrap">
           <div className="avatar" style={{ width: 52, height: 52, fontSize: 20 }}>

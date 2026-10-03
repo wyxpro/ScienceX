@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Icon, { type IconName } from '../../components/Icon';
-import { Donut, LineChart } from '../../components/charts';
+import { Donut } from '../../components/charts';
 import { Empty, Tag } from '../../components/ui';
 
 interface UsageData {
@@ -29,6 +29,295 @@ const MODEL_COLORS = ['var(--brand)', 'var(--accent)', 'var(--gold)', 'var(--blu
 const SCENE_ICONS: Record<string, IconName> = {
   chat: 'chat', 对话: 'chat', 文献检索: 'search', 文献: 'book', 综述: 'book', 图表生成: 'chart', 图表: 'chart',
   实验设计: 'flask', 数据分析: 'chart', 论文写作: 'pen', 审稿: 'award', 投稿: 'mail', 知识库: 'db',
+};
+
+/* ============================================================
+ * 每日趋势卡（专业版）：指标切换 · 平滑面积图 · 悬停十字线与明细
+ * ============================================================ */
+type MetricKey = 'tokens' | 'calls' | 'cost';
+
+const METRICS: Record<MetricKey, { label: string; color: string; short: (v: number) => string; full: (v: number) => string }> = {
+  tokens: { label: 'Token', color: 'var(--brand)', short: (v) => fmtK(v), full: (v) => `${Math.round(v).toLocaleString()} tk` },
+  calls: { label: '调用次数', color: 'var(--blue-safe)', short: (v) => fmtK(v), full: (v) => `${Math.round(v).toLocaleString()} 次` },
+  cost: { label: '费用', color: 'var(--accent)', short: (v) => `¥${fmtK(v)}`, full: (v) => `¥${v.toFixed(2)}` },
+};
+
+/* 将最大值向上取整到 1/2/5×10^n 的「整洁」刻度 */
+function niceScale(maxV: number, ticks = 4): { step: number; top: number } {
+  if (maxV <= 0) return { step: 1, top: 1 };
+  const raw = maxV / ticks;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  return { step, top: Math.ceil(maxV / step) * step };
+}
+
+/* Catmull-Rom → 三次贝塞尔平滑曲线（控制点 y 夹在绘图区内防过冲） */
+function smoothPath(pts: { x: number; y: number }[], yMin: number, yMax: number): string {
+  const clamp = (v: number) => Math.min(yMax, Math.max(yMin, v));
+  if (pts.length < 2) return pts.length === 1 ? `M ${pts[0].x},${pts[0].y}` : '';
+  let d = `M ${pts[0].x},${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = clamp(p1.y + (p2.y - p0.y) / 6);
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = clamp(p2.y - (p3.y - p1.y) / 6);
+    d += ` C ${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+  }
+  return d;
+}
+
+const TrendChart: React.FC<{ byDay: UsageData['by_day']; metric: MetricKey }> = ({ byDay, metric }) => {
+  const meta = METRICS[metric];
+  const gradId = `grad-${metric}-${React.useId().replace(/[^a-zA-Z0-9-]/g, '')}`;
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [w, setW] = useState(760);
+  const [hover, setHover] = useState<number | null>(null);
+
+  /* 容器宽度自适应，保证 1:1 像素坐标（点与文字不变形） */
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((es) => {
+      const cw = es[0].contentRect.width;
+      if (cw > 0) setW(cw);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  /* 切换指标时重置悬停 */
+  useEffect(() => setHover(null), [metric]);
+
+  const H = 248;
+  const pad = { l: 50, r: 18, t: 26, b: 30 };
+  const iw = Math.max(60, w - pad.l - pad.r);
+  const ih = H - pad.t - pad.b;
+  const baseY = pad.t + ih;
+  const n = byDay.length;
+
+  const values = byDay.map((d) => (metric === 'tokens' ? d.tokens : metric === 'calls' ? d.calls ?? 0 : Number(d.cost ?? 0)));
+  const { step, top } = niceScale(Math.max(...values, 0));
+  const x = (i: number) => pad.l + (n <= 1 ? iw / 2 : (i / (n - 1)) * iw);
+  const y = (v: number) => pad.t + ih - (Math.min(v, top) / top) * ih;
+
+  const pts = values.map((v, i) => ({ x: x(i), y: y(v) }));
+  const linePath = smoothPath(pts, pad.t, baseY);
+  const areaPath = n > 1 ? `${linePath} L ${pts[n - 1].x},${baseY} L ${pts[0].x},${baseY} Z` : '';
+
+  const peak = Math.max(...values, 0);
+  const peakIdx = values.indexOf(peak);
+  const hasPeak = peak > 0 && n > 0;
+  const avg = n ? values.reduce((a, b) => a + b, 0) / n : 0;
+
+  /* x 轴标签抽样（约 8 个），始终包含首尾 */
+  const labelStep = Math.max(1, Math.ceil(n / 8));
+  const xIdxs = Array.from(new Set(byDay.map((_, i) => i).filter((i) => i % labelStep === 0 || i === n - 1)));
+
+  /* y 轴刻度 */
+  const yTicks: number[] = [];
+  for (let v = 0; v <= top + 1e-9 && yTicks.length <= 7; v += step) yTicks.push(v);
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (n === 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * w;
+    const i = n === 1 ? 0 : Math.round(((mx - pad.l) / iw) * (n - 1));
+    setHover(Math.max(0, Math.min(n - 1, i)));
+  };
+
+  const hoverD = hover != null ? byDay[hover] : null;
+  const tipX = hover != null ? Math.min(Math.max(x(hover), 88), Math.max(88, w - 88)) : 0;
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative', cursor: 'crosshair' }}>
+      <svg
+        key={metric}
+        viewBox={`0 0 ${w} ${H}`}
+        width="100%"
+        height={H}
+        role="img"
+        aria-label="每日消耗趋势图"
+        onMouseMove={onMove}
+        onMouseLeave={() => setHover(null)}
+        style={{ display: 'block' }}
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" style={{ stopColor: meta.color, stopOpacity: 0.2 }} />
+            <stop offset="92%" style={{ stopColor: meta.color, stopOpacity: 0.02 }} />
+          </linearGradient>
+        </defs>
+
+        {/* 网格 + y 轴刻度 */}
+        {yTicks.map((v) => (
+          <g key={v}>
+            <line x1={pad.l} x2={pad.l + iw} y1={y(v)} y2={y(v)}
+              stroke={v === 0 ? 'var(--line-strong)' : 'var(--line)'} strokeWidth="1"
+              strokeDasharray={v === 0 ? undefined : '2 5'} vectorEffect="non-scaling-stroke" />
+            <text x={pad.l - 10} y={y(v) + 3.5} textAnchor="end" style={{ fontSize: 10.5, fill: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+              {meta.short(v)}
+            </text>
+          </g>
+        ))}
+
+        {/* x 轴日期 */}
+        {xIdxs.map((i) => (
+          <text key={i} x={x(i)} y={H - 9} textAnchor="middle"
+            style={{ fontSize: 10.5, fill: hover === i ? 'var(--ink)' : 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+            {byDay[i].date.slice(5)}
+          </text>
+        ))}
+
+        {/* 日均参考线 */}
+        {avg > 0 && (
+          <line x1={pad.l} x2={pad.l + iw} y1={y(avg)} y2={y(avg)}
+            stroke="var(--accent)" strokeWidth="1.2" strokeDasharray="6 4" opacity="0.55">
+            <title>{`日均 ${meta.full(avg)}`}</title>
+          </line>
+        )}
+
+        {/* 面积 + 平滑折线（线条生长动画） */}
+        {n > 1 && <path d={areaPath} fill={`url(#${gradId})`} />}
+        {n > 1 && (
+          <path d={linePath} fill="none" stroke={meta.color} strokeWidth="2.2"
+            strokeLinecap="round" strokeLinejoin="round" pathLength={1}
+            strokeDasharray="1" strokeDashoffset="1"
+            style={{ animation: 'dash 1.2s var(--ease) 0.1s both' }} />
+        )}
+        {n === 1 && <circle cx={x(0)} cy={y(values[0])} r="4" fill={meta.color} />}
+
+        {/* 峰值实心点 */}
+        {hasPeak && <circle cx={x(peakIdx)} cy={y(peak)} r="3.4" fill={meta.color} stroke="var(--surface)" strokeWidth="1.8" />}
+
+        {/* 悬停十字线 + 高亮点 */}
+        {hover != null && hoverD && (
+          <g pointerEvents="none">
+            <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={baseY}
+              stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+            <circle cx={x(hover)} cy={y(values[hover])} r="9" fill={meta.color} opacity="0.14" />
+            <circle cx={x(hover)} cy={y(values[hover])} r="4" fill="#fff" stroke={meta.color} strokeWidth="2.2" />
+          </g>
+        )}
+      </svg>
+
+      {/* 峰值标注 */}
+      {hasPeak && (
+        <div style={{
+          position: 'absolute', left: x(peakIdx), top: y(peak) - 30, transform: 'translateX(-50%)',
+          background: 'var(--brand-soft)', color: 'var(--brand-strong)', border: '1px solid var(--brand-soft)',
+          fontSize: 10.5, fontWeight: 700, padding: '2.5px 8px', borderRadius: 7,
+          pointerEvents: 'none', whiteSpace: 'nowrap',
+        }}>
+          峰值 {meta.short(peak)}
+        </div>
+      )}
+
+      {/* 悬停明细卡 */}
+      {hover != null && hoverD && (
+        <div className="anim-pop" style={{
+          position: 'absolute', left: tipX, top: 4, transform: 'translateX(-50%)',
+          background: 'var(--surface)', border: '1px solid var(--line-strong)', borderRadius: 10,
+          boxShadow: '0 10px 28px -10px rgba(15, 23, 42, 0.22)', padding: '9px 12px',
+          pointerEvents: 'none', zIndex: 6, minWidth: 136,
+        }}>
+          <div className="mono fw-bold" style={{ fontSize: 12, marginBottom: 5 }}>{hoverD.date}</div>
+          <div className="row g-1" style={{ alignItems: 'center' }}>
+            <span style={{ width: 8, height: 8, borderRadius: 3, background: meta.color, flex: 'none' }} />
+            <span className="mono fw-bold" style={{ fontSize: 13.5 }}>{meta.full(values[hover])}</span>
+          </div>
+          {metric !== 'calls' && hoverD.calls != null && (
+            <div className="text-xs text-muted" style={{ marginTop: 4 }}>调用 {hoverD.calls.toLocaleString()} 次</div>
+          )}
+          {metric !== 'cost' && hoverD.cost != null && (
+            <div className="text-xs text-muted" style={{ marginTop: 2 }}>费用 ¥{hoverD.cost}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MetricTrendCard: React.FC<{ byDay: UsageData['by_day']; range: number }> = ({ byDay, range }) => {
+  const n = byDay.length;
+  const avail = (['tokens', 'calls', 'cost'] as MetricKey[]).filter(
+    (k) => k === 'tokens' || byDay.some((d) => (k === 'calls' ? d.calls != null : d.cost != null))
+  );
+  const [metric, setMetric] = useState<MetricKey>('tokens');
+  const active: MetricKey = avail.includes(metric) ? metric : 'tokens';
+  const meta = METRICS[active];
+
+  const values = byDay.map((d) => (active === 'tokens' ? d.tokens : active === 'calls' ? d.calls ?? 0 : Number(d.cost ?? 0)));
+  const peak = n ? Math.max(...values, 0) : 0;
+  const peakIdx = values.indexOf(peak);
+  const avg = n ? values.reduce((a, b) => a + b, 0) / n : 0;
+  const last = values[n - 1] ?? 0;
+  const prev = n > 1 ? values[n - 2] ?? 0 : 0;
+  const delta = prev > 0 ? ((last - prev) / prev) * 100 : null;
+
+  const stats: { label: string; value: string; sub: React.ReactNode }[] = [
+    { label: '峰值', value: meta.short(peak), sub: n ? byDay[peakIdx]?.date.slice(5) : '' },
+    { label: '日均', value: meta.short(avg), sub: `近 ${range} 天平均` },
+    { label: '昨日', value: meta.short(last), sub: delta != null ? (
+      <Tag color={delta >= 0 ? 'amber' : 'green'}>
+        <Icon name="arrowUp" size={10} style={{ transform: delta < 0 ? 'rotate(180deg)' : undefined }} />
+        {Math.abs(delta).toFixed(0)}% 环比
+      </Tag>
+    ) : '—' },
+  ];
+
+  return (
+    <div className="card anim-in" style={{ padding: '18px 20px 14px' }}>
+      {/* 头部：标题 + 指标切换 */}
+      <div className="row-between wrap g-2">
+        <div className="row g-2">
+          <span style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--brand-soft)', color: 'var(--brand-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+            <Icon name="chart" size={15} />
+          </span>
+          <div>
+            <div className="fw-bold" style={{ fontSize: 14.5 }}>每日 Token 消耗趋势</div>
+            <div className="text-xs text-muted" style={{ marginTop: 1 }}>悬停查看每日明细 · 虚线为日均线</div>
+          </div>
+        </div>
+        {avail.length > 1 && (
+          <div className="seg">
+            {avail.map((k) => (
+              <button key={k} className={`seg-btn ${active === k ? 'active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setMetric(k)}>
+                {METRICS[k].label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 关键统计 */}
+      {n > 0 && (
+        <div className="row wrap" style={{ gap: 26, margin: '14px 2px 2px' }}>
+          {stats.map((s, i) => (
+            <React.Fragment key={s.label}>
+              {i > 0 && <span style={{ width: 1, height: 32, background: 'var(--line)', flex: 'none' }} />}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span className="text-muted" style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.4 }}>{s.label}</span>
+                <span className="mono fw-bold" style={{ fontSize: 17, lineHeight: 1.25 }}>{s.value}</span>
+                <span style={{ minHeight: 18, display: 'inline-flex', alignItems: 'center', fontSize: 10.5, color: 'var(--muted)' }}>{s.sub}</span>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+
+      {/* 图表主体 */}
+      {n === 0 ? (
+        <div style={{ padding: '12px 0 8px' }}><Empty icon="chart" text="暂无用量数据" /></div>
+      ) : (
+        <TrendChart byDay={byDay} metric={active} />
+      )}
+    </div>
+  );
 };
 
 export const UsageSection: React.FC<UsageSectionProps> = ({
@@ -117,31 +406,8 @@ export const UsageSection: React.FC<UsageSectionProps> = ({
             ))}
           </div>
 
-          {/* ===== 趋势图 ===== */}
-          <div className="card card-pad">
-            <div className="row-between wrap g-2 mb-2">
-              <span className="card-title"><Icon name="chart" size={15} /> 每日 Token 消耗趋势</span>
-              {derived && (
-                <div className="row g-2 text-xs text-muted">
-                  <span>峰值 <b className="mono" style={{ color: 'var(--ink)' }}>{fmtK(derived.peak)}</b></span>
-                  <span>· 均值 <b className="mono" style={{ color: 'var(--ink)' }}>{fmtK(derived.avg)}</b></span>
-                  <span>· 昨日 <b className="mono" style={{ color: 'var(--brand-strong)' }}>{fmtK(derived.last.tokens)}</b></span>
-                </div>
-              )}
-            </div>
-            <LineChart
-              series={[
-                {
-                  name: 'Token',
-                  data: usage.by_day.map((d) => d.tokens),
-                  color: 'var(--brand)',
-                },
-              ]}
-              labels={usage.by_day.map((d) => d.date.slice(5))}
-              height={190}
-              yFormat={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
-            />
-          </div>
+          {/* ===== 趋势图（专业版） ===== */}
+          <MetricTrendCard byDay={usage.by_day} range={range} />
 
           {/* ===== 分模型 + 分场景 ===== */}
           <div
