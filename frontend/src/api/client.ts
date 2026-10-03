@@ -3,6 +3,20 @@
    支持：类型泛型、静默 Token 续期、SSE 容错解析、断线断点重连、Abort 中断与 401 路由广播
    ============================================================ */
 
+import type {
+  ChatCompletionPayload,
+  ChatMessage,
+  DocChatMessage,
+  PlanFlowData,
+  SSEDonePayload,
+  SSEProgressPayload,
+  SSEReferencePayload,
+  SSEStartPayload,
+  SSEStepPayload,
+  SSEToolPayload,
+  ThoughtStep,
+} from '../types';
+
 const BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
 export class ApiError extends Error {
@@ -264,37 +278,31 @@ export async function api<T = any>(path: string, opts: RequestOptions = {}): Pro
   throw new ApiError(50001, '响应内容格式错误，非有效 JSON 格式');
 }
 
-/* ---------- SSE 流式事件定义 (TSD §5.4 标准协议) ---------- */
+/* ---------- SSE 流式事件定义 (TSD §5.4 标准协议，载荷类型见 types/index.ts F2 判别联合) ---------- */
 export interface SSEHandlers {
-  onStart?: (d: any) => void;
+  onStart?: (d: SSEStartPayload) => void;
   onDelta?: (text: string) => void;
   /** progress 载荷：DreamPaper 流水线额外携带 design_log（Design Log 流式增量）与 diagnosis（故障诊断卡） */
-  onProgress?: (d: {
-    percent: number;
-    stage: string;
-    message?: string;
-    design_log?: { step: string; label: string; status: string; content: string };
-    diagnosis?: Record<string, any>;
-  }) => void;
-  onReference?: (d: any) => void;
-  onTool?: (d: any) => void;
-  onDone?: (d: any) => void;
+  onProgress?: (d: SSEProgressPayload) => void;
+  onReference?: (d: SSEReferencePayload) => void;
+  onTool?: (d: SSEToolPayload) => void;
+  onDone?: (d: SSEDonePayload) => void;
   onError?: (msg: string) => void;
   /* LingXiAgent 多智能体扩展事件 */
-  onPlan?: (data: any) => void;
-  onStepStart?: (data: any) => void;
-  onStepUpdate?: (data: any) => void;
-  onThought?: (data: any) => void;
-  onToolCall?: (data: any) => void;
-  onToolResult?: (data: any) => void;
-  onMemoryInjected?: (data: any) => void;
+  onPlan?: (data: PlanFlowData) => void;
+  onStepStart?: (data: SSEStepPayload) => void;
+  onStepUpdate?: (data: SSEStepPayload) => void;
+  onThought?: (data: ThoughtStep) => void;
+  onToolCall?: (data: SSEToolPayload) => void;
+  onToolResult?: (data: SSEToolPayload) => void;
+  onMemoryInjected?: (data: NonNullable<ChatMessage['memory_injected']>) => void;
 }
 
 /* ---------- SSE：对话流式 (支持 AbortSignal 中断与 Last-Event-ID 记录) ---------- */
 // 每条流单独保存游标，避免对话流的事件序号污染文献问答或任务流。
 const lastReceivedEventIds = new Map<string, string>();
 
-export async function chatStream(payload: any, handlers: SSEHandlers, signal?: AbortSignal): Promise<void> {
+export async function chatStream(payload: ChatCompletionPayload, handlers: SSEHandlers, signal?: AbortSignal): Promise<void> {
   const token = getToken();
   const streamKey = `chat:${payload?.conversation_id || 'default'}`;
   try {
@@ -324,7 +332,7 @@ export async function chatStream(payload: any, handlers: SSEHandlers, signal?: A
   }
 }
 
-export async function docChatStream(docId: string, messages: any[], handlers: SSEHandlers, signal?: AbortSignal): Promise<void> {
+export async function docChatStream(docId: string, messages: DocChatMessage[], handlers: SSEHandlers, signal?: AbortSignal): Promise<void> {
   const token = getToken();
   try {
     const res = await fetchWithAuth(`${BASE}/documents/${docId}/chat`, {

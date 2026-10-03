@@ -246,7 +246,7 @@ export default function Chat() {
                     plan: {
                       ...x.plan,
                       steps: x.plan.steps.map((s, idx) =>
-                        idx === up.step_index ? { ...s, status: up.status, output: up.output } : s
+                        idx === up.step_index ? { ...s, status: up.status || s.status, output: up.output } : s
                       ),
                     },
                   }

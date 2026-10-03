@@ -113,3 +113,17 @@ routes (chat/documents/research/publish/...)
 1. **演示与真实的边界要对外可见**：未配置 `DEEPSEEK_API_KEY` 时回退模板内容可能被误认为模型输出，建议全局显式标识（配合 A7/B8）。
 2. **Vercel 多实例是当前架构的隐形约束**：任何新引入的进程内存态（会话、限流、任务流）都会复现「Token 已失效」同类故障，新功能设计时先问「这个状态放哪」。
 3. **不要在原型上直接堆生产功能**：建议存储与校验两项底座（B1/B2）先行，否则后续每个新功能都在放大技术债。
+
+---
+
+## 七、实施记录（2026-10-04，第二节「前端分析与建议」落地）
+
+| # | 条目 | 状态 | 落地内容 |
+| :--- | :--- | :---: | :--- |
+| F3 | 工程化缺失 | ✅ 已完成 | 接入 ESLint 9（flat config）+ typescript-eslint 8 + react-hooks + react-refresh + Prettier；新增 `lint` / `lint:fix` / `format` / `typecheck` 脚本；CI 增加「Frontend typecheck + Frontend lint」两道门禁（当前 0 error / 248 warning，存量 `any` 以 warn 渐进收敛）。 |
+| F2 | 类型安全 | ✅ 主体完成 | `types/index.ts` 新增 SSE 事件判别联合（`SSEEvent` + 14 种事件名 + 8 类载荷接口）；`client.ts` 的 `SSEHandlers` 全量告别 `any`，`chatStream` 改用 `ChatCompletionPayload`（补 `agent_mode`），`docChatStream` 改用 `DocChatMessage`；类型校准中发现并对齐了后端 step_update 事件真实词表（`planning/completed`）。剩余 248 处存量 `any` 已入 lint 监控，按页面逐步收敛。 |
+| F5 | 错误与加载态 | ✅ 核心完成 | 新增 `components/ErrorBoundary.tsx`（重试本页 / 刷新 / 返回工作台 + 错误堆栈本地留存 `sx:error-log`）；双层接入：外壳内按路由 key 重置的页面级边界（单页崩溃不拖垮侧边栏）+ 顶层兜底边界（Landing/Login）。 |
+| F1 | 超大组件 | 🔶 第一阶段 | Reader.tsx **1990 → 950 行**，按功能域拆出 3 个模块：`reader/readerShared.ts`（常量/工具/类型）、`reader/ReaderAgentPanel.tsx`（右栏 Agent 对话中枢，含语音输入/附件/模型切换，切换文献自动重置会话）、`reader/ReaderImportModal.tsx`（导入弹窗，表单校验状态内聚，`onImport` 回调返回错误文案）。中栏五 Tab 面板与左栏阅读器为后续第二阶段拆分对象；Submission/Reproduce 同理。 |
+| F4/F6-F9 | 样式/表单/状态/缓存 | ⏸ 未动 | 属渐进型改造（内联样式 1288 处、引入新依赖），建议与功能迭代合并推进，不在本次范围。 |
+
+**验收**：`tsc --noEmit` 0 错误；`eslint src` 0 error；`npm run build` 通过；行为等价性通过组件职责比对（导入/对话/删切换文献链路未变）。

@@ -52,7 +52,8 @@ export interface PlanStep {
   id: string;
   title: string;
   tool?: string;
-  status: 'waiting' | 'running' | 'success' | 'failed';
+  /** planning/completed 为 LingXi 引擎 step_update 事件实际状态词表 */
+  status: 'waiting' | 'running' | 'success' | 'failed' | 'planning' | 'completed';
   desc?: string;
   output?: string;
 }
@@ -149,6 +150,8 @@ export interface ChatCompletionPayload {
   temperature?: number;
   skills?: string[];
   mcp_tools?: string[];
+  agent_mode?: AgentMode;
+  [key: string]: any;
 }
 
 export interface SkillItem {
@@ -380,4 +383,106 @@ export interface AsyncTaskProgress {
   message?: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
   result?: any;
+}
+
+/* ---------- SSE 流式事件协议（TSD §5.4，F2 判别联合） ----------
+   事件名全集：start / delta / progress / reference / tool / plan / step_start /
+   step_update / thought / tool_call / tool_result / memory_injected / error / done
+   各载荷保留索引签名以兼容后端字段演进，已知字段获得编译期约束 */
+
+export type SSEEventName =
+  | 'start'
+  | 'delta'
+  | 'progress'
+  | 'reference'
+  | 'tool'
+  | 'plan'
+  | 'step_start'
+  | 'step_update'
+  | 'thought'
+  | 'tool_call'
+  | 'tool_result'
+  | 'memory_injected'
+  | 'error'
+  | 'done';
+
+export interface SSEStartPayload {
+  conversation_id?: string;
+  message_id?: string;
+  mode?: 'live' | 'fallback';
+  model?: string;
+  [key: string]: any;
+}
+
+export interface SSEDeltaPayload {
+  text: string;
+  [key: string]: any;
+}
+
+/** DreamPaper 流水线 design_log 增量与故障诊断卡 */
+export interface SSEProgressPayload {
+  percent: number;
+  stage: string;
+  message?: string;
+  design_log?: { step: string; label: string; status: string; content: string };
+  diagnosis?: Record<string, any>;
+  [key: string]: any;
+}
+
+export interface SSEReferencePayload extends CitationReference {
+  [key: string]: any;
+}
+
+export interface SSEToolPayload {
+  name?: string;
+  tool?: string;
+  status?: string;
+  args?: Record<string, any>;
+  result?: any;
+  [key: string]: any;
+}
+
+/** Plan-Execute 模式 step_start / step_update 事件载荷（按步骤索引增量更新计划流） */
+export interface SSEStepPayload {
+  step_index?: number;
+  status?: PlanStep['status'];
+  output?: string;
+  [key: string]: any;
+}
+
+export interface SSEDonePayload {
+  text?: string;
+  aborted?: boolean;
+  mode?: 'live' | 'fallback';
+  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+  [key: string]: any;
+}
+
+export interface SSEErrorPayload {
+  message?: string;
+  code?: number;
+  retryable?: boolean;
+  degraded?: boolean;
+  [key: string]: any;
+}
+
+/** 原始 SSE 事件判别联合：供解析器与调试工具按 event 字段窄化载荷 */
+export type SSEEvent =
+  | { event: 'start'; data: SSEStartPayload }
+  | { event: 'delta'; data: SSEDeltaPayload }
+  | { event: 'progress'; data: SSEProgressPayload }
+  | { event: 'reference'; data: SSEReferencePayload }
+  | { event: 'tool'; data: SSEToolPayload }
+  | { event: 'plan'; data: PlanFlowData }
+  | { event: 'step_start' | 'step_update'; data: SSEStepPayload }
+  | { event: 'thought'; data: ThoughtStep }
+  | { event: 'tool_call' | 'tool_result'; data: SSEToolPayload }
+  | { event: 'memory_injected'; data: NonNullable<ChatMessage['memory_injected']> }
+  | { event: 'error'; data: SSEErrorPayload }
+  | { event: 'done'; data: SSEDonePayload };
+
+/** 文献问答消息（docChatStream 入参） */
+export interface DocChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }

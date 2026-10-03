@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Icon, { type IconName } from '../components/Icon';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { useAuth } from '../stores/auth';
 import { useIsMobile } from '../hooks/useIsMobile';
 
@@ -207,7 +208,10 @@ export default function AppLayout() {
         )}
 
         <main className="page-scroll" id="page-scroll">
-          <Outlet />
+          {/* 页面级错误边界：单页渲染崩溃不影响外壳，切换路由自动重置（F5） */}
+          <ErrorBoundary key={loc.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

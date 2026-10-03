@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../stores/auth';
 import { PageLoading } from '../components/ui';
+import ErrorBoundary from '../components/ErrorBoundary';
 import AppLayout from '../layouts/AppLayout';
 
 const Landing = lazy(() => import('../pages/Landing'));
@@ -34,7 +35,9 @@ function Guard({ children }: { children: JSX.Element }) {
 export default function Router() {
   return (
     <HashRouter>
-      <Suspense fallback={<PageLoading />}>
+      {/* 顶层错误边界：兜底外壳之外（Landing / Login）的渲染异常（F5） */}
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/landing" element={<Landing />} />
@@ -55,7 +58,8 @@ export default function Router() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Suspense>
+        </Suspense>
+      </ErrorBoundary>
     </HashRouter>
   );
 }
