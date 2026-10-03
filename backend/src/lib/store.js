@@ -28,12 +28,13 @@ const users = [
 const sessions = new Map(); // token -> { user_id, expires_at }
 
 const builtinModels = [
-  { id: 'm-deepseek-flash', name: 'DeepSeek V4.1 Flash', model_name: 'DeepSeek-Flash', provider: 'deepseek', tag: '极速推理 · 推荐', context: '64K', enabled: true, builtin: true },
-  { id: 'm-gpt4o', name: 'GPT-4o', provider: 'openai', tag: '通用最强', context: '128K', enabled: true, builtin: true },
-  { id: 'm-claude', name: 'Claude 3.7 Sonnet', provider: 'anthropic', tag: '长文写作', context: '200K', enabled: true, builtin: true },
-  { id: 'm-gemini', name: 'Gemini 2.0 Flash', provider: 'google', tag: '高速低价', context: '1M', enabled: true, builtin: true },
-  { id: 'm-deepseek', name: 'DeepSeek-V3', model_name: 'DeepSeek-Flash', provider: 'deepseek', tag: '代码 / 推理', context: '64K', enabled: true, builtin: true },
-  { id: 'm-qwen', name: 'Qwen-Max', provider: 'qwen', tag: '中文优化', context: '128K', enabled: true, builtin: true },
+  { id: 'm-deepseek-flash', name: 'DeepSeek V4.1 Flash', model_name: 'DeepSeek-Flash', provider: 'deepseek', tag: '极速推理 · 默认推荐', context: '64K', enabled: true, builtin: true },
+  // ↓↓ OpenAI Next 统一文本网关（OpenAI 兼容 /v1/chat/completions，同一套 SDK 切换多厂商模型，均已实测连通）
+  { id: 'm-gpt-sol', name: 'GPT-6.1 Sol', model_name: 'gpt-6.1-sol', provider: 'openai', base_url: 'https://api.openai-next.com/v1', api_key_env: 'OPENAINEXT_API_KEY', timeout_ms: 90000, tag: '通用旗舰 · 深度推理', context: '128K', enabled: true, builtin: true },
+  { id: 'm-claude', name: 'Claude Sonnet 5', model_name: 'claude-sonnet-5', provider: 'openai', base_url: 'https://api.openai-next.com/v1', api_key_env: 'OPENAINEXT_API_KEY', timeout_ms: 90000, tag: '长文写作 · 学术润色', context: '200K', enabled: true, builtin: true },
+  { id: 'm-gemini', name: 'Gemini 3.8 Flash', model_name: 'gemini-3.8-flash', provider: 'openai', base_url: 'https://api.openai-next.com/v1', api_key_env: 'OPENAINEXT_API_KEY', timeout_ms: 60000, tag: '高速低价 · 超长上下文', context: '1M', enabled: true, builtin: true },
+  { id: 'm-deepseek', name: 'DeepSeek V4 Pro', model_name: 'deepseek-v4-pro', provider: 'openai', base_url: 'https://api.openai-next.com/v1', api_key_env: 'OPENAINEXT_API_KEY', timeout_ms: 90000, tag: '代码 / 数学推理', context: '128K', enabled: true, builtin: true },
+  { id: 'm-kimi', name: 'Kimi K2.5', model_name: 'kimi-k2.5', provider: 'openai', base_url: 'https://api.openai-next.com/v1', api_key_env: 'OPENAINEXT_API_KEY', timeout_ms: 60000, tag: '中文长文档精读', context: '256K', enabled: true, builtin: true },
 ];
 
 const customModels = [

@@ -5,8 +5,8 @@
  *  - JobRecord / JobEvent / JobError / JobDesignLog 数据模型（src/types.ts，高参考性）
  *  - stage-weight 阶段进度映射（src/app.tsx PAPER/PPT_STAGE_WEIGHTS，高参考性）
  *  - 案例记忆 + Advisor 评分反哺（memory.rs / advisor.md 思路）
- * 降级策略：ScienceX 网关仅支持文本 chat 协议，无图像生成端点 ——
- *  Implement 阶段产出矢量 spec（diagram / plot / deck），由前端 SVG/图表组件渲染，可导出 SVG 与 JSON。
+ * 降级策略：文本网关负责 Design 阶段 spec 生成；Implement 阶段优先调用生图网关
+ *  （OpenAI 兼容 /v1/images/generations，见 ai/image.js）产出真实位图；未配置或失败时降级矢量 spec 渲染。
  */
 
 const store = require('../lib/store');
@@ -15,6 +15,7 @@ const { ok, errors } = require('../lib/respond');
 const { auth } = require('./account');
 const gateway = require('../lib/model-gateway');
 const dp = require('../lib/dp-prompts');
+const imageApi = require('../ai/image');
 
 const router = require('../lib/router').createRouter();
 
@@ -81,6 +82,57 @@ async function designJSON(systemPrompt, userBrief, fallback) {
     }
   } catch { /* 网关异常 → 确定性回退 */ }
   return { spec: fallback(), mode: 'simulated', raw: '' };
+}
+
+/* ---------- 生图 prompt 构造（Design spec → 位图渲染指令） ---------- */
+function figurePrompt(mode, payload, spec) {
+  if (mode === 'paper_figure') {
+    const stages = (spec?.stages || []).map((s) => s.name || s).filter(Boolean);
+    return [
+      'Create a publication-ready academic method-overview figure for a scientific paper.',
+      `Figure title: ${payload.title}`,
+      `Method pipeline description: ${payload.method}`,
+      stages.length ? `Use exactly ${stages.length} stage panels in this order, connected left-to-right: ${stages.join(' -> ')}.` : '',
+      payload.custom ? `Additional constraints: ${payload.custom}` : '',
+      'Style: flat vector infographic on a white background, muted academic color palette, thin outlines, rounded rectangles, clear directional arrows, panel headers with concise labels.',
+      'IMPORTANT: the content is in Chinese — translate every title, label and annotation into concise academic English before rendering; all visible text in the image must be in English, sharp and legible. No watermark, no photo-realism, no clutter.',
+    ].filter(Boolean).join('\n');
+  }
+  const series = (spec?.series || []).map((s) => `${s.label}=${s.value}`).filter(Boolean).join(', ');
+  return [
+    'Create a publication-ready statistical chart for an academic paper.',
+    `Chart title: ${payload.title}`,
+    payload.data ? `Source data: ${payload.data}` : '',
+    spec?.chart_type ? `Chart type: ${spec.chart_type}.` : '',
+    series ? `Plot these data series exactly with their values: ${series}.` : '',
+    'Style: colorblind-friendly academic palette, white background, light gray gridlines, axis labels with units, legend outside the plot area, precise numerals.',
+    'IMPORTANT: the content is in Chinese — translate the title and any Chinese labels into concise academic English before rendering; all visible text in the image must be in English. No watermark, clean vector look.',
+  ].filter(Boolean).join('\n');
+}
+
+/* ---------- Implement 阶段：生图网关渲染位图，失败降级矢量 ---------- */
+async function renderImage(job, task, payload, spec, setStage) {
+  const model = String(payload.image_model || '').trim();
+  if (!imageApi.hasImageGateway()) {
+    setStage('render', '渲染矢量预览', '未配置生图网关（IMAGE_API_KEY），Implement 降级为矢量 spec 渲染（前端 SVG，可导出）。');
+    return;
+  }
+  setStage('render', '渲染位图（生图网关）', `正在调用 ${model || imageApi.imageConfig().model} 生成位图（耗时约 1 分钟）…`, 'running');
+  try {
+    const img = await imageApi.generateImage(figurePrompt(job.mode, payload, spec), {
+      size: imageApi.sizeForRatio(payload.aspect_ratio),
+      ...(model ? { model } : {}),
+    });
+    job.result.image = {
+      url: img.url || '',
+      data_url: img.b64 ? `data:image/png;base64,${img.b64}` : '',
+      model: img.model, size: img.size, format: 'png',
+    };
+    setStage('render', '渲染位图（生图网关）', `位图渲染完成（${img.model} · ${img.size}）。\n${img.url ? `图片直链：${img.url}` : '已接收 base64 位图'}`);
+  } catch (error) {
+    job.result.render_warning = `生图网关失败：${error.message}；已降级为矢量 spec 渲染。`;
+    setStage('render', '渲染矢量降级', `${job.result.render_warning}`, 'warning');
+  }
 }
 
 /* ---------- 回退构造器（无网关 / 解析失败时仍产出可渲染 spec） ---------- */
@@ -194,8 +246,7 @@ async function runPipeline(job, task, payload) {
 
       setStage('implement_plan', 'Implement：渲染计划', design.spec.implement_plan || '按 Diagram Spec 渲染学术矢量图。');
       await step(300);
-      setStage('render', '渲染矢量预览', 'ScienceX 网关暂无图像端点，Implement 降级为矢量 spec 渲染（前端 SVG，可导出）。');
-      await step(350);
+      await renderImage(job, task, payload, design.spec, setStage);
       setStage('save', '保存产物');
     } else if (job.mode === 'plot_chart') {
       setStage('memory', '案例记忆召回', rated.length ? `召回 ${rated.length} 条同类型图表案例供参考。` : '暂无历史案例。');
@@ -213,8 +264,7 @@ async function runPipeline(job, task, payload) {
       await step(300);
       setStage('implement_plan', 'Implement：渲染计划', design.spec.implement_plan || '按 Plot Spec 渲染学术图表。');
       await step(300);
-      setStage('render', '渲染矢量预览', '降级为矢量图表组件渲染（SVG，可导出 JSON / 截图）。');
-      await step(350);
+      await renderImage(job, task, payload, design.spec, setStage);
       setStage('save', '保存产物');
     } else {
       setStage('master', '母版风格分析（阶段一）', '', 'running');
@@ -277,7 +327,12 @@ router.get('/dreampaper/templates', auth, (req, res) => {
 router.get('/dreampaper/jobs', auth, (req, res) => {
   const items = dpJobs
     .filter((j) => j.owner_id === req.user.id)
-    .map(({ design_logs, ...meta }) => ({ ...meta, design_log_count: design_logs.length }));
+    .map(({ design_logs, result, ...meta }) => ({
+      ...meta,
+      design_log_count: design_logs.length,
+      /* 列表不携带 base64 位图（可达 MB 级），仅保留元数据与直链 */
+      result: result ? { ...result, image: result.image ? { ...result.image, data_url: '' } : undefined } : null,
+    }));
   ok(res, { items, notice: dp.NOTICE });
 });
 

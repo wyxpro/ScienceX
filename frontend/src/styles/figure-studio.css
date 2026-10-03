@@ -315,6 +315,7 @@
 .fx-log { padding: 8px 12px; border-left: 3px solid var(--fx-accent); border-radius: 8px; background: #faf8fc; }
 .fx-log[data-status='running'] { border-left-color: var(--fx-amber); }
 .fx-log[data-status='failed'] { border-left-color: var(--fx-rose); }
+.fx-log[data-status='warning'] { border-left-color: var(--fx-amber); background: #fdf9f2; }
 .fx-log-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; color: var(--fx-text-1); }
 .fx-log-head em { font-style: normal; font-size: 10.5px; color: var(--fx-amber); }
 .fx-log pre {
@@ -333,6 +334,8 @@
 .fx-result-title { font-weight: 650; font-size: 13.5px; color: var(--fx-text-1); }
 .fx-result-tag { font-size: 11px; padding: 2px 9px; border-radius: var(--fx-r-pill); background: var(--fx-accent-soft); color: var(--fx-accent-ink); }
 .fx-svg { width: 100%; background: #fff; border: 1px solid var(--fx-hairline); border-radius: 10px; }
+.fx-img { display: block; width: 100%; background: #fff; border: 1px solid var(--fx-hairline); border-radius: 10px; }
+.fx-render-warning { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #8a6a1f; background: #fdf9f2; border: 1px solid #f0e2c0; border-radius: 8px; padding: 6px 10px; }
 .fx-result-actions { display: flex; gap: 8px; }
 
 /* ---------- 移动端适配（≤768px）：单列堆叠、控件防溢出、长文本折行 ---------- */

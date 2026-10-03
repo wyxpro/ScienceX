@@ -68,7 +68,8 @@ function gatewayConfig(modelId, userId) {
   // Never reinterpret an unknown or unauthorized explicit model as the global default.
   if (explicitModel && !model) return { model: null, baseUrl: '', apiKey: '', modelName: '' };
 
-  const isDeepSeek = model?.provider === 'deepseek' || model?.id === 'm-deepseek-flash' || model?.id === 'm-deepseek' || model?.model_name === 'DeepSeek-Flash';
+  // 内置模型可自带 base_url + api_key_env（如 OpenAI Next 统一网关），否则回退全局 DeepSeek/OpenAI 配置
+  const isDeepSeek = model?.provider === 'deepseek' || model?.id === 'm-deepseek-flash' || model?.model_name === 'DeepSeek-Flash';
   const defaultBaseUrl = isDeepSeek
     ? (process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://www.sophnet.com/api/open-apis/v1')
     : (process.env.OPENAI_BASE_URL || process.env.DEEPSEEK_BASE_URL || 'https://www.sophnet.com/api/open-apis/v1');
@@ -79,7 +80,7 @@ function gatewayConfig(modelId, userId) {
 
   const baseUrl = model?.base_url || defaultBaseUrl;
   const apiKey = model?.builtin
-    ? defaultApiKey
+    ? (model.api_key_env ? (process.env[model.api_key_env] || '') : defaultApiKey)
     : model
       ? (model.api_key_encrypted ? decryptSecret(model.api_key_encrypted) : '')
       : defaultApiKey;
@@ -102,7 +103,7 @@ async function createClient(model, userId) {
   return new DeepSeekClient({
     baseUrl: config.baseUrl, apiKey: config.apiKey, model: config.modelName,
     provider: config.model?.provider || 'openai',
-    timeoutMs: Number(process.env.OPENAI_TIMEOUT_MS || 30000),
+    timeoutMs: Number(config.model?.timeout_ms || process.env.OPENAI_TIMEOUT_MS || 30000),
     hasKey: () => !!config.apiKey || config.model?.provider === 'ollama',
   });
 }

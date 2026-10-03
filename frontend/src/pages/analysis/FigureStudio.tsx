@@ -13,7 +13,8 @@ type Pane = 'templates' | 'result';
 type DesignLog = { step: string; label: string; status: string; content: string };
 type Diagnosis = { summary: string; code?: string; stage?: string; role?: string; endpoint?: string; suggestion?: string };
 type DpTemplate = { id: string; kind: Kind; name: string; category: string; visual_intent: string; desc: string; image_url?: string };
-type DpResult = { kind: string; title: string; spec: any; design_mode?: string };
+type DpImage = { url?: string; data_url?: string; model?: string; size?: string; format?: string };
+type DpResult = { kind: string; title: string; spec: any; design_mode?: string; image?: DpImage; render_warning?: string };
 
 const MAX_TEMPLATES = 3;
 
@@ -197,6 +198,21 @@ export default function FigureStudio() {
 
   const ready = Boolean(title.trim() && method.trim() && selected.length > 0);
 
+  /* 位图导出：url 跨域时经 fetch blob 下载，失败回退新窗口打开 */
+  const downloadImage = async () => {
+    const src = result?.image?.url || result?.image?.data_url;
+    if (!src) return;
+    try {
+      const blob = await (await fetch(src)).blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${result?.title || 'figure'}.png`; a.click();
+      URL.revokeObjectURL(url);
+    } catch { window.open(src, '_blank'); }
+  };
+
+  const bitmapSrc = result?.image?.url || result?.image?.data_url || '';
+
   return (
     <div className="fx-studio anim-in">
       <div className="fx-intro">
@@ -341,6 +357,24 @@ export default function FigureStudio() {
                   <div className="fx-diag-kv"><span>摘要</span><span>{diagnosis.summary}</span></div>
                   {diagnosis.endpoint && <div className="fx-diag-kv"><span>请求端点</span><span>{diagnosis.endpoint}</span></div>}
                   {diagnosis.suggestion && <div className="fx-diag-kv"><span>处理建议</span><span>{diagnosis.suggestion}</span></div>}
+                </div>
+              )}
+
+              {result && bitmapSrc && (
+                <div className="fx-result">
+                  <div className="fx-result-head">
+                    <span className="fx-result-title">{result.title}</span>
+                    <span className="fx-result-tag">生图 · {result.image?.model}{result.image?.size ? ` · ${result.image.size}` : ''}</span>
+                  </div>
+                  <div className="fx-result-fig">
+                    <img src={bitmapSrc} alt={result.title} className="fx-img" />
+                    <div className="fx-result-actions">
+                      <button type="button" className="fx-ghost" onClick={downloadImage}><Icon name="download" size={13} />导出 PNG</button>
+                    </div>
+                  </div>
+                  {result.render_warning && (
+                    <div className="fx-render-warning"><Icon name="alert" size={13} />{result.render_warning}</div>
+                  )}
                 </div>
               )}
 

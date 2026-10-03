@@ -155,7 +155,8 @@ router.delete('/models/:id', auth, (req, res) => {
 });
 
 router.post('/models/:id/test', auth, async (req, res) => {
-  const m = store.customModels.find((x) => x.id === req.params.id && canAccess(x, req.user.id));
+  // 自定义模型与内置模型（如 OpenAI Next 网关系列）均可一键连通性测试
+  const m = store.customModels.find((x) => x.id === req.params.id && canAccess(x, req.user.id)) || store.builtinModels.find((x) => x.id === req.params.id);
   if (!m) return errors.notFound(res, '模型不存在');
   const started = Date.now();
   if (!gateway.enabled(m.id, req.user.id)) {
