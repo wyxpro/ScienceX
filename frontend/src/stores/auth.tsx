@@ -55,12 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       const redirectPath = customEvent.detail?.redirect;
       // 公开宣传页和登录页无需认证，后台请求失效时仍允许访问。
-      if (!['/', '/login', '/landing'].includes(window.location.pathname.replace(/\/$/, '') || '/')) {
+      const currentRoute = (window.location.hash.replace(/^#/, '') || '/').split('?')[0].replace(/\/$/, '') || '/';
+      if (!['/', '/login', '/landing'].includes(currentRoute)) {
         const target = redirectPath
           ? `/login?redirect=${encodeURIComponent(redirectPath)}`
           : '/login';
-        window.history.pushState({}, '', target);
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        window.location.hash = target;
       }
     };
 
@@ -96,8 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     clearToken();
     setUser(null);
-    window.history.pushState({}, '', '/login');
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.location.hash = '/login';
   };
 
   return (

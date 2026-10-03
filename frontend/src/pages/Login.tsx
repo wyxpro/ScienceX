@@ -30,7 +30,7 @@ export default function Login() {
         await register(name || '青年学者', email, password);
         toast('注册成功，已为您开通学术专属工作台');
       }
-      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      const redirect = new URLSearchParams(window.location.hash.split('?')[1] || '').get('redirect');
       nav(redirect ? decodeURIComponent(redirect) : '/chat');
     } catch (err: any) {
       toast(err.message || '操作失败，请重试', 'err');
@@ -46,7 +46,7 @@ export default function Login() {
     try {
       await login('demo@sciencex.cn', '123456');
       toast('已通过演示账号快捷登录');
-      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      const redirect = new URLSearchParams(window.location.hash.split('?')[1] || '').get('redirect');
       nav(redirect ? decodeURIComponent(redirect) : '/chat');
     } catch (err: any) {
       toast(err.message || '登录异常', 'err');

@@ -1,6 +1,6 @@
 /* 路由：懒加载 + 登录守卫（页面结构与 PRD §2.0 信息架构一一对应） */
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../stores/auth';
 import { PageLoading } from '../components/ui';
 import AppLayout from '../layouts/AppLayout';
@@ -33,7 +33,7 @@ function Guard({ children }: { children: JSX.Element }) {
 
 export default function Router() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -56,6 +56,6 @@ export default function Router() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

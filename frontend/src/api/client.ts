@@ -135,7 +135,7 @@ function handleAuthExpired() {
   // 广播 401 事件给 React 应用，支持平滑展示 Toast 与带参重定向
   window.dispatchEvent(
     new CustomEvent('sx:auth-expired', {
-      detail: { redirect: window.location.pathname + window.location.search },
+      detail: { redirect: window.location.hash.replace(/^#/, '') || '/' },
     })
   );
 }
