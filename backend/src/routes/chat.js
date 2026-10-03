@@ -21,7 +21,8 @@ router.post('/chat/completions', auth, express.json({ limit: '2mb' }), asyncHand
   }
 
   // 调度 LingXiAgent 多智能体引擎 (支持 8 大模式、灵寻规划流、三层记忆与 MCP 工具)
-  await lingxiEngine.executeAgentStream(res, {
+  // 引擎优先真实调用 DeepSeek V4.1 Flash，返回真实正文与 token 用量
+  const agentResult = await lingxiEngine.executeAgentStream(res, {
     messages,
     model,
     agentMode: agent_mode,
@@ -31,7 +32,7 @@ router.post('/chat/completions', auth, express.json({ limit: '2mb' }), asyncHand
     convId: conversation_id,
   });
 
-  // 记录会话历史
+  // 记录会话历史（保存真实模型回复，而非占位符）
   const conv = store.conversations.find((c) => c.id === conversation_id && canAccess(c, req.user.id));
   if (conv) {
     const lastUser = [...messages].reverse().find((m) => m.role === 'user');
@@ -48,8 +49,8 @@ router.post('/chat/completions', auth, express.json({ limit: '2mb' }), asyncHand
         role: 'assistant',
         model,
         agent_mode,
-        content: `（已完成 ${agent_mode} 模式智能体推演与处理）`,
-        tokens: 280,
+        content: (agentResult && agentResult.content && agentResult.content.trim()) || `（已完成 ${agent_mode} 模式智能体推演与处理）`,
+        tokens: (agentResult && agentResult.usage && agentResult.usage.total_tokens) || 280,
         created_at: store.now(),
       });
       conv.updated_at = store.now();
