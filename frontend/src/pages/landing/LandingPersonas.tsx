@@ -6,7 +6,9 @@ import labPiImg from '../../assets/personas/lab_pi.jpg';
 
 interface PersonaScenario {
   id: string;
+  order: string;
   role: string;
+  audience: string;
   tag: string;
   coverImg: string;
   avatarIcon: string;
@@ -15,7 +17,8 @@ interface PersonaScenario {
   cardActiveBg: string;
   shadowColor: string;
   sceneTitle: string;
-  challenges: {
+  targetOutcome: string;
+  features: {
     icon: string;
     title: string;
     desc: string;
@@ -27,90 +30,99 @@ interface PersonaScenario {
 const PERSONA_SCENARIOS: PersonaScenario[] = [
   {
     id: 'student',
+    order: '01',
     role: '大学生 / 研究生',
+    audience: '本科毕设 · 硕博研究生',
     tag: '学术启蒙与深度探索 · 从 0 到 1 破局',
     coverImg: gradStudentImg,
-    avatarIcon: 'book',
+    avatarIcon: 'bulb',
     themeColor: '#0284c7',
     badgeBg: 'rgba(2, 132, 199, 0.1)',
-    cardActiveBg: 'rgba(2, 132, 199, 0.035)',
+    cardActiveBg: 'rgba(2, 132, 199, 0.03)',
     shadowColor: 'rgba(2, 132, 199, 0.22)',
-    sceneTitle: '毕业设计开题、文献精读、实验 Baseline 复现与论文初撰',
-    challenges: [
+    sceneTitle: '开题调研 · 文献精读 · 基线复现 · 初稿撰写',
+    targetOutcome: '高分完成开题论证 · 产出首篇 CCF 顶会/顶刊论文',
+    features: [
       {
         icon: 'bulb',
-        title: '选题开题方向迷茫',
-        desc: '面对浩瀚学术文献难以精准捕捉核心创新点与前沿研究空白，开题报告思路发散缺乏论证深度。',
+        title: '智能选题与开题推演',
+        desc: '前沿热点与个人背景深度匹配，一键生成结构化开题报告与可行性论证。',
       },
       {
         icon: 'book',
-        title: '外文文献精读耗时',
-        desc: '英文顶刊长难句、专业术语壁垒与复杂数学公式推导理解门槛高，逐篇通读耗费大量科研时间。',
+        title: '三栏结构化文献精读',
+        desc: '双语对照速读、公式拆解与七段式创新点提取，大幅缩短文献摸索周期。',
       },
       {
         icon: 'flask',
-        title: 'Baseline 实验复现困难',
-        desc: '开源实验代码环境配置繁琐、基线复现屡屡失败，消融实验缺乏规范的对比维度。',
+        title: '实验沙箱与基线对标',
+        desc: '自动适配开源 Baseline 实验环境，智能推导演化消融矩阵与参数看板。',
       },
     ],
     keywords: ['开题调研', '文献精读', 'Baseline 对比', '消融实验'],
   },
   {
     id: 'teacher',
+    order: '02',
     role: '高校教师',
-    tag: '教研并进 · 课题立项与团队指导',
+    audience: '青年骨干 · 硕博导师 · 课题负责人',
+    tag: '教研并进 · 课题立项与团队统筹',
     coverImg: earlyScholarImg,
     avatarIcon: 'pen',
     themeColor: '#059669',
     badgeBg: 'rgba(5, 150, 105, 0.1)',
-    cardActiveBg: 'rgba(5, 150, 105, 0.035)',
+    cardActiveBg: 'rgba(5, 150, 105, 0.03)',
     shadowColor: 'rgba(5, 150, 105, 0.22)',
-    sceneTitle: '国家/省部级基金申报书撰写、课题把控与学生论文预审',
-    challenges: [
+    sceneTitle: '基金申报 · 组会指导 · 论文预审 · 资产沉淀',
+    targetOutcome: '国自然/省部级基金高效获批 · 团队科研成果资产零流失',
+    features: [
       {
         icon: 'doc',
-        title: '基金申报书撰写周期紧',
-        desc: '教学与行政事务繁多，国家自然科学基金/省部级课题申报书的研究现状综述与技术路线推导撰写时间极为紧迫。',
+        title: '基金申报综述与论证助手',
+        desc: '快速梳理国内外研究现状综述，严密辅助提炼科学假说与技术路线图。',
       },
       {
         icon: 'users',
-        title: '组会指导与论文审阅负担重',
-        desc: '花费大量精力帮不同层级的学生纠正初稿中的逻辑漏洞与格式硬伤，组会汇报缺乏统一标准。',
+        title: '多智能体盲审把关',
+        desc: '提交前预先完成 5 维同行盲审模拟，提前消除学术表述瑕疵与逻辑硬伤。',
       },
       {
         icon: 'db',
-        title: '课题组科研资产分散断层',
-        desc: '学生毕业流动导致论文数据、实验脚本与文献笔记散落各处，缺乏数字化的课题积累与传承沉淀。',
+        title: '数字化课题组资产传承',
+        desc: '沉淀打通实验脚本、图表与论文全周期，学生交接平滑、研究积累不断层。',
       },
     ],
     keywords: ['国自然基金', '立项论证', '组会管理', '论文预审', '资产沉淀'],
   },
   {
     id: 'researcher',
+    order: '03',
     role: '科研人员',
-    tag: '顶刊攻关 · 原创突破与学科交叉',
+    audience: '专职学者 · 实验室 PI · 顶尖科学家',
+    tag: '前沿攻关 · 原创突破与交叉创新',
     coverImg: labPiImg,
-    avatarIcon: 'flask',
+    avatarIcon: 'target',
     themeColor: '#7c3aed',
     badgeBg: 'rgba(124, 58, 237, 0.1)',
-    cardActiveBg: 'rgba(124, 58, 237, 0.035)',
+    cardActiveBg: 'rgba(124, 58, 237, 0.03)',
     shadowColor: 'rgba(124, 58, 237, 0.22)',
-    sceneTitle: '顶刊顶会攻关、前沿学术雷达、严谨消融与同行盲审对抗',
-    challenges: [
+    sceneTitle: '顶刊冲刺 · 前沿雷达 · 严谨消融 · 盲审对抗',
+    targetOutcome: 'Nature/IEEE 顶刊顶会录用 · 建立学术高影响力',
+    features: [
       {
-        icon: 'target',
-        title: '顶刊对创新性要求极苛刻',
-        desc: '面向 Nature / IEEE / ACM 等高影响因子刊物，需要极高理论创新增量、严谨的数学形式化与深度机理解释。',
+        icon: 'chart',
+        title: '前沿雷达与创新量化',
+        desc: '多源交叉追踪全球顶尖突破，精准推演理论增量与机理解释维度。',
       },
       {
         icon: 'shield',
-        title: '多学科交叉复现与消融复杂度高',
-        desc: '多模态、跨模态大规模模型验证计算开销大，参数敏感性分析与可复现性存证工作量庞大。',
+        title: '全周期消融与复现存证',
+        desc: '自动推导参数敏感性看板与可复现性存证，筑牢高水平审稿证据链。',
       },
       {
         icon: 'refresh',
-        title: '同行盲审对抗与 Rebuttal 辩护',
-        desc: '国际审稿人评审意见针锋相对，需在极短时间内推演审稿疑虑并组织严密、有说服力的抗辩材料。',
+        title: '盲审对抗与 Rebuttal 辩护',
+        desc: '多维审稿意见智能反推，推演潜在质疑并组织严密有力的抗辩支撑链。',
       },
     ],
     keywords: ['顶刊顶会', '前沿雷达', '多维消融', '同行盲审', 'Rebuttal'],
@@ -121,7 +133,7 @@ export const LandingPersonas: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string>('student');
 
   return (
-    <section id="personas" className="landing-section" style={{ maxWidth: 1320, margin: '0 auto', padding: '60px 24px' }}>
+    <section id="personas" className="landing-section" style={{ maxWidth: 1320, margin: '0 auto', padding: '64px 24px' }}>
       <div className="section-head text-center" style={{ marginBottom: 44 }}>
         <div className="section-badge">User Personas & Scenarios</div>
         <h2 className="section-title" style={{ fontSize: 'clamp(26px, 3.2vw, 36px)', marginTop: 8 }}>
@@ -136,8 +148,8 @@ export const LandingPersonas: React.FC = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-          gap: 26,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+          gap: 28,
         }}
       >
         {PERSONA_SCENARIOS.map((p) => {
@@ -147,13 +159,12 @@ export const LandingPersonas: React.FC = () => {
               key={p.id}
               onClick={() => setSelectedId(p.id)}
               style={{
-                borderRadius: 24,
+                borderRadius: 22,
                 overflow: 'hidden',
-                background: isSelected ? p.cardActiveBg : '#ffffff',
-                backdropFilter: 'blur(16px)',
+                background: '#ffffff',
                 border: isSelected ? `2px solid ${p.themeColor}` : '1px solid #e2e8f0',
                 boxShadow: isSelected
-                  ? `0 20px 48px -10px ${p.shadowColor}, 0 4px 16px rgba(0, 0, 0, 0.05)`
+                  ? `0 20px 48px -10px ${p.shadowColor}, 0 4px 16px rgba(0, 0, 0, 0.04)`
                   : '0 4px 20px -4px rgba(15, 23, 42, 0.05)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -166,7 +177,7 @@ export const LandingPersonas: React.FC = () => {
                 if (!isSelected) {
                   e.currentTarget.style.borderColor = p.themeColor;
                   e.currentTarget.style.transform = 'translateY(-3px)';
-                  e.currentTarget.style.boxShadow = `0 12px 28px -6px ${p.shadowColor}`;
+                  e.currentTarget.style.boxShadow = `0 14px 30px -6px ${p.shadowColor}`;
                 }
               }}
               onMouseLeave={(e) => {
@@ -180,37 +191,12 @@ export const LandingPersonas: React.FC = () => {
               tabIndex={0}
               aria-label={`选择画像：${p.role}`}
             >
-              {/* 顶部选中角标 */}
-              {isSelected && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 14,
-                    right: 14,
-                    zIndex: 10,
-                    background: p.themeColor,
-                    color: '#ffffff',
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    padding: '4px 12px',
-                    borderRadius: 999,
-                    boxShadow: `0 4px 12px ${p.shadowColor}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    backdropFilter: 'blur(6px)',
-                  }}
-                >
-                  <Icon name="check" size={13} /> 聚焦场景
-                </div>
-              )}
-
-              {/* 封面图区域 */}
+              {/* 1. 顶部保留封面图区域 */}
               <div
                 style={{
                   position: 'relative',
                   width: '100%',
-                  height: 196,
+                  height: 200,
                   overflow: 'hidden',
                   background: '#0e1d17',
                 }}
@@ -228,17 +214,63 @@ export const LandingPersonas: React.FC = () => {
                   }}
                   loading="lazy"
                 />
-                {/* 蒙层渐变 */}
+
+                {/* 深度暗角渐变蒙层，保证文字 100% 易读 */}
                 <div
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.3) 50%, rgba(0,0,0,0.1) 100%)',
+                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.94) 0%, rgba(15, 23, 42, 0.45) 55%, rgba(0, 0, 0, 0.2) 100%)',
                     pointerEvents: 'none',
                   }}
                 />
 
-                {/* 封面图内叠底信息 */}
+                {/* 封面顶部浮动标贴 */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 14,
+                    left: 16,
+                    right: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    zIndex: 2,
+                  }}
+                >
+                  <span
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.65)',
+                      backdropFilter: 'blur(8px)',
+                      color: '#ffffff',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: 6,
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    STAGE {p.order}
+                  </span>
+
+                  <span
+                    style={{
+                      background: isSelected ? p.themeColor : 'rgba(15, 23, 42, 0.65)',
+                      backdropFilter: 'blur(8px)',
+                      color: '#ffffff',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '3px 10px',
+                      borderRadius: 999,
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      boxShadow: isSelected ? `0 2px 10px ${p.shadowColor}` : 'none',
+                    }}
+                  >
+                    {p.audience}
+                  </span>
+                </div>
+
+                {/* 封面底部核心信息 */}
                 <div
                   style={{
                     position: 'absolute',
@@ -246,98 +278,98 @@ export const LandingPersonas: React.FC = () => {
                     left: 18,
                     right: 18,
                     display: 'flex',
-                    alignItems: 'flex-end',
-                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 12,
                     zIndex: 2,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      color: p.themeColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
+                      backdropFilter: 'blur(8px)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon name={p.avatarIcon as any} size={20} />
+                  </div>
+                  <div>
                     <div
                       style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 13,
-                        background: 'rgba(255, 255, 255, 0.95)',
-                        color: p.themeColor,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
-                        backdropFilter: 'blur(8px)',
-                        flexShrink: 0,
+                        fontWeight: 800,
+                        fontSize: 18,
+                        color: '#ffffff',
+                        letterSpacing: '-0.2px',
+                        lineHeight: 1.25,
                       }}
                     >
-                      <Icon name={p.avatarIcon as any} size={22} />
+                      {p.role}
                     </div>
-                    <div>
-                      <div
-                        style={{
-                          fontWeight: 800,
-                          fontSize: 18,
-                          color: '#ffffff',
-                          textShadow: '0 2px 8px rgba(0, 0, 0, 0.7)',
-                          lineHeight: 1.25,
-                        }}
-                      >
-                        {p.role}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: '#e2e8f0',
-                          marginTop: 3,
-                          textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {p.tag}
-                      </div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: '#cbd5e1',
+                        marginTop: 3,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {p.tag}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 卡片主体内容 */}
-              <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                {/* 核心场景定位条 */}
+              {/* 2. 卡片主体内容区域 */}
+              <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                {/* 核心场景定位横条 */}
                 <div
                   style={{
-                    fontSize: 13,
-                    fontWeight: 700,
+                    fontSize: 12.5,
+                    fontWeight: 600,
                     color: p.themeColor,
-                    marginBottom: 18,
-                    padding: '9px 13px',
-                    borderRadius: 11,
-                    background: isSelected ? '#ffffff' : 'rgba(241, 245, 249, 0.75)',
-                    border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid #e2e8f0',
-                    transition: 'all 0.25s ease',
-                    lineHeight: 1.45,
+                    marginBottom: 16,
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: `${p.themeColor}0a`,
+                    border: `1px solid ${p.themeColor}22`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
-                  🎯 {p.sceneTitle}
+                  <span style={{ fontSize: 13 }}>🎯</span>
+                  <span className="ellipsis">{p.sceneTitle}</span>
                 </div>
 
-                {/* 核心科研挑战清单 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, marginBottom: 18 }}>
-                  {p.challenges.map((c, idx) => (
+                {/* 三大专属赋能功能微卡片 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 16 }}>
+                  {p.features.map((f, idx) => (
                     <div
                       key={idx}
                       style={{
-                        padding: '12px 14px',
-                        borderRadius: 12,
-                        background: isSelected ? 'rgba(255, 255, 255, 0.8)' : '#f8fafc',
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        background: '#f8fafc',
                         border: '1px solid #edf2f7',
                         display: 'flex',
-                        gap: 12,
+                        gap: 10,
                         alignItems: 'flex-start',
+                        transition: 'all 0.2s ease',
                       }}
                     >
                       <span
                         style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 8,
-                          background: `${p.themeColor}12`,
+                          width: 26,
+                          height: 26,
+                          borderRadius: 7,
+                          background: `${p.themeColor}14`,
                           color: p.themeColor,
                           display: 'flex',
                           alignItems: 'center',
@@ -346,25 +378,47 @@ export const LandingPersonas: React.FC = () => {
                           marginTop: 1,
                         }}
                       >
-                        <Icon name={c.icon as any} size={15} />
+                        <Icon name={f.icon as any} size={14} />
                       </span>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a' }}>
-                          {c.title}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
+                          {f.title}
                         </div>
-                        <div style={{ fontSize: 12, color: '#475569', marginTop: 3, lineHeight: 1.5 }}>
-                          {c.desc}
+                        <div style={{ fontSize: 11.5, color: '#475569', marginTop: 2, lineHeight: 1.45 }}>
+                          {f.desc}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
+                {/* 标杆预期产出横条 */}
+                <div
+                  style={{
+                    padding: '9px 12px',
+                    borderRadius: 10,
+                    background: isSelected ? 'rgba(255, 255, 255, 0.95)' : '#ffffff',
+                    border: `1px dashed ${p.themeColor}44`,
+                    marginBottom: 14,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#0f172a',
+                  }}
+                >
+                  <span style={{ color: '#d97706', fontSize: 14 }}>🏆</span>
+                  <span style={{ color: '#334155' }}>
+                    标杆目标：<strong style={{ color: p.themeColor }}>{p.targetOutcome}</strong>
+                  </span>
+                </div>
+
                 {/* 底部学术关键词标签 */}
                 <div
                   style={{
-                    borderTop: '1px solid #edf2f7',
-                    paddingTop: 14,
+                    borderTop: '1px solid #f1f5f9',
+                    paddingTop: 12,
                     marginTop: 'auto',
                     display: 'flex',
                     alignItems: 'center',
@@ -376,13 +430,12 @@ export const LandingPersonas: React.FC = () => {
                     <span
                       key={idx}
                       style={{
-                        fontSize: 11.5,
-                        padding: '3px 9px',
+                        fontSize: 11,
+                        padding: '2px 8px',
                         borderRadius: 6,
                         background: isSelected ? `${p.themeColor}12` : '#f1f5f9',
-                        color: isSelected ? p.themeColor : '#475569',
+                        color: isSelected ? p.themeColor : '#64748b',
                         fontWeight: isSelected ? 700 : 500,
-                        border: isSelected ? `1px solid ${p.themeColor}26` : '1px solid transparent',
                       }}
                     >
                       #{kw}

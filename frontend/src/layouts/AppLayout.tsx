@@ -25,9 +25,9 @@ const GROUPS: NavGroup[] = [
   },
   {
     title: '特色功能', items: [
+      { to: '/features/reproduce', label: '论文复现', icon: 'branch' },
       { to: '/features/meeting', label: '组会汇报', icon: 'users' },
       { to: '/features/review', label: '专家评审团', icon: 'award' },
-      { to: '/features/reproduce', label: '论文复现', icon: 'branch' },
     ],
   },
 ];
