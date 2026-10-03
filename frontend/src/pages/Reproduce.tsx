@@ -1,7 +1,9 @@
-/* 论文复现 —— 特色功能：新增复现（选择论文 / 上传文档）→ 五阶段复现流水线 → 指标比对报告 */
+/* 论文复现 —— 特色功能：新增复现（选择论文 / 上传文档 / 执行课题组）→ 五阶段复现流水线 → 指标比对报告 */
 import { useEffect, useRef, useState } from 'react';
 import Icon from '../components/Icon';
 import { Empty, Modal, Progress, Tag, useToast } from '../components/ui';
+import { api } from '../api/client';
+import type { TeamItem } from '../types';
 
 /* ---------- 数据定义 ---------- */
 interface Candidate {
@@ -105,6 +107,22 @@ const CANDIDATES: Candidate[] = [
   },
 ];
 
+const AVATAR_COLORS = ['#10b981', '#6366f1', '#0ea5e9', '#f59e0b'];
+
+/* 课题组降级演示数据（接口异常时兜底，与「设置与管理」一致） */
+const DEMO_TEAMS: TeamItem[] = [
+  {
+    id: 'demo-team-affective',
+    name: '情感计算课题组',
+    members: [
+      { user_id: 'demo-u1', name: '陈墨', role: 'admin' },
+      { user_id: 'demo-u2', name: '林曦', role: 'member' },
+      { user_id: 'demo-u3', name: '赵越', role: 'member' },
+      { user_id: 'demo-u4', name: 'Dr. 韩明远', role: 'member' },
+    ],
+  },
+];
+
 type PhaseStatus = 'done' | 'running' | 'pending';
 
 /* 从上传文档生成复现目标（演示：按文档名生成通用五阶段方案与占位指标） */
@@ -143,6 +161,18 @@ export default function Reproduce() {
   const [addOpen, setAddOpen] = useState(false);
   const [pickId, setPickId] = useState(CANDIDATES[0].id);
   const [docName, setDocName] = useState('');
+
+  /* 执行课题组（产物归档空间）：弹窗打开时拉取，异常时用演示数据兜底 */
+  const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [teamId, setTeamId] = useState('');
+  const teamList = teams.length ? teams : DEMO_TEAMS;
+  const activeTeam = teamList.find((t) => t.id === teamId) || teamList[0];
+  useEffect(() => {
+    if (!addOpen || teams.length) return;
+    api<{ items: TeamItem[] } | TeamItem[]>('/teams')
+      .then((t) => setTeams((t as any)?.items || (Array.isArray(t) ? t : [])))
+      .catch(() => { /* 保留演示兜底数据 */ });
+  }, [addOpen, teams.length]);
 
   const [running, setRunning] = useState(false);
   const [phaseIdx, setPhaseIdx] = useState(-1);      // 当前执行阶段
@@ -221,7 +251,7 @@ export default function Reproduce() {
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 4fr)', alignItems: 'start', flex: 'none' }}>
         {/* 左：五阶段步骤条 */}
         <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div className="row-between wrap g-2">
+          <div className="row g-2 wrap" style={{ alignItems: 'center' }}>
             <span className="card-title"><Icon name="zap" size={15} /> 复现流水线</span>
             <div className="row g-1" style={{ flex: 'none' }}>
               <button
@@ -376,7 +406,7 @@ export default function Reproduce() {
       </div>
 
       {/* ===== 新增复现弹窗：选择论文 或 上传文档 ===== */}
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={<><Icon name="plus" size={15} /> 新增复现</>}>
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={<><Icon name="plus" size={15} /> 新增复现</>} width="lg">
         <div className="fw-bold text-small mb-2">选择复现的论文</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {[...extras, ...CANDIDATES].map((c) => {
@@ -434,6 +464,77 @@ export default function Reproduce() {
           />
         </label>
 
+        {/* 执行课题组（产物归档空间） */}
+        <div className="row g-2" style={{ alignItems: 'center', margin: '14px 0 8px' }}>
+          <span className="text-xs text-muted" style={{ flex: 'none' }}>执行课题组 · 产物归档空间</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+          <span className="text-xs text-muted" style={{ flex: 'none' }}>{teamList.length} 个课题组</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {teamList.map((t) => {
+            const on = activeTeam?.id === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTeamId(t.id)}
+                aria-pressed={on}
+                style={{
+                  textAlign: 'left', cursor: 'pointer', padding: '12px 14px', borderRadius: 10,
+                  border: on ? '1px solid var(--brand)' : '1px solid var(--line)',
+                  background: on ? 'var(--brand-softer)' : '#ffffff',
+                  boxShadow: on ? '0 0 0 3px rgba(27,122,94,.10)' : 'none',
+                }}
+              >
+                <div className="row-between" style={{ alignItems: 'center' }}>
+                  <div className="row g-2" style={{ alignItems: 'center', minWidth: 0 }}>
+                    <div className="row" style={{ paddingLeft: 6, flex: 'none' }}>
+                      {(t.members || []).slice(0, 4).map((m, mi) => (
+                        <span
+                          key={m.user_id}
+                          className="avatar"
+                          title={m.name}
+                          style={{
+                            width: 26, height: 26, fontSize: 10.5, borderWidth: 0, marginLeft: -6,
+                            zIndex: 10 - mi, outline: '2px solid #ffffff',
+                            background: AVATAR_COLORS[mi % AVATAR_COLORS.length],
+                          }}
+                        >
+                          {m.name?.[0] || '员'}
+                        </span>
+                      ))}
+                      {(t.members?.length ?? 0) > 4 && (
+                        <span className="avatar" style={{ width: 26, height: 26, fontSize: 9.5, marginLeft: -6, borderWidth: 0, outline: '2px solid #ffffff', background: 'var(--bg-deep)', color: 'var(--muted)' }}>
+                          +{(t.members?.length ?? 0) - 4}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="fw-bold text-small ellipsis">{t.name}</div>
+                      <div className="text-xs text-muted" style={{ marginTop: 2 }}>{t.members?.length ?? 0} 名成员 · 协作空间已互通</div>
+                    </div>
+                  </div>
+                  {on ? (
+                    <span className="tag tag-green" style={{ flex: 'none' }}><Icon name="check" size={11} /> 已选择</span>
+                  ) : (
+                    <span className="tag tag-outline" style={{ flex: 'none' }}>选择</span>
+                  )}
+                </div>
+                <div className="row g-1 wrap" style={{ marginTop: 8 }}>
+                  {t.members?.map((m) => (
+                    <span key={m.user_id} className="tag tag-outline" style={{ gap: 6, borderRadius: 8, padding: '3px 9px', cursor: 'default' }}>
+                      <span style={{ fontWeight: 500 }}>{m.name}</span>
+                      <span className="text-xs" style={{ color: m.role === 'admin' ? 'var(--brand-strong)' : 'var(--muted)' }}>
+                        {m.role === 'admin' ? '管理员' : m.role === 'guest' ? '访客' : '成员'}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
         <button
           className="btn btn-primary btn-block mt-3"
           disabled={!pickId && !docName}
@@ -443,11 +544,11 @@ export default function Reproduce() {
               setExtras((x) => [c, ...x]);
               reset();
               setPickedId(c.id);
-              toast(`已导入「${docName}」，复现方案已生成`, 'ok');
+              toast(`已导入「${docName}」，产物将归档至「${activeTeam?.name}」`, 'ok');
             } else if (pickId) {
               reset();
               setPickedId(pickId);
-              toast('复现目标已更新', 'ok');
+              toast(`复现目标已更新 · 执行空间「${activeTeam?.name}」`, 'ok');
             }
             setAddOpen(false);
           }}
