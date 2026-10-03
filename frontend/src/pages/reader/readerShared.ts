@@ -34,15 +34,15 @@ export function readAsBase64(file: File): Promise<string> {
   });
 }
 
-/* AI模型选项列表 */
+/* AI模型选项列表（与后端内置模型保持一致，OpenAI Next 统一网关实测可用） */
 export const AI_MODELS = [
   { id: 'deepseek-flash', name: 'DeepSeek V4.1 Flash', desc: '极速推理 · 3.1.1 文本核心引擎', badge: '闪电' },
-  { id: 'gpt-4o', name: 'GPT-4o 顶刊精读', desc: '综合推理 · 全文架构多模态深度解析', badge: '推荐' },
-  { id: 'claude-3-5', name: 'Claude 3.5 Sonnet', desc: '长篇文献精读 · 学术写作推敲', badge: '长文' },
-  { id: 'deepseek-r1', name: 'DeepSeek-R1 深度推理', desc: '数学公式推导 · 逻辑严密反思', badge: '推理' },
-  { id: 'deepseek-v3', name: 'DeepSeek-V3 学术精读', desc: '极速响应 · 代码与算法细节剖析', badge: '极速' },
-  { id: 'gemini-1-5-pro', name: 'Gemini 1.5 Pro', desc: '200万上下文 · 附录与图表跨页比对', badge: '超长' },
-  { id: 'o1-preview', name: 'OpenAI o1 深度思考', desc: '复杂定理证明 · 实验方案论证', badge: '思考' },
+  { id: 'm-gpt-sol', name: 'GPT-6.1 Sol 顶刊精读', desc: '通用旗舰 · 全文架构深度推理', badge: '推荐' },
+  { id: 'm-claude', name: 'Claude Sonnet 5', desc: '长篇文献精读 · 学术写作推敲', badge: '长文' },
+  { id: 'm-deepseek', name: 'DeepSeek V4 Pro 深度推理', desc: '数学公式推导 · 逻辑严密反思', badge: '推理' },
+  { id: 'm-kimi', name: 'Kimi K2.5 中文精读', desc: '256K 上下文 · 中文长文档剖析', badge: '中文' },
+  { id: 'm-gemini', name: 'Gemini 3.8 Flash', desc: '1M 上下文 · 附录与图表跨页比对', badge: '超长' },
+  { id: 'm-deepseek-flash', name: 'DeepSeek-Flash 极速模式', desc: '极速响应 · 代码与算法细节剖析', badge: '极速' },
 ];
 
 /* 七段总结的标准 7 色彩条配置（完全对齐用户上传图） */

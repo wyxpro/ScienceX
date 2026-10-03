@@ -100,9 +100,9 @@ export const LandingFeatures: React.FC = () => {
                   <div className="tilt-chat-bubble" style={{ margin: 0 }}>
                     <span className="text-xs text-muted">多模型协同中枢：</span>
                     <div className="row g-2 items-center text-xs mt-1">
-                      <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)' }}>DeepSeek-R1</span>
-                      <span className="tag" style={{ background: 'var(--bg-deep)', color: 'var(--ink)' }}>GPT-4o</span>
-                      <span className="tag" style={{ background: 'var(--bg-deep)', color: 'var(--ink)' }}>Claude 3.5</span>
+                      <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)' }}>DeepSeek V4 Pro</span>
+                      <span className="tag" style={{ background: 'var(--bg-deep)', color: 'var(--ink)' }}>GPT-6.1 Sol</span>
+                      <span className="tag" style={{ background: 'var(--bg-deep)', color: 'var(--ink)' }}>Claude Sonnet 5</span>
                     </div>
                   </div>
                   <div className="tilt-chat-bubble ai" style={{ margin: 0 }}>

@@ -15,6 +15,8 @@ class DeepSeekClient {
   async chatCompletion(messages, options = {}) {
     const result = await this.request(messages, options, async (response, request) => {
       const result = request.parse(await response.json());
+      // 推理型模型（如 Kimi K2.5）在短输出预算下可能只返回 reasoning_content；降级采用思维链而非直接报错
+      if ((!result.text || !String(result.text).trim()) && result.reasoning && result.reasoning.trim()) result.text = result.reasoning.trim();
       if (typeof result.text !== 'string' || !result.text.trim()) throw new AIError('模型返回了空内容', 'INVALID_RESPONSE');
       return result;
     });

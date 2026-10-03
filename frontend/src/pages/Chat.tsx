@@ -31,12 +31,12 @@ const QUICK_PROMPTS: QuickPrompt[] = [
 
 const DEFAULT_MODELS = {
   builtin: [
-    { id: 'm-deepseek-flash', name: 'DeepSeek V4.1 Flash', model_name: 'DeepSeek-Flash', provider: 'deepseek', tag: '极速推理 · 推荐', context: '64K' },
-    { id: 'm-gpt4o', name: 'GPT-4o', provider: 'openai', tag: '通用最强', context: '128K' },
-    { id: 'm-claude', name: 'Claude 3.7 Sonnet', provider: 'anthropic', tag: '长文写作', context: '200K' },
-    { id: 'm-gemini', name: 'Gemini 2.0 Flash', provider: 'google', tag: '高速低价', context: '1M' },
-    { id: 'm-deepseek', name: 'DeepSeek-V3', provider: 'deepseek', tag: '代码 / 推理', context: '64K' },
-    { id: 'm-qwen', name: 'Qwen-Max', provider: 'qwen', tag: '中文优化', context: '128K' },
+    { id: 'm-deepseek-flash', name: 'DeepSeek V4.1 Flash', model_name: 'DeepSeek-Flash', provider: 'deepseek', tag: '极速推理 · 默认推荐', context: '64K' },
+    { id: 'm-gpt-sol', name: 'GPT-6.1 Sol', model_name: 'gpt-6.1-sol', provider: 'openai', tag: '通用旗舰 · 深度推理', context: '128K' },
+    { id: 'm-claude', name: 'Claude Sonnet 5', model_name: 'claude-sonnet-5', provider: 'openai', tag: '长文写作 · 学术润色', context: '200K' },
+    { id: 'm-gemini', name: 'Gemini 3.8 Flash', model_name: 'gemini-3.8-flash', provider: 'openai', tag: '高速低价 · 超长上下文', context: '1M' },
+    { id: 'm-deepseek', name: 'DeepSeek V4 Pro', model_name: 'deepseek-v4-pro', provider: 'openai', tag: '代码 / 数学推理', context: '128K' },
+    { id: 'm-kimi', name: 'Kimi K2.5', model_name: 'kimi-k2.5', provider: 'openai', tag: '中文长文档精读', context: '256K' },
   ],
   custom: [],
 };
