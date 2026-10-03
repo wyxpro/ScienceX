@@ -165,7 +165,7 @@ test('生产环境未配置主密钥时回退演示密钥并告警，不再拒�
   assert.match(result.stderr, /安全提醒/);
 });
 
-test('生产环境拒绝演示账号登录', { concurrency: false }, async () => {
+test('生产环境允许演示账号登录（现场演示要求）', { concurrency: false }, async () => {
   const previous = process.env.NODE_ENV;
   process.env.NODE_ENV = 'production';
   try {
@@ -173,8 +173,9 @@ test('生产环境拒绝演示账号登录', { concurrency: false }, async () =>
       method: 'POST',
       body: JSON.stringify({ email: 'demo@sciencex.cn', password: '123456' }),
     });
-    assert.equal(response.status, 401);
-    assert.equal(body.code, 40101);
+    assert.equal(response.status, 200);
+    assert.equal(body.code, 0);
+    assert.ok(body.data.token);
   } finally {
     if (previous === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previous;

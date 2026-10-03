@@ -50,9 +50,7 @@ function auth(req, res, next) {
 /* ---------- 认证 REQ-USER-05 ---------- */
 router.post('/auth/login', (req, res) => {
   const { email, password } = req.body || {};
-  if (process.env.NODE_ENV === 'production' && email === 'demo@sciencex.cn') {
-    return errors.unauthorized(res, '演示账号在生产环境不可用');
-  }
+  // 演示账号在所有环境可用（现场演示/评审要求）；如需关闭，删除 store 中的演示用户即可。
   const user = store.users.find((u) => u.email === email && verifyPassword(password, u.password));
   if (!user) return errors.param(res, '邮箱或密码错误（演示账号 demo@sciencex.cn / 123456）');
   const { token, refreshToken } = issueSession(user);
