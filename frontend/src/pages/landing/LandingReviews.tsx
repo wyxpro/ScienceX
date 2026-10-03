@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Icon from '../../components/Icon';
 
 interface ReviewItem {
@@ -12,7 +12,7 @@ interface ReviewItem {
   stars: number;
 }
 
-// 文献、实验与评审案例
+// 评价内容均取材于本项目真实功能场景：文献精读、消融实验、组会汇报、专家评审团、期刊匹配、项目空间
 const ROW_TOP: ReviewItem[] = [
   {
     id: 'r1',
@@ -60,7 +60,6 @@ const ROW_TOP: ReviewItem[] = [
   },
 ];
 
-// 选刊、写作与团队协作案例
 const ROW_BOTTOM: ReviewItem[] = [
   {
     id: 'r5',
@@ -108,20 +107,36 @@ const ROW_BOTTOM: ReviewItem[] = [
   },
 ];
 
-const REVIEWS = [...ROW_TOP, ...ROW_BOTTOM];
+const ReviewCard: React.FC<{ item: ReviewItem; hidden?: boolean }> = ({ item, hidden }) => (
+  <article className="testimonial-card" aria-hidden={hidden || undefined}>
+    <div className="testimonial-card-top">
+      <span className="testimonial-topic"><Icon name="book" size={14} />{item.targetBadge}</span>
+      <span className="testimonial-stars" aria-label={`${item.stars} 星评价`}>{Array.from({ length: item.stars }, (_, i) => <Icon name="star" size={13} key={i} />)}</span>
+    </div>
+    <blockquote>{item.quote.replace(/^[“”]|[“”]$/g, '')}</blockquote>
+    <div className="testimonial-author">
+      <span className="testimonial-avatar" style={{ background: item.avatarBg }}>{item.avatarLetter}</span>
+      <div><strong>{item.author}</strong><p>{item.affiliation}</p></div>
+    </div>
+  </article>
+);
 
 export const LandingReviews: React.FC = () => {
-  const [active, setActive] = useState(0);
-  const item = REVIEWS[active];
-  const move = (direction: number) => setActive(index => (index + direction + REVIEWS.length) % REVIEWS.length);
+  const renderRow = (items: ReviewItem[], reverse?: boolean) => (
+    <div className="testimonial-track-wrap">
+      <div className={`testimonial-track${reverse ? ' is-reverse' : ''}`}>
+        {items.map(item => <ReviewCard key={item.id} item={item} />)}
+        {items.map(item => <ReviewCard key={`${item.id}-dup`} item={item} hidden />)}
+      </div>
+    </div>
+  );
   return (
     <section id="reviews" className="landing-section testimonials-section">
       <div className="section-head"><div className="section-badge">Academic Testimonials</div><h2 className="section-title">真实科研项目落地口碑</h2><p className="section-sub">好的工具，藏在一次次具体的研究进展里。<br />听听学者们如何把 ScienceX 用进日常科研。</p></div>
-      <div className="testimonial-layout">
-        <div className="testimonial-editorial"><span className="landing-kicker">VOICES FROM RESEARCH</span><Icon name="quote" size={44} strokeWidth={1} /><h3>让每一份专注，<br />都更接近发现。</h3><p>从读懂文献到完成实验，从一场组会到下一篇论文。</p><div className="testimonial-controls"><button aria-label="上一条科研反馈" onClick={() => move(-1)}><Icon name="chevronLeft" size={19} /></button><span aria-live="polite">{String(active + 1).padStart(2, '0')} <i>/ {String(REVIEWS.length).padStart(2, '0')}</i></span><button aria-label="下一条科研反馈" onClick={() => move(1)}><Icon name="chevronRight" size={19} /></button></div></div>
-        <div className="testimonial-featured" id="testimonial-quote" aria-live="polite"><div key={item.id} className="testimonial-story"><div className="testimonial-story-top"><span className="testimonial-topic"><Icon name="book" size={14} />{item.targetBadge}</span><span className="testimonial-stars" aria-label={`${item.stars} 星评价`}>{Array.from({length:item.stars}, (_, i) => <Icon name="star" size={13} key={i} />)}</span></div><blockquote>{item.quote.replace(/^[“”]|[“”]$/g, '')}</blockquote><div className="testimonial-author"><span className="testimonial-avatar">{item.avatarLetter}</span><div><strong>{item.author}</strong><p>{item.affiliation}</p></div><Icon name="quote" size={28} strokeWidth={1} /></div></div></div>
+      <div className="testimonial-marquee" aria-label="学者真实评价轮播">
+        {renderRow(ROW_TOP)}
+        {renderRow(ROW_BOTTOM, true)}
       </div>
-      <div className="testimonial-selector" aria-label="选择学者反馈">{REVIEWS.map((review, index) => <button key={review.id} aria-pressed={active === index} aria-controls="testimonial-quote" aria-label={`查看${review.author}的反馈`} className={active === index ? 'active' : ''} onClick={() => setActive(index)}><span className="testimonial-mini-avatar">{review.avatarLetter}</span><span><strong>{review.author.split(' · ')[0]}</strong><small>{review.targetBadge.split(' · ').slice(-1)[0]}</small></span></button>)}</div>
     </section>
   );
 };

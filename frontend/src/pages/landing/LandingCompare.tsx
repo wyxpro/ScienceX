@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Icon from '../../components/Icon';
 
-const FILTERS = ['全部能力', '阅读与写作', '实验与评审', '协作与扩展'];
 const ROWS = [
   { label: '科研全流程', sub: '从选题到投稿', icon: 'layers', group: 3, science: '统一工作台，连接全环节', others: ['通过对话分步完成', '围绕文献任务展开', '聚焦管理与排版'] },
   { label: '文献精读', sub: '理解、关联、积累', icon: 'book', group: 1, science: '三栏精读 + 引用拓扑图谱', others: ['附件问答与内容总结', '专业文献检索与问答', '文献整理与引用管理'] },
@@ -14,14 +13,11 @@ const ROWS = [
 ];
 
 export const LandingCompare: React.FC = () => {
-  const [filter, setFilter] = useState(0);
-  const rows = ROWS.filter(row => filter === 0 || row.group === filter);
   return (
     <section id="compare" className="landing-section comparison-section">
       <div className="section-head"><div className="section-badge">Competitive Analysis</div><h2 className="section-title">为什么选择 ScienceX？<br />一表看清核心优势</h2><p className="section-sub">把散落的工具，连接成连贯的研究体验。<br />按你关注的科研环节，找到合适的工作方式。</p></div>
-      <div className="comparison-toolbar"><div className="landing-segmented" aria-label="筛选对比能力">{FILTERS.map((label, index) => <button key={label} aria-pressed={filter === index} className={filter === index ? 'active' : ''} onClick={() => setFilter(index)}>{label}</button>)}</div><span className="comparison-count" aria-live="polite">{rows.length} 项能力对比</span></div>
       <div className="comparison-scroll" role="region" aria-label="科研工具能力对比表，可横向滚动" tabIndex={0}>
-        <table className="comparison-table"><caption className="sr-only">ScienceX 与通用大模型、文献工具、管理排版工具的典型使用方式对比</caption><thead><tr><th scope="col"><span className="landing-kicker">FIND YOUR FIT</span><strong>你的科研需求</strong></th><th scope="col" className="science-column"><span className="comparison-product"><Icon name="spark" size={20} />ScienceX</span><small>一体化 AI 科研工作台</small></th><th scope="col"><strong>通用大模型</strong><small>GPT / Kimi 等</small></th><th scope="col"><strong>文献工具</strong><small>SciSpace / Elicit 等</small></th><th scope="col"><strong>管理与排版工具</strong><small>Zotero / Overleaf 等</small></th></tr></thead><tbody>{rows.map(row => <tr key={row.label}><th scope="row"><span className="comparison-row-title"><Icon name={row.icon} size={17} />{row.label}</span><small>{row.sub}</small></th><td className="science-column"><span className="comparison-value"><Icon name="check" size={15} />{row.science}</span></td>{row.others.map((value, index) => <td key={index}>{value}</td>)}</tr>)}</tbody></table>
+        <table className="comparison-table"><caption className="sr-only">ScienceX 与通用大模型、文献工具、管理排版工具的典型使用方式对比</caption><thead><tr><th scope="col"><span className="landing-kicker">FIND YOUR FIT</span><strong>你的科研需求</strong></th><th scope="col" className="science-column"><span className="comparison-product"><Icon name="spark" size={20} />ScienceX</span><small>一体化 AI 科研工作台</small></th><th scope="col"><strong>通用大模型</strong><small>GPT / Kimi 等</small></th><th scope="col"><strong>文献工具</strong><small>SciSpace / Elicit 等</small></th><th scope="col"><strong>管理与排版工具</strong><small>Zotero / Overleaf 等</small></th></tr></thead><tbody>{ROWS.map(row => <tr key={row.label}><th scope="row"><span className="comparison-row-title"><Icon name={row.icon} size={17} />{row.label}</span><small>{row.sub}</small></th><td className="science-column"><span className="comparison-value"><Icon name="check" size={15} />{row.science}</span></td>{row.others.map((value, index) => <td key={index}>{value}</td>)}</tr>)}</tbody></table>
       </div>
       <div className="comparison-foot"><span><Icon name="info" size={14} />按典型使用方式展示，具体能力随产品版本与方案变化。</span><span className="comparison-scroll-hint">左右滑动查看完整对比 <Icon name="arrowRight" size={14} /></span></div>
     </section>
