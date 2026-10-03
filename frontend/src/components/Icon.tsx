@@ -58,6 +58,7 @@ const P: Record<string, JSX.Element> = {
   arrowUp: <><path d="M12 19V5M5 12l7-7 7 7" /></>,
   grid: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></>,
   terminal: <><path d="m4 17 6-6-6-6" /><path d="M12 19h8" /></>,
+  code: <><path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /></>,
 };
 
 export type IconName = keyof typeof P;

@@ -9,8 +9,9 @@ import { CitationGraph3D } from '../components/CitationGraph3D';
 import { useToast } from '../components/ui';
 import { TaskRunner } from '../components/TaskRunner';
 import ImmersiveReader from './reader/ImmersiveReader';
+import { CodeReproductionViewer } from './reader/CodeReproductionViewer';
 
-type MidTab = 'translate' | 'mindmap' | 'seven' | 'graph' | 'kb';
+type MidTab = 'translate' | 'mindmap' | 'seven' | 'reproduce' | 'graph' | 'kb';
 type LeftMode = 'read' | 'file';
 
 /* AI模型选项列表 */
@@ -793,6 +794,7 @@ export default function Reader() {
                 ['translate', 'globe', '翻译'],
                 ['mindmap', 'branch', '思维导图'],
                 ['seven', 'doc', '七段总结'],
+                ['reproduce', 'code', '代码复现'],
                 ['graph', 'link', '引用图谱'],
                 ['kb', 'db', '知识库'],
               ] as const
@@ -1095,6 +1097,11 @@ export default function Reader() {
                   })}
                 </div>
               </div>
+            )}
+
+            {/* 3.5 论文代码复现功能（专业 IDE 编辑器风格） */}
+            {midTab === 'reproduce' && (
+              <CodeReproductionViewer paperTitle={doc?.title} />
             )}
 
             {/* 4. 引用图谱功能（3D 可交互全景拓扑） */}
