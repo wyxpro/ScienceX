@@ -56,7 +56,7 @@ export default function Chat() {
       const saved = localStorage.getItem('sciencex_chat_model');
       if (saved && saved !== 'DeepSeek-V3') return saved;
     } catch {}
-    return 'DeepSeek V4.1 Flash';
+    return 'GPT-6.1 Sol';
   });
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [keyword, setKeyword] = useState('');
@@ -93,7 +93,7 @@ export default function Chat() {
       const loadedModels = (m && m.builtin && m.builtin.length > 0) ? m : DEFAULT_MODELS;
       setModels(loadedModels);
 
-      // 模型选择优先级：用户主动选择 > DeepSeek V4.1 Flash 默认
+      // 模型选择优先级：用户主动选择 > GPT-6.1 Sol 默认
       const allModelNames = [
         ...(loadedModels.builtin || []).map((x: any) => x.name),
         ...(loadedModels.custom || []).map((x: any) => x.name),
@@ -103,12 +103,12 @@ export default function Chat() {
         if (saved && saved !== 'DeepSeek-V3' && allModelNames.includes(saved)) {
           setModel(saved);
         } else {
-          const defaultFlash = loadedModels.builtin?.find((item: any) => item.name === 'DeepSeek V4.1 Flash' || item.id === 'm-deepseek-flash')?.name || 'DeepSeek V4.1 Flash';
-          setModel(defaultFlash);
-          localStorage.setItem('sciencex_chat_model', defaultFlash);
+          const defaultSol = loadedModels.builtin?.find((item: any) => item.name === 'GPT-6.1 Sol' || item.id === 'm-gpt-sol')?.name || allModelNames[0] || 'GPT-6.1 Sol';
+          setModel(defaultSol);
+          localStorage.setItem('sciencex_chat_model', defaultSol);
         }
       } catch {
-        setModel('DeepSeek V4.1 Flash');
+        setModel('GPT-6.1 Sol');
       }
 
       if (d) setDashboard(d);

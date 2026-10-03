@@ -266,8 +266,8 @@ export default function Reader() {
       if (degraded) setTask(null);
       else setTask({ id: r.task_id, title: '文档解析（版面还原 + 公式识别）' });
 
-      // 解析完成后自动进入沉浸式阅读模式
-      setLeftMode('read');
+      // 解析完成后默认展示「原文档」视图
+      setLeftMode('file');
       const rr = await api<{ items: any[] }>('/documents');
       setDocs(rr.items);
       await loadDoc(r.doc_id);
