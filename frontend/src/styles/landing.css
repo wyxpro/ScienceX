@@ -93,7 +93,18 @@
 .hero-eyebrow { display: flex; align-items: center; gap: 9px; color: #587265; font: 10px var(--font-mono); letter-spacing: 1.7px; margin-bottom: 27px; }
 .hero-eyebrow > span { width: 6px; height: 6px; background: var(--brand); border-radius: 50%; box-shadow: 0 0 0 4px #1b7a5e0d; }
 .hero-title { font-family: var(--font-sans); font-size: clamp(36px, 3.8vw, 54px); font-weight: 750; line-height: 1.38; letter-spacing: -2px; margin: 0 0 24px; color: #203b2f; }
-.hero-title > span { color: var(--brand); }
+.hero-title > span {
+  background: linear-gradient(90deg, #1b7a5e, #16a085, #2f80ed, #8b5cf6, #16a085, #1b7a5e);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: heroTitleFlow 6s linear infinite;
+}
+@keyframes heroTitleFlow {
+  to { background-position: 220% center; }
+}
 .hero-desc { font-size: 16px; line-height: 1.9; color: #68766c; margin: 0 0 30px; }
 .hero-actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .btn-hero-primary, .btn-hero-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; font: 600 14px var(--font-sans); border-radius: 9px; padding: 15px 21px; cursor: pointer; transition: transform .22s, background .22s, box-shadow .22s; }
