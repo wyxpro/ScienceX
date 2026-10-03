@@ -4,6 +4,12 @@ import { api } from '../api/client';
 import Icon from '../components/Icon';
 import { Countdown, Empty, ScoreRing, Skeleton, Tag, useToast } from '../components/ui';
 
+const CCF_TAG_STYLES: Record<string, { bg: string; color: string; border: string }> = {
+  A: { bg: '#fef2f2', color: '#dc2626', border: 'rgba(239, 68, 68, 0.2)' },
+  B: { bg: '#fffbeb', color: '#d97706', border: 'rgba(245, 158, 11, 0.25)' },
+  C: { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
+};
+
 const CCF_COLORS: Record<string, string> = { A: 'red', B: 'amber', C: 'gray' };
 const STATUS_LABEL: Record<string, string> = {
   watching: '已关注',
@@ -28,6 +34,9 @@ export default function Submission() {
   const [tracks, setTracks] = useState<any[]>([]);
   const [ccf, setCcf] = useState('');
   const [keyword, setKeyword] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | '会议' | '期刊'>('all');
+  const [timeFilter, setTimeFilter] = useState<'all' | '30' | '90'>('all');
+
   /* 匹配表单 */
   const [abstract, setAbstract] = useState('');
   const [matching, setMatching] = useState(false);
@@ -106,11 +115,39 @@ export default function Submission() {
     }
   };
 
+  // 格式化官网显示（去掉协议头保持简洁美观）
+  const getDomainFromUrl = (url?: string) => {
+    if (!url) return '';
+    try {
+      return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    } catch {
+      return url;
+    }
+  };
+
+  // 过滤后的期刊列表（支持类型与时间过滤）
+  const filteredJournals = journals.filter((j) => {
+    if (typeFilter !== 'all' && j.type !== typeFilter) return false;
+    if (timeFilter === '30' && (j.days_left == null || j.days_left > 30 || j.days_left < 0)) return false;
+    if (timeFilter === '90' && (j.days_left == null || j.days_left > 90 || j.days_left < 0)) return false;
+    return true;
+  });
+
   return (
-    <div className="page" style={{ gap: 14 }}>
-      {/* ===== 页头 Tabs ===== */}
-      <div className="card card-pad row-between wrap g-2" style={{ flex: 'none' }}>
-        <div className="tabs" style={{ background: 'transparent', padding: 0 }}>
+    <div className="page" style={{ gap: 16 }}>
+      {/* ===== 页头：Tabs + 紧跟其后的搜索与 CCF 筛选组件 ===== */}
+      <div
+        className="card card-pad"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 14,
+          padding: '12px 18px',
+        }}
+      >
+        {/* 左侧三大核心 Tab */}
+        <div className="tabs" style={{ background: 'transparent', padding: 0, margin: 0, flexShrink: 0 }}>
           {([
             ['journals', '期刊会议大全', 'mail'],
             ['tracks', `投稿追踪 (${tracks.length})`, 'clock'],
@@ -121,24 +158,127 @@ export default function Submission() {
             </button>
           ))}
         </div>
+
+        {/* 紧接在“期刊智能匹配”按钮右边的搜索框与 CCF 筛选群 */}
         {tab === 'journals' && (
-          <div className="row g-2 wrap">
-            <input
-              className="input"
-              style={{ width: 180 }}
-              placeholder="搜索期刊 / 会议…"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-            />
-            <div className="row g-1">
-              {['', 'A', 'B', 'C'].map((c) => (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 10,
+              paddingLeft: 8,
+              borderLeft: '1px solid var(--line)',
+              flex: 1,
+            }}
+          >
+            {/* 会议/期刊快速切换 */}
+            <div
+              style={{
+                display: 'flex',
+                background: 'var(--bg-deep)',
+                borderRadius: 8,
+                padding: 2,
+                border: '1px solid var(--line)',
+              }}
+            >
+              {(['all', '会议', '期刊'] as const).map((t) => (
                 <button
-                  key={c}
-                  className={`tag ${ccf === c ? 'tag-green' : 'tag-outline'}`}
-                  style={{ cursor: 'pointer', border: 'none' }}
-                  onClick={() => setCcf(c)}
+                  key={t}
+                  type="button"
+                  onClick={() => setTypeFilter(t)}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 12,
+                    fontWeight: typeFilter === t ? 700 : 500,
+                    borderRadius: 6,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: typeFilter === t ? '#ffffff' : 'transparent',
+                    color: typeFilter === t ? 'var(--ink)' : 'var(--muted)',
+                    boxShadow: typeFilter === t ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  }}
                 >
-                  {c || '全部 CCF'}
+                  {t === 'all' ? '全部' : t}
+                </button>
+              ))}
+            </div>
+
+            {/* 搜索框 */}
+            <div style={{ position: 'relative', width: 200 }}>
+              <input
+                className="input"
+                style={{ width: '100%', height: 32, fontSize: 12.5, paddingLeft: 28, borderRadius: 8 }}
+                placeholder="搜索会议 / 期刊…"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  left: 9,
+                  top: 8,
+                  color: 'var(--muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Icon name="search" size={13} />
+              </span>
+            </div>
+
+            {/* CCF 等级胶囊按钮 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {[
+                { key: '', label: '全部 CCF' },
+                { key: 'A', label: 'CCF-A' },
+                { key: 'B', label: 'CCF-B' },
+                { key: 'C', label: 'CCF-C' },
+              ].map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setCcf(c.key)}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 12,
+                    fontWeight: ccf === c.key ? 700 : 500,
+                    borderRadius: 7,
+                    border: ccf === c.key ? '1px solid var(--brand)' : '1px solid var(--line)',
+                    background: ccf === c.key ? 'var(--brand-soft)' : '#ffffff',
+                    color: ccf === c.key ? 'var(--brand-strong)' : 'var(--ink-2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 截稿时间快速筛选 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+              {[
+                { key: 'all', label: '全部时间' },
+                { key: '30', label: '30天内' },
+                { key: '90', label: '90天内' },
+              ].map((tm) => (
+                <button
+                  key={tm.key}
+                  type="button"
+                  onClick={() => setTimeFilter(tm.key as any)}
+                  style={{
+                    padding: '4px 9px',
+                    fontSize: 11.5,
+                    fontWeight: timeFilter === tm.key ? 700 : 500,
+                    borderRadius: 6,
+                    border: timeFilter === tm.key ? '1px solid #94a3b8' : '1px solid var(--line)',
+                    background: timeFilter === tm.key ? '#f1f5f9' : '#ffffff',
+                    color: timeFilter === tm.key ? '#0f172a' : 'var(--muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tm.label}
                 </button>
               ))}
             </div>
@@ -146,154 +286,215 @@ export default function Submission() {
         )}
       </div>
 
-      {/* ===== 期刊列表 ===== */}
+      {/* ===== 期刊列表（电脑端一行 3 个卡片 · 现代典雅卡片样式） ===== */}
       {tab === 'journals' && (
         <div className="anim-in">
           {loading ? (
             <div className="card card-pad">
-              <Skeleton lines={6} h={38} />
+              <Skeleton lines={6} h={42} />
             </div>
-          ) : journals.length === 0 ? (
-            <Empty icon="mail" text="没有符合条件的期刊，试试放宽筛选" />
+          ) : filteredJournals.length === 0 ? (
+            <Empty icon="mail" text="没有符合条件的期刊或会议，试试放宽筛选" />
           ) : (
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
-              {journals.map((j) => (
-                <div
-                  key={j.id}
-                  className="card card-pad card-hover anim-in"
-                  onClick={() => setSelectedJournal(j)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    cursor: 'pointer',
-                    position: 'relative',
-                    transition: 'all 0.25s ease',
-                  }}
-                  title="点击查看期刊详细信息与投稿指南"
-                >
-                  {/* 头部标题与分类 */}
-                  <div className="row-between">
-                    <div className="row g-2" style={{ minWidth: 0, alignItems: 'center' }}>
-                      <div
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(max(31%, 320px), 1fr))',
+                gap: 16,
+              }}
+            >
+              {filteredJournals.map((j) => {
+                const ccfStyle = CCF_TAG_STYLES[j.ccf] || CCF_TAG_STYLES.C;
+                const isUrgent = typeof j.days_left === 'number' && j.days_left <= 30 && j.days_left >= 0;
+
+                return (
+                  <div
+                    key={j.id}
+                    onClick={() => setSelectedJournal(j)}
+                    style={{
+                      borderRadius: 16,
+                      background: '#ffffff',
+                      border: j.tracked ? '1.5px solid var(--brand)' : '1px solid #e2e8f0',
+                      boxShadow: j.tracked
+                        ? '0 6px 20px -4px rgba(27, 122, 94, 0.16)'
+                        : '0 2px 10px rgba(15, 23, 42, 0.04)',
+                      padding: '18px 20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-3px)';
+                      e.currentTarget.style.boxShadow = '0 10px 24px -4px rgba(15, 23, 42, 0.09)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = j.tracked
+                        ? '0 6px 20px -4px rgba(27, 122, 94, 0.16)'
+                        : '0 2px 10px rgba(15, 23, 42, 0.04)';
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title="点击查看期刊详情与投稿须知"
+                  >
+                    {/* 第一行：CCF 标签 + 期刊/会议名称 + 收藏星星按钮 */}
+                    <div className="row-between" style={{ alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <span
+                          style={{
+                            padding: '2px 7px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 800,
+                            background: ccfStyle.bg,
+                            color: ccfStyle.color,
+                            border: `1px solid ${ccfStyle.border}`,
+                            flexShrink: 0,
+                          }}
+                        >
+                          CCF-{j.ccf}
+                        </span>
+                        <div
+                          className="ellipsis"
+                          style={{
+                            fontSize: 16,
+                            fontWeight: 800,
+                            color: '#0f172a',
+                            letterSpacing: '-0.2px',
+                          }}
+                        >
+                          {j.name}
+                        </div>
+                      </div>
+
+                      {/* 收藏 / 追踪星星图标 */}
+                      <button
+                        type="button"
+                        onClick={(e) => toggleTrack(j, e)}
                         style={{
-                          flex: 'none',
-                          width: 42,
-                          height: 42,
-                          borderRadius: 11,
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 4,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          background: 'var(--brand-soft)',
-                          color: 'var(--brand-strong)',
-                          fontWeight: 800,
-                          fontSize: 13,
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                          color: j.tracked ? '#d97706' : '#94a3b8',
+                          transition: 'transform 0.15s ease, color 0.15s ease',
+                          flexShrink: 0,
                         }}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+                        title={j.tracked ? '已关注，点击取消' : '点击关注追踪'}
                       >
-                        {j.name.slice(0, 3).toUpperCase()}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div className="fw-bold text-small ellipsis" style={{ fontSize: 15, color: 'var(--ink)' }}>
-                          {j.name}
-                        </div>
-                        <div className="text-xs text-muted ellipsis" style={{ marginTop: 2 }}>
-                          {j.field}
-                        </div>
-                      </div>
+                        <Icon name="star" size={18} />
+                      </button>
                     </div>
-                    <Tag color={CCF_COLORS[j.ccf] as any}>CCF-{j.ccf}</Tag>
-                  </div>
 
-                  {/* 学术属性徽章 */}
-                  <div className="row g-1 wrap">
-                    <Tag color="gray">
-                      <Icon name="doc" size={11} /> {j.type}
-                    </Tag>
-                    {j.if_score && <Tag color="gold">IF {j.if_score}</Tag>}
-                    {j.acceptance_rate && <Tag color="green">录用率 {j.acceptance_rate}</Tag>}
-                    <Tag color="gray">{j.period}</Tag>
-                    {j.location && j.location !== '-' && <Tag color="gray">{j.location}</Tag>}
-                  </div>
-
-                  {/* 新增：投稿截止日期专栏 */}
-                  <div
-                    style={{
-                      background: 'var(--bg-deep)',
-                      borderRadius: 9,
-                      padding: '8px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontSize: 12,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-2)' }}>
-                      <Icon name="calendar" size={13} />
-                      <span style={{ color: 'var(--muted)' }}>截止日期:</span>
-                      <strong style={{ fontWeight: 600 }}>{formatDeadlineDate(j.deadline)}</strong>
+                    {/* 第二行：英文全称 / 领域副标题 */}
+                    <div
+                      className="ellipsis"
+                      style={{
+                        fontSize: 12.5,
+                        color: '#64748b',
+                        lineHeight: 1.4,
+                      }}
+                      title={j.full_name || j.field}
+                    >
+                      {j.full_name || j.field}
                     </div>
-                    <Countdown days={j.days_left} />
-                  </div>
 
-                  {/* 底部操作区：官网按钮与关注操作 */}
-                  <div
-                    className="row-between items-center"
-                    style={{
-                      marginTop: 'auto',
-                      paddingTop: 8,
-                      borderTop: '1px solid var(--line)',
-                    }}
-                  >
-                    {/* 官网跳转按钮 */}
-                    {j.website ? (
-                      <a
-                        href={j.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="btn btn-ghost btn-xs"
+                    {/* 第三行：截稿状态（重点醒目展示） */}
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: isUrgent ? '#dc2626' : typeof j.days_left === 'number' ? '#b45309' : '#047857',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <span>
+                        {typeof j.days_left === 'number'
+                          ? `全文截稿 · 剩 ${j.days_left} 天 (${formatDeadlineDate(j.deadline)})`
+                          : '滚动投稿 · 常年开放'}
+                      </span>
+                    </div>
+
+                    {/* 第四行：举办日期与地点 / 周期 */}
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <span>{j.location && j.location !== '-' ? `${j.period} · ${j.location}` : j.period}</span>
+                      {j.if_score && (
+                        <span style={{ color: '#d97706', fontWeight: 600 }}>· IF {j.if_score}</span>
+                      )}
+                    </div>
+
+                    {/* 第五行：官方网址点击链接 + 详情提示 */}
+                    <div
+                      style={{
+                        marginTop: 4,
+                        paddingTop: 8,
+                        borderTop: '1px solid #f1f5f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      {j.website ? (
+                        <a
+                          href={j.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            fontSize: 12,
+                            color: '#0284c7',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                          title={`访问 ${j.name} 官网`}
+                        >
+                          <Icon name="link" size={11} />
+                          <span className="ellipsis" style={{ maxWidth: 220 }}>
+                            {getDomainFromUrl(j.website)}
+                          </span>
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: 11.5, color: '#94a3b8' }}>暂无官网</span>
+                      )}
+
+                      <span
                         style={{
-                          display: 'inline-flex',
+                          fontSize: 11.5,
+                          color: 'var(--muted)',
+                          display: 'flex',
                           alignItems: 'center',
-                          gap: 4,
-                          color: 'var(--brand-strong)',
-                          fontWeight: 600,
-                          padding: '4px 10px',
-                          borderRadius: 7,
-                          background: 'var(--brand-soft)',
+                          gap: 2,
                         }}
-                        title={`访问 ${j.name} 官方网站`}
                       >
-                        <Icon name="link" size={12} /> 官网
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted">暂无官网</span>
-                    )}
-
-                    <div className="row g-2">
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedJournal(j);
-                        }}
-                        style={{ fontSize: 12 }}
-                      >
-                        详情
-                      </button>
-                      <button
-                        className={`btn btn-xs ${j.tracked ? 'btn-ghost' : 'btn-primary'}`}
-                        onClick={(e) => toggleTrack(j, e)}
-                        style={{ padding: '4px 10px' }}
-                      >
-                        <Icon name={j.tracked ? 'check' : 'star'} size={11} />
-                        {j.tracked ? '已关注' : '关注'}
-                      </button>
+                        详情 <Icon name="chevronRight" size={11} />
+                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -303,7 +504,7 @@ export default function Submission() {
       {tab === 'tracks' && (
         <div className="anim-in">
           {tracks.length === 0 ? (
-            <Empty icon="clock" text="暂无追踪记录，去期刊大全点击「关注」添加" />
+            <Empty icon="clock" text="暂无追踪记录，去期刊大全点击「★ 关注」添加" />
           ) : (
             <div className="card" style={{ overflow: 'hidden' }}>
               {tracks.map((t, i) => (
@@ -347,7 +548,7 @@ export default function Submission() {
         </div>
       )}
 
-      {/* ===== 期刊匹配 ===== */}
+      {/* ===== 期刊智能匹配 ===== */}
       {tab === 'match' && (
         <div
           className="anim-in"
@@ -439,7 +640,7 @@ export default function Submission() {
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
-                background: 'linear-gradient(175deg, var(--brand-softer) 0%, #ffffff 100%)',
+                background: 'linear-gradient(175deg, #f8fafc 0%, #ffffff 100%)',
               }}
             >
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -463,14 +664,26 @@ export default function Submission() {
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--ink)' }}>
+                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0f172a' }}>
                       {selectedJournal.name}
                     </h3>
-                    <Tag color={CCF_COLORS[selectedJournal.ccf] as any}>CCF-{selectedJournal.ccf}</Tag>
+                    <span
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontWeight: 800,
+                        background: CCF_TAG_STYLES[selectedJournal.ccf]?.bg || '#f1f5f9',
+                        color: CCF_TAG_STYLES[selectedJournal.ccf]?.color || '#334155',
+                        border: `1px solid ${CCF_TAG_STYLES[selectedJournal.ccf]?.border || '#e2e8f0'}`,
+                      }}
+                    >
+                      CCF-{selectedJournal.ccf}
+                    </span>
                     <Tag color="gray">{selectedJournal.type}</Tag>
                     {selectedJournal.if_score && <Tag color="gold">IF {selectedJournal.if_score}</Tag>}
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, lineHeight: 1.4 }}>
                     {selectedJournal.full_name || selectedJournal.field}
                   </div>
                 </div>
@@ -507,12 +720,12 @@ export default function Submission() {
                   style={{
                     padding: '12px 14px',
                     borderRadius: 12,
-                    background: 'var(--bg-deep)',
-                    border: '1px solid var(--line)',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>投稿截止</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-strong)' }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>投稿截止</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>
                     {formatDeadlineDate(selectedJournal.deadline)}
                   </div>
                 </div>
@@ -521,12 +734,12 @@ export default function Submission() {
                   style={{
                     padding: '12px 14px',
                     borderRadius: 12,
-                    background: 'var(--bg-deep)',
-                    border: '1px solid var(--line)',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>影响因子 / 级别</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)' }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>影响因子 / 级别</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>
                     {selectedJournal.if_score ? `IF ${selectedJournal.if_score}` : `CCF-${selectedJournal.ccf} 顶会`}
                   </div>
                 </div>
@@ -535,12 +748,12 @@ export default function Submission() {
                   style={{
                     padding: '12px 14px',
                     borderRadius: 12,
-                    background: 'var(--bg-deep)',
-                    border: '1px solid var(--line)',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>审稿周期</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)' }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>审稿周期</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>
                     {selectedJournal.review_cycle || selectedJournal.period || '约 3 个月'}
                   </div>
                 </div>
@@ -549,11 +762,11 @@ export default function Submission() {
                   style={{
                     padding: '12px 14px',
                     borderRadius: 12,
-                    background: 'var(--bg-deep)',
-                    border: '1px solid var(--line)',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>参考录用率</div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>参考录用率</div>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: '#059669' }}>
                     {selectedJournal.acceptance_rate || '约 22%~25%'}
                   </div>
@@ -562,18 +775,29 @@ export default function Submission() {
 
               {/* 简介 */}
               <div style={{ marginBottom: 18 }}>
-                <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', marginBottom: 6 }}>
+                <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', marginBottom: 6 }}>
                   📖 简介与学术声誉
                 </div>
-                <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--ink-2)', background: '#fafafa', padding: '12px 16px', borderRadius: 10 }}>
-                  {selectedJournal.description || `${selectedJournal.name} 是${selectedJournal.field}领域的核心国际学术发表阵地，具有极高的同行声誉与严密的审稿机制。`}
+                <div
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.7,
+                    color: '#334155',
+                    background: '#f8fafc',
+                    padding: '12px 16px',
+                    borderRadius: 10,
+                    border: '1px solid #edf2f7',
+                  }}
+                >
+                  {selectedJournal.description ||
+                    `${selectedJournal.name} 是${selectedJournal.field}领域的核心国际学术发表阵地，具有极高的同行声誉与严密的审稿机制。`}
                 </div>
               </div>
 
               {/* 收录主题 */}
               {selectedJournal.topics && selectedJournal.topics.length > 0 && (
                 <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', marginBottom: 8 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', marginBottom: 8 }}>
                     🏷️ 重点收录主题
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -586,7 +810,7 @@ export default function Submission() {
                           borderRadius: 8,
                           background: 'var(--brand-soft)',
                           color: 'var(--brand-strong)',
-                          fontWeight: 500,
+                          fontWeight: 600,
                         }}
                       >
                         #{t}
@@ -598,21 +822,22 @@ export default function Submission() {
 
               {/* 投稿指南与规范 */}
               <div style={{ marginBottom: 18 }}>
-                <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', marginBottom: 6 }}>
+                <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', marginBottom: 6 }}>
                   📝 投稿须知与格式规范
                 </div>
                 <div
                   style={{
                     fontSize: 12.5,
                     lineHeight: 1.65,
-                    color: 'var(--ink-2)',
+                    color: '#334155',
                     background: '#f8fafc',
                     padding: '12px 16px',
                     borderRadius: 10,
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid #edf2f7',
                   }}
                 >
-                  {selectedJournal.guidelines || `${selectedJournal.publisher || '官方'} 标准格式 · 请严格遵循匿名盲审规范与正文页数限制。`}
+                  {selectedJournal.guidelines ||
+                    `${selectedJournal.publisher || '官方'} 标准格式 · 请严格遵循匿名盲审规范与正文页数限制。`}
                 </div>
               </div>
 
@@ -623,14 +848,21 @@ export default function Submission() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '10px 14px',
-                  background: 'var(--bg-deep)',
+                  background: '#f1f5f9',
                   borderRadius: 10,
                   fontSize: 12,
-                  color: 'var(--muted)',
+                  color: '#64748b',
                 }}
               >
-                <span>举办地点/主办方：<strong style={{ color: 'var(--ink)' }}>{selectedJournal.location !== '-' ? selectedJournal.location : (selectedJournal.publisher || '国际学术组织')}</strong></span>
-                <span>出版商：<strong style={{ color: 'var(--ink)' }}>{selectedJournal.publisher || 'IEEE/ACM/Springer'}</strong></span>
+                <span>
+                  举办地点/主办方：
+                  <strong style={{ color: '#0f172a' }}>
+                    {selectedJournal.location !== '-' ? selectedJournal.location : selectedJournal.publisher || '国际学术组织'}
+                  </strong>
+                </span>
+                <span>
+                  出版商：<strong style={{ color: '#0f172a' }}>{selectedJournal.publisher || 'IEEE / ACM / Springer'}</strong>
+                </span>
               </div>
             </div>
 
@@ -642,7 +874,7 @@ export default function Submission() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: '#fafafa',
+                background: '#f8fafc',
               }}
             >
               <button
