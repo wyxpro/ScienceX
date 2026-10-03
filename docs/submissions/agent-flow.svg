@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="920" viewBox="0 0 1240 920" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arV" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="920" fill="#f8fafc"/>
+  <text x="620" y="38" text-anchor="middle" font-size="24" font-weight="bold" fill="#0f172a">灵犀引擎 · 多智能体 Agent 工作流程图</text>
+  <text x="620" y="60" text-anchor="middle" font-size="13" fill="#64748b">决策流程 / 模式路由 / 工具调用链路 / 三层记忆（backend/src/lib/agents/lingxiEngine.js）</text>
+
+  <!-- 用户输入 -->
+  <rect x="470" y="80" width="300" height="44" rx="22" fill="#0f172a"/>
+  <text x="620" y="108" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="bold">用户提问 + agent_mode + 课题组上下文</text>
+  <line x1="620" y1="124" x2="620" y2="152" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <!-- 记忆注入 -->
+  <rect x="470" y="152" width="300" height="40" rx="8" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="620" y="169" text-anchor="middle" font-size="12" font-weight="bold" fill="#155e75">三层记忆引擎 · 上下文注入</text>
+  <text x="620" y="185" text-anchor="middle" font-size="10.5" fill="#0e7490">短期对话 RAM → 滚动摘要 → 长期科研事实（跨会话沉淀）</text>
+  <line x1="620" y1="192" x2="620" y2="218" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <!-- 模式路由菱形 -->
+  <polygon points="620,218 790,262 620,306 450,262" fill="#fef3c7" stroke="#d97706" stroke-width="1.8"/>
+  <text x="620" y="256" text-anchor="middle" font-size="13" font-weight="bold" fill="#92400e">意图识别 · 模式路由</text>
+  <text x="620" y="276" text-anchor="middle" font-size="11" fill="#b45309">按 agent_mode 分发至 8 类编排策略</text>
+
+  <!-- 8 模式条 -->
+  <g font-size="11.5">
+    <rect x="60" y="330" width="132" height="52" rx="7" fill="#ffffff" stroke="#94a3b8"/><text x="126" y="351" text-anchor="middle" font-weight="bold" fill="#334155">General 通用</text><text x="126" y="369" text-anchor="middle" font-size="10" fill="#64748b">直接流式应答</text>
+    <rect x="204" y="330" width="132" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed"/><text x="270" y="351" text-anchor="middle" font-weight="bold" fill="#5b21b6">ReAct 推演</text><text x="270" y="369" text-anchor="middle" font-size="10" fill="#7c3aed">思考↔观察循环</text>
+    <rect x="348" y="330" width="132" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed"/><text x="414" y="351" text-anchor="middle" font-weight="bold" fill="#5b21b6">Plan-Execute</text><text x="414" y="369" text-anchor="middle" font-size="10" fill="#7c3aed">灵寻规划流</text>
+    <rect x="492" y="330" width="132" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed"/><text x="558" y="351" text-anchor="middle" font-weight="bold" fill="#5b21b6">CodeAct 沙箱</text><text x="558" y="369" text-anchor="middle" font-size="10" fill="#7c3aed">代码生成执行</text>
+    <rect x="636" y="330" width="132" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed"/><text x="702" y="351" text-anchor="middle" font-weight="bold" fill="#5b21b6">MCP 工具</text><text x="702" y="369" text-anchor="middle" font-size="10" fill="#7c3aed">arXiv 检索编排</text>
+    <rect x="780" y="330" width="132" height="52" rx="7" fill="#ffffff" stroke="#94a3b8"/><text x="846" y="351" text-anchor="middle" font-weight="bold" fill="#334155">Skill 技能</text><text x="846" y="369" text-anchor="middle" font-size="10" fill="#64748b">可扩展技能包</text>
+    <rect x="924" y="330" width="132" height="52" rx="7" fill="#ffffff" stroke="#94a3b8"/><text x="990" y="351" text-anchor="middle" font-weight="bold" fill="#334155">Text2SQL</text><text x="990" y="369" text-anchor="middle" font-size="10" fill="#64748b">结构化数据查询</text>
+    <rect x="1068" y="330" width="122" height="52" rx="7" fill="#ffffff" stroke="#94a3b8"/><text x="1129" y="351" text-anchor="middle" font-weight="bold" fill="#334155">Structured</text><text x="1129" y="369" text-anchor="middle" font-size="10" fill="#64748b">JSON Schema 输出</text>
+  </g>
+  <!-- 路由→模式 连线 -->
+  <g stroke="#d97706" stroke-width="1.3" fill="none">
+    <path d="M 500 290 C 300 300 160 310 126 330" marker-end="url(#ar)"/>
+    <path d="M 545 298 C 460 305 320 312 270 330" marker-end="url(#ar)"/>
+    <path d="M 585 303 C 540 310 450 318 414 330" marker-end="url(#ar)"/>
+    <path d="M 610 306 C 590 314 570 320 558 330" marker-end="url(#ar)"/>
+    <path d="M 640 306 C 665 316 685 322 702 330" marker-end="url(#ar)"/>
+    <path d="M 680 300 C 740 308 810 316 846 330" marker-end="url(#ar)"/>
+    <path d="M 715 293 C 820 300 940 314 990 330" marker-end="url(#ar)"/>
+    <path d="M 745 286 C 900 296 1080 310 1129 330" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- ══════ 四条典型工具调用链路 ══════ -->
+  <text x="60" y="428" font-size="15" font-weight="bold" fill="#0f172a">典型决策流程与工具调用链路（4 条展开）</text>
+
+  <!-- ReAct 循环 -->
+  <rect x="60" y="444" width="560" height="120 " rx="9" fill="#f5f3ff" stroke="#a78bfa" stroke-dasharray="4 3"/>
+  <text x="80" y="466" font-size="12.5" font-weight="bold" fill="#6d28d9">ReAct：Thought → Action → Observation 循环（≤N 轮）</text>
+  <g font-size="11">
+    <rect x="84" y="482" width="112" height="38" rx="6" fill="#ffffff" stroke="#c4b5fd"/><text x="140" y="505" text-anchor="middle" fill="#5b21b6">Thought 思考</text>
+    <rect x="236" y="482" width="112" height="38" rx="6" fill="#ffffff" stroke="#c4b5fd"/><text x="292" y="505" text-anchor="middle" fill="#5b21b6">Action 工具调用</text>
+    <rect x="388" y="482" width="120" height="38" rx="6" fill="#ffffff" stroke="#c4b5fd"/><text x="448" y="505" text-anchor="middle" fill="#5b21b6">Observation 观察</text>
+    <rect x="540" y="482" width="60" height="38" rx="6" fill="#dcfce7" stroke="#4ade80"/><text x="570" y="499" text-anchor="middle" fill="#166534">Final</text><text x="570" y="514" text-anchor="middle" font-size="10" fill="#166534">Answer</text>
+  </g>
+  <g stroke="#7c3aed" stroke-width="1.5" fill="none">
+    <line x1="196" y1="501" x2="236" y2="501" marker-end="url(#arV)"/>
+    <line x1="348" y1="501" x2="388" y2="501" marker-end="url(#arV)"/>
+    <line x1="508" y1="501" x2="540" y2="501" marker-end="url(#arV)"/>
+    <path d="M 448 520 C 448 548 140 548 140 520" marker-end="url(#arV)"/>
+  </g>
+  <text x="294" y="544" text-anchor="middle" font-size="10.5" fill="#7c3aed">未收敛 → 进入下一轮推演（前端 ReActThoughtBox 逐轮渲染）</text>
+
+  <!-- Plan-Execute -->
+  <rect x="640" y="444" width="550" height="120" rx="9" fill="#f0f9ff" stroke="#38bdf8" stroke-dasharray="4 3"/>
+  <text x="660" y="466" font-size="12.5" font-weight="bold" fill="#0369a1">Plan-Execute：先规划后执行（灵寻规划流）</text>
+  <g font-size="11">
+    <rect x="662" y="482" width="96" height="38" rx="6" fill="#ffffff" stroke="#7dd3fc"/><text x="710" y="505" text-anchor="middle" fill="#0c4a6e">目标解析</text>
+    <rect x="786" y="482" width="120" height="38" rx="6" fill="#ffffff" stroke="#7dd3fc"/><text x="846" y="499" text-anchor="middle" fill="#0c4a6e">生成子任务计划</text><text x="846" y="514" text-anchor="middle" font-size="9.5" fill="#0284c7">plan 事件推送</text>
+    <rect x="934" y="482" width="118" height="38" rx="6" fill="#ffffff" stroke="#7dd3fc"/><text x="993" y="499" text-anchor="middle" fill="#0c4a6e">逐步执行·勾选</text><text x="993" y="514" text-anchor="middle" font-size="9.5" fill="#0284c7">progress 事件</text>
+    <rect x="1080" y="482" width="88" height="38" rx="6" fill="#ffffff" stroke="#7dd3fc"/><text x="1124" y="505" text-anchor="middle" fill="#0c4a6e">汇总报告</text>
+  </g>
+  <g stroke="#0284c7" stroke-width="1.5" fill="none">
+    <line x1="758" y1="501" x2="786" y2="501" marker-end="url(#ar)"/>
+    <line x1="906" y1="501" x2="934" y2="501" marker-end="url(#ar)"/>
+    <line x1="1052" y1="501" x2="1080" y2="501" marker-end="url(#ar)"/>
+  </g>
+  <text x="880" y="546" text-anchor="middle" font-size="10.5" fill="#0284c7">前端 PlanFlowCard 实时展示步骤清单与完成状态</text>
+
+  <!-- CodeAct -->
+  <rect x="60" y="584" width="560 " height="112" rx="9" fill="#fefce8" stroke="#facc15" stroke-dasharray="4 3"/>
+  <text x="80" y="606" font-size="12.5" font-weight="bold" fill="#a16207">CodeAct：生成代码 → 沙箱执行 → 结果回流</text>
+  <g font-size="11">
+    <rect x="84" y="620" width="110" height="38" rx="6" fill="#ffffff" stroke="#fde047"/><text x="139" y="643" text-anchor="middle" fill="#713f12">代码生成</text>
+    <rect x="222" y="620" width="130" height="38" rx="6" fill="#ffffff" stroke="#fde047"/><text x="287" y="637" text-anchor="middle" fill="#713f12">沙箱模拟执行</text><text x="287" y="652" text-anchor="middle" font-size="9.5" fill="#a16207">tool 事件（目标:真实沙箱）</text>
+    <rect x="380" y="620" width="110" height="38" rx="6" fill="#ffffff" stroke="#fde047"/><text x="435" y="643" text-anchor="middle" fill="#713f12">stdout 解析</text>
+    <rect x="518" y="620" width="86" height="38" rx="6" fill="#ffffff" stroke="#fde047"/><text x="561" y="643" text-anchor="middle" fill="#713f12">图表/结论卡</text>
+  </g>
+  <g stroke="#ca8a04" stroke-width="1.5" fill="none">
+    <line x1="194" y1="639" x2="222" y2="639" marker-end="url(#ar)"/>
+    <line x1="352" y1="639" x2="380" y2="639" marker-end="url(#ar)"/>
+    <line x1="490" y1="639" x2="518" y2="639" marker-end="url(#ar)"/>
+  </g>
+  <text x="330" y="680" text-anchor="middle" font-size="10.5" fill="#a16207">前端 CodeActResultCard 展示代码、执行日志与可视化产物</text>
+
+  <!-- MCP -->
+  <rect x="640" y="584" width="550" height="112" rx="9" fill="#fdf2f8" stroke="#ec4899" stroke-dasharray="4 3"/>
+  <text x="660" y="606" font-size="12.5" font-weight="bold" fill="#be185d">MCP：外部工具发现与调用链</text>
+  <g font-size="11">
+    <rect x="664" y="620" width="112" height="38" rx="6" fill="#ffffff" stroke="#f9a8d4"/><text x="720" y="637" text-anchor="middle" fill="#831843">意图→工具匹配</text><text x="720" y="652" text-anchor="middle" font-size="9.5" fill="#be185d">/mcp/recommend</text>
+    <rect x="804" y="620" width="120" height="38" rx="6" fill="#ffffff" stroke="#f9a8d4"/><text x="864" y="637" text-anchor="middle" fill="#831843">arXiv 检索工具</text><text x="864" y="652" text-anchor="middle" font-size="9.5" fill="#be185d">tool 事件携带参数</text>
+    <rect x="952" y="620" width="108" height="38" rx="6" fill="#ffffff" stroke="#f9a8d4"/><text x="1006" y="643" text-anchor="middle" fill="#831843">reference 引用源</text>
+    <rect x="1088" y="620" width="86" height="38" rx="6" fill="#ffffff" stroke="#f9a8d4"/><text x="1131" y="643" text-anchor="middle" fill="#831843">论文卡片</text>
+  </g>
+  <g stroke="#db2777" stroke-width="1.5" fill="none">
+    <line x1="776" y1="639" x2="804" y2="639" marker-end="url(#ar)"/>
+    <line x1="924" y1="639" x2="952" y2="639" marker-end="url(#ar)"/>
+    <line x1="1060" y1="639" x2="1088" y2="639" marker-end="url(#ar)"/>
+  </g>
+  <text x="905" y="680" text-anchor="middle" font-size="10.5" fill="#be185d">前端 McpPapersCard 渲染检索结果与可溯源引用</text>
+
+  <!-- SSE 事件总线 -->
+  <rect x="60" y="728" width="1130 " height="66" rx="9" fill="#0f172a"/>
+  <text x="80" y="752" font-size="13" font-weight="bold" fill="#f8fafc">SSE 流式事件总线（text/event-stream · 统一协议）</text>
+  <g font-size="11">
+    <rect x="360" y="740" width="72" height="26" rx="13" fill="#1e293b" stroke="#334155"/><text x="396" y="757" text-anchor="middle" fill="#7dd3fc">start</text>
+    <rect x="442" y="740" width="72" height="26" rx="13" fill="#1e293b" stroke="#334155"/><text x="478" y="757" text-anchor="middle" fill="#fbbf24">tool</text>
+    <rect x="524" y="740" width="72" height="26" rx="13" fill="#1e293b" stroke="#334155"/><text x="560" y="757" text-anchor="middle" fill="#a5b4fc">delta</text>
+    <rect x="606" y="740" width="86" height="26" rx="13" fill="#1e293b" stroke="#334155"/><text x="649" y="757" text-anchor="middle" fill="#86efac">progress</text>
+    <rect x="702" y="740" width="98" height="26" rx="13" fill="#1e293b" stroke="#334155"/><text x="751" y="757" text-anchor="middle" fill="#f9a8d4">reference</text>
+    <rect x="810" y="740" width="78" height="26" rx="13" fill="#1e293b" stroke="#334155"/><text x="849" y="757" text-anchor="middle" fill="#4ade80">done</text>
+    <rect x="898" y="740" width="72" height="26" rx="13" fill="#1e293b" stroke="#334155"/><text x="934" y="757" text-anchor="middle" fill="#f87171">error</text>
+  </g>
+  <text x="80" y="780" font-size="10.5" fill="#94a3b8">每条事件带自增 id，支持 Last-Event-ID 语义与前端断流兜底；异常统一 error 事件收尾，不中断进程</text>
+
+  <!-- 模式→总线 汇聚线 -->
+  <g stroke="#64748b" stroke-width="1.2" fill="none" stroke-dasharray="3 3">
+    <path d="M 340 564 L 340 690 L 400 690 L 400 728" marker-end="url(#ar)"/>
+    <path d="M 900 564 L 900 690 L 840 690 L 840 728" marker-end="url(#ar)"/>
+    <path d="M 340 696 L 340 728" marker-end="url(#ar)"/>
+    <path d="M 900 696 L 900 728" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- 记忆回写 -->
+  <path d="M 620 800 L 620 830 L 1010 830 L 1010 192 L 770 192" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="7 4" marker-end="url(#arR)"/>
+  <text x="820" y="846" text-anchor="middle" font-size="11.5" fill="#dc2626" font-weight="bold">会话结束 → 事实抽取回写三层记忆（短期 RAM / 滚动摘要 / 长期科研事实）</text>
+
+  <!-- 底部输出 -->
+  <rect x="230" y="800" width="220" height="40" rx="20" fill="#16a34a"/>
+  <text x="340" y="825" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">流式答案 + 卡片渲染至前端</text>
+  <line x1="340" y1="794" x2="340" y2="800" stroke="#16a34a" stroke-width="2"/>
+  <line x1="900" y1="794" x2="900" y2="796" stroke="#16a34a" stroke-width="0"/>
+</svg>

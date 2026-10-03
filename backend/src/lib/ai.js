@@ -153,8 +153,8 @@ function createTask(type, stages, resultBuilder, ownerId = null) {
         }
       }
       task.percent = 100;
-      task.status = 'done';
       task.result = await resultBuilder(task);
+      task.status = 'done';
       publishTaskEvent(task, 'done');
     } catch (error) {
       task.status = 'failed';

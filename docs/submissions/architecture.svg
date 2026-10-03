@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="880" viewBox="0 0 1240 880" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="880" fill="#f8fafc"/>
+  <text x="620" y="38" text-anchor="middle" font-size="24" font-weight="bold" fill="#0f172a">ScienceX · AI 科研工作台 — 系统架构图</text>
+  <text x="620" y="60" text-anchor="middle" font-size="13" fill="#64748b">组件 / 数据流 / API 交互关系（As-Is 演示架构，2026-10）</text>
+
+  <!-- ═══════════ 第 1 层：浏览器端 ═══════════ -->
+  <rect x="40" y="80" width="820" height="150" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="60" y="106" font-size="15" font-weight="bold" fill="#1d4ed8">① 浏览器端 · 前端 SPA（React 18.3 + TypeScript 5.5 + Vite 5.4）</text>
+
+  <rect x="60" y="120" width="185" height="42" rx="6" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="152" y="138" text-anchor="middle" font-size="12" fill="#1e3a8a">Landing 官网宣传页</text>
+  <text x="152" y="154" text-anchor="middle" font-size="11" fill="#64748b">Login / 演示账号一键填入</text>
+
+  <rect x="258" y="120" width="290" height="42" rx="6" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="403" y="138" text-anchor="middle" font-size="12" fill="#1e3a8a">工作台 12 大模块页面（路由级懒加载 + Guard）</text>
+  <text x="403" y="154" text-anchor="middle" font-size="11" fill="#64748b">Chat·Topic·Reader·Reproduce·Experiment·Analysis·Writing·Submission·Meeting·Review·Projects·Account</text>
+
+  <rect x="561" y="120" width="280" height="42" rx="6" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="701" y="138" text-anchor="middle" font-size="12" fill="#1e3a8a">可视化组件层</text>
+  <text x="701" y="154" text-anchor="middle" font-size="11" fill="#64748b">SVG 图表引擎 · CitationGraph3D · Markdown 流渲染 · VirtualList</text>
+
+  <rect x="60" y="176" width="370 " height="42" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+  <text x="245" y="194" text-anchor="middle" font-size="12" fill="#1e3a8a">统一 API 客户端 api/client.ts（Fetch + Bearer Token）</text>
+  <text x="245" y="210" text-anchor="middle" font-size="11" fill="#64748b">REST JSON 请求 / 统一响应报文解析</text>
+
+  <rect x="450" y="176" width="391" height="42" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+  <text x="645" y="194" text-anchor="middle" font-size="12" fill="#1e3a8a">SSE 流解码器 readSSE（ReadableStream 逐 Token + AbortController）</text>
+  <text x="645" y="210" text-anchor="middle" font-size="11" fill="#64748b">7 类事件：start · tool · delta · progress · reference · done · error</text>
+
+  <!-- ═══════════ 第 2 层：部署/代理 ═══════════ -->
+  <rect x="40" y="262" width="820" height="66" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="60" y="288" font-size="15" font-weight="bold" fill="#854d0e">② 部署与代理层</text>
+  <text x="60" y="312" font-size="12.5" fill="#713f12">生产：Vercel（ci.playe.top）vercel.json 双 service + /api/* 重写回源后端　｜　本地开发：Vite Proxy 自动读取 backend/.port 热发现端口</text>
+
+  <!-- 前端→代理 箭头 -->
+  <line x1="245" y1="218" x2="245" y2="262" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="255" y="245" font-size="11" fill="#475569">HTTPS REST</text>
+  <line x1="645" y1="218" x2="645" y2="262" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="6 3" marker-end="url(#arrowBlue)"/>
+  <text x="655" y="245" font-size="11" fill="#2563eb">SSE 长连接（proxy_buffering off）</text>
+
+  <!-- ═══════════ 第 3 层：后端 Express ═══════════ -->
+  <rect x="40" y="360" width="820" height="230" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="60" y="386" font-size="15" font-weight="bold" fill="#15803d">③ 后端 API 服务 · Node.js 18 + Express 4.19（backend/src/server.js，统一前缀 /api/v1）</text>
+
+  <!-- 中间件链 -->
+  <rect x="60" y="400" width="780" height="40" rx="6" fill="#dcfce7" stroke="#4ade80"/>
+  <text x="450" y="418" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#14532d">全局中间件链（请求从左入 → 右出）</text>
+  <text x="450" y="433" text-anchor="middle" font-size="11.5" fill="#166534">CORS → 滑动窗口限流 rate-limit（对话30/min·写作文献60/min）→ X-Request-Id 链路追踪 → HMAC-SHA256 令牌验签 auth → 多租户可见性 access</text>
+
+  <!-- 路由模块 -->
+  <g font-size="11.5" fill="#14532d">
+    <rect x="60" y="452" width="108" height="34" rx="5" fill="#ffffff" stroke="#86efac"/><text x="114" y="466" text-anchor="middle">routes/chat</text><text x="114" y="480" text-anchor="middle" font-size="10" fill="#64748b">对话·看板·MCP</text>
+    <rect x="176" y="452" width="108" height="34" rx="5" fill="#ffffff" stroke="#86efac"/><text x="230" y="466" text-anchor="middle">routes/literature</text><text x="230" y="480" text-anchor="middle" font-size="10" fill="#64748b">选题·检索·开题</text>
+    <rect x="292" y="452" width="108" height="34" rx="5" fill="#ffffff" stroke="#86efac"/><text x="346" y="466" text-anchor="middle">routes/documents</text><text x="346" y="480" text-anchor="middle" font-size="10" fill="#64748b">解析·RAG·图谱</text>
+    <rect x="408" y="452" width="108" height="34" rx="5" fill="#ffffff" stroke="#86efac"/><text x="462" y="466" text-anchor="middle">routes/research</text><text x="462" y="480" text-anchor="middle" font-size="10" fill="#64748b">实验·图表·润色</text>
+    <rect x="524" y="452" width="108" height="34" rx="5" fill="#ffffff" stroke="#86efac"/><text x="578" y="466" text-anchor="middle">routes/dreampaper</text><text x="578" y="480" text-anchor="middle" font-size="10" fill="#64748b">论文复现流水线</text>
+    <rect x="640" y="452" width="100" height="34" rx="5" fill="#ffffff" stroke="#86efac"/><text x="690" y="466" text-anchor="middle">routes/publish</text><text x="690" y="480" text-anchor="middle" font-size="10" fill="#64748b">期刊·评审团</text>
+    <rect x="748" y="452" width="92" height="34" rx="5" fill="#ffffff" stroke="#86efac"/><text x="794" y="466" text-anchor="middle">routes/account</text><text x="794" y="480" text-anchor="middle" font-size="10" fill="#64748b">认证·模型·计费</text>
+  </g>
+
+  <!-- 能力库 -->
+  <rect x="60" y="500" width="380 " height="76" rx="6" fill="#bbf7d0" stroke="#34d399"/>
+  <text x="250" y="520" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#065f46">AI 能力层（src/ai + lib/agents）</text>
+  <text x="250" y="538" text-anchor="middle" font-size="11" fill="#065f46">lingxiEngine：8 类 Agent 编排 + 三层记忆引擎 + MCP 工具</text>
+  <text x="250" y="554" text-anchor="middle" font-size="11" fill="#065f46">config / client / textModality / streamAdapter（双轨：真实调用+回退）</text>
+  <text x="250" y="570" text-anchor="middle" font-size="11" fill="#065f46">model-gateway：内置 DeepSeek 与用户私有模型统一调度</text>
+
+  <rect x="456" y="500" width="384" height="76" rx="6" fill="#bbf7d0" stroke="#34d399"/>
+  <text x="648" y="520" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#065f46">领域支撑层（src/lib）</text>
+  <text x="648" y="538" text-anchor="middle" font-size="11" fill="#065f46">parser.js：PDF / Word / Markdown / CAJ 零依赖解析（可选 PyMuPDF）</text>
+  <text x="648" y="554" text-anchor="middle" font-size="11" fill="#065f46">ai.js：SSE 协议引擎 · 异步任务编排（createTask + 事件总线）</text>
+  <text x="648" y="570" text-anchor="middle" font-size="11" fill="#065f46">security / respond / store：令牌签发 · 统一报文 · JSON 持久化</text>
+
+  <!-- 代理→后端 箭头 -->
+  <line x1="450" y1="328" x2="450" y2="360" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrowGreen)"/>
+
+  <!-- ═══════════ 第 4 层：数据持久 ═══════════ -->
+  <rect x="40" y="622" width="390" height="86" rx="10" fill="#faf5ff" stroke="#9333ea" stroke-width="1.5"/>
+  <text x="60" y="648" font-size="14" font-weight="bold" fill="#6b21a8">④ 数据持久层（演示实现）</text>
+  <text x="60" y="670" font-size="11.5" fill="#581c87">store.js · JSON 文件持久化（.data/store.json）</text>
+  <text x="60" y="688" font-size="11.5" fill="#581c87">实体：用户/会话/项目/文档/稿件/评审报告/任务/订单</text>
+  <text x="60" y="703" font-size="10.5" fill="#8b5cf6">目标架构：PostgreSQL 16 + Redis 7 + MinIO（TSD，未随本仓库交付）</text>
+
+  <line x1="235" y1="590" x2="235" y2="622" stroke="#9333ea" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="245" y="612" font-size="10.5" fill="#6b21a8">读写实体 / 任务状态</text>
+
+  <!-- ═══════════ 右侧：外部服务 ═══════════ -->
+  <rect x="900" y="80" width="300" height="212" rx="10" fill="#fff1f2" stroke="#e11d48" stroke-width="1.5"/>
+  <text x="920" y="106" font-size="14" font-weight="bold" fill="#9f1239">⑤ 外部 AI 模型服务</text>
+  <rect x="918" y="120" width="264" height="52" rx="6" fill="#ffffff" stroke="#fda4af"/>
+  <text x="1050" y="140" text-anchor="middle" font-size="12" fill="#881337">Sophnet 网关 · DeepSeek V4.1 Flash</text>
+  <text x="1050" y="158" text-anchor="middle" font-size="10.5" fill="#64748b">OpenAI 兼容协议 /api/open-apis/v1</text>
+  <rect x="918" y="182" width="264" height="52" rx="6" fill="#ffffff" stroke="#fda4af"/>
+  <text x="1050" y="202" text-anchor="middle" font-size="12" fill="#881337">用户私有 OpenAI 兼容模型</text>
+  <text x="1050" y="220" text-anchor="middle" font-size="10.5" fill="#64748b">个人设置托管 BaseURL / Key / Model</text>
+  <rect x="918" y="244" width="264" height="36" rx="6" fill="#ffe4e6" stroke="#fda4af"/>
+  <text x="1050" y="267" text-anchor="middle" font-size="11.5" fill="#881337">无密钥/网关异常 → 确定性演示模板回退</text>
+
+  <rect x="900" y="316" width="300" height="86" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="920" y="342" font-size="14" font-weight="bold" fill="#9a3412">⑥ 可选本地依赖</text>
+  <text x="920" y="364" font-size="11.5" fill="#7c2d12">Python 3.8+ / PyMuPDF：PDF 原生文本层提取</text>
+  <text x="920" y="382" font-size="11.5" fill="#7c2d12">未安装时解析引擎自动降级（CAJ 版本头识别）</text>
+
+  <!-- 后端→外部 箭头 -->
+  <line x1="840" y1="538" x2="1050" y2="538" stroke="#e11d48" stroke-width="0" />
+  <path d="M 840 520 C 900 520 880 170 918 150" fill="none" stroke="#e11d48" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <text x="880" y="330" font-size="11" fill="#9f1239" transform="rotate(-78 890 340)">HTTPS Chat Completions（超时熔断）</text>
+  <path d="M 840 556 C 920 556 890 370 918 362" fill="none" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <text x="925" y="470" font-size="11" fill="#9a3412">子进程委托解析（可选）</text>
+
+  <!-- ═══════════ 底部：数据流说明 ═══════════ -->
+  <rect x="40" y="740" width="1160" height="112" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="60" y="766" font-size="13.5" font-weight="bold" fill="#0f172a">核心数据流说明</text>
+  <text x="60" y="788" font-size="11.5" fill="#334155">▸ 同步请求：浏览器 → Vercel/Vite 代理 → Express 中间件链 → 路由 → store 持久化 → 统一报文 { code, message, data, timestamp, request_id } 返回</text>
+  <text x="60" y="808" font-size="11.5" fill="#334155">▸ 流式对话：POST /chat/completions → 灵犀引擎按 agent_mode 编排 → SSE 7 类事件逐 Token 推送 → 前端 readSSE 增量渲染（支持 AbortController 中断）</text>
+  <text x="60" y="828" font-size="11.5" fill="#334155">▸ 异步任务：POST 创建任务返回 task_id → GET /tasks/:id/stream SSE 推送 progress/done/error → 任务结果落库（评审团、开题报告、导出等）</text>
+  <text x="60" y="846" font-size="11.5" fill="#64748b">▸ 鉴权贯穿：HMAC-SHA256 无状态令牌 sx1.&lt;payload&gt;.&lt;signature&gt;（Access 7 天 / Refresh 30 天），多实例可离线验签，适配 Serverless</text>
+</svg>

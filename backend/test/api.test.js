@@ -291,7 +291,7 @@ test('选题三件套：双轨对接后响应结构稳定（无密钥时确定�
   assert.equal(store.tasks.get(proposal.body.data.task_id).owner_id, 'u1');
 });
 
-test('多智能体评审团：任务完成后返回结构化报告（无密钥时确定性回退）', { concurrency: false, timeout: 20000 }, async () => {
+test('多智能体评审团：任务完成后返回结构化报告（无密钥时确定性回退）', { concurrency: false, timeout: 150000 }, async () => {
   const headers = { Authorization: `Bearer ${await ensureToken()}` };
   const created = await request('/review/council', {
     method: 'POST',
@@ -303,7 +303,7 @@ test('多智能体评审团：任务完成后返回结构化报告（无密钥�
   assert.ok(taskId);
 
   let task;
-  for (let i = 0; i < 80; i += 1) {
+  for (let i = 0; i < 560; i += 1) { // 真实模型调用可能耗时较长，最多轮询 140s
     task = store.tasks.get(taskId);
     if (task && (task.status === 'done' || task.status === 'failed')) break;
     await new Promise((resolve) => setTimeout(resolve, 250));
