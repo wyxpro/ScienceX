@@ -73,56 +73,58 @@ export default function Meeting() {
   const shown = filter === 'all' ? advice : advice.filter((a) => a.status === filter);
 
   return (
-    <div className="page" style={{ gap: 14 }}>
+    <div className="page" style={{ gap: 26, padding: '24px 28px', maxWidth: 1380, margin: '0 auto' }}>
       {/* ===== 上：PPT 生成 ===== */}
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', flex: 'none' }}>
-        <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div className="fw-bold" style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Icon name="play" size={15} /> 组会 PPT 一键生成
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 22, flex: 'none' }}>
+        <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: '22px 24px' }}>
+          <div className="fw-bold" style={{ fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="play" size={16} /> 组会 PPT 一键生成
           </div>
           <div>
-            <div className="field-label">汇报主题 / 研究内容</div>
+            <div className="field-label" style={{ marginBottom: 6 }}>汇报主题 / 研究内容</div>
             <textarea className="textarea" rows={3} value={source} onChange={(e) => setSource(e.target.value)}
-              placeholder="例：up9 baseline 多数据集验证进展" />
+              placeholder="例：up9 baseline 多数据集验证进展" style={{ lineHeight: 1.6 }} />
           </div>
           <div>
-            <div className="field-label">模板风格</div>
-            <div className="row g-1 wrap">
+            <div className="field-label" style={{ marginBottom: 6 }}>模板风格</div>
+            <div className="row g-2 wrap">
               {[['academic', '学术严谨'], ['minimal', '极简风'], ['visual', '图表驱动']].map(([k, label]) => (
-                <button key={k} className={`tag ${template === k ? 'tag-green' : 'tag-outline'}`} style={{ cursor: 'pointer', border: 'none' }}
+                <button key={k} className={`tag ${template === k ? 'tag-green' : 'tag-outline'}`} style={{ cursor: 'pointer', border: 'none', padding: '6px 14px', fontSize: 13 }}
                   onClick={() => setTemplate(k)}>{label}</button>
               ))}
             </div>
           </div>
-          <button className="btn btn-primary" onClick={generateDeck}>
-            <Icon name="zap" size={14} /> 生成汇报 PPT
+          <button className="btn btn-primary" onClick={generateDeck} style={{ marginTop: 4, padding: '10px 18px', fontSize: 13.5 }}>
+            <Icon name="zap" size={15} /> 生成汇报 PPT
           </button>
         </div>
 
-        <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="fw-bold mb-2" style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Icon name="doc" size={15} /> 生成结果
+        <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', padding: '22px 24px' }}>
+          <div className="fw-bold mb-3" style={{ fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="doc" size={16} /> 生成结果
           </div>
           {!deckResult ? (
-            <Empty icon="doc" text="尚未生成，点击左侧按钮开始" />
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Empty icon="doc" text="尚未生成，点击左侧按钮开始" />
+            </div>
           ) : (
-            <div className="anim-pop" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="anim-pop" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="row g-2 wrap">
                 <Tag color="green"><Icon name="check" size={11} />{deckResult.file_name}</Tag>
                 <Tag color="gray">{deckResult.pages} 页</Tag>
               </div>
-              <div className="card card-pad" style={{ background: 'var(--brand-softer)', borderColor: 'var(--brand-soft)' }}>
-                <div className="text-xs text-muted mb-1">PPT 大纲</div>
+              <div className="card card-pad" style={{ background: 'var(--brand-softer)', borderColor: 'var(--brand-soft)', padding: '14px 16px' }}>
+                <div className="text-xs text-muted mb-2">PPT 大纲</div>
                 {deckResult.outline.map((o: any, i: number) => (
-                  <div key={i} className="row g-2 text-small" style={{ padding: '3px 0' }}>
-                    <span className="mono text-muted" style={{ flex: 'none' }}>P{o.page}</span>
+                  <div key={i} className="row g-2 text-small" style={{ padding: '5px 0' }}>
+                    <span className="mono text-muted" style={{ flex: 'none', width: 28 }}>P{o.page}</span>
                     <span className="fw-bold" style={{ flex: 'none' }}>{o.title}</span>
                     <span className="text-xs text-muted">{o.note}</span>
                   </div>
                 ))}
               </div>
-              <button className="btn btn-soft btn-sm" style={{ alignSelf: 'flex-start' }}>
-                <Icon name="download" size={12} /> 下载 .pptx
+              <button className="btn btn-soft btn-sm" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                <Icon name="download" size={13} /> 下载 .pptx
               </button>
             </div>
           )}
@@ -130,46 +132,46 @@ export default function Meeting() {
       </div>
 
       {/* ===== 下：导师建议记录 ===== */}
-      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 300 }}>
-        <div className="row-between wrap g-2" style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-          <div className="fw-bold" style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Icon name="quote" size={15} /> 导师建议记录
+      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 340 }}>
+        <div className="row-between wrap g-2" style={{ padding: '16px 22px', borderBottom: '1px solid var(--line)' }}>
+          <div className="fw-bold" style={{ fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="quote" size={16} /> 导师建议记录
           </div>
-          <div className="row g-1">
+          <div className="row g-2">
             {['all', 'todo', 'doing', 'done'].map((k) => (
-              <button key={k} className={`tag ${filter === k ? 'tag-green' : 'tag-outline'}`} style={{ cursor: 'pointer', border: 'none' }}
+              <button key={k} className={`tag ${filter === k ? 'tag-green' : 'tag-outline'}`} style={{ cursor: 'pointer', border: 'none', padding: '5px 12px', fontSize: 12.5 }}
                 onClick={() => setFilter(k)}>{k === 'all' ? '全部' : STATUS_META[k].label}</button>
             ))}
           </div>
         </div>
 
-        <div className="page-scroll" style={{ flex: 1, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="page-scroll" style={{ flex: 1, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* 抽取输入区 */}
-          <div className="card card-pad" style={{ borderColor: 'var(--brand-soft)', background: 'var(--surface)' }}>
-            <div className="row-between mb-1">
-              <span className="text-xs text-muted">粘贴组会记录 / 导师语音转写文本，AI 自动抽取待办建议</span>
+          <div className="card card-pad" style={{ borderColor: 'var(--brand-soft)', background: 'var(--surface)', padding: '18px 20px' }}>
+            <div className="row-between mb-2">
+              <span className="text-xs text-muted" style={{ fontSize: 13 }}>粘贴组会记录 / 导师语音转写文本，AI 自动抽取待办建议</span>
               {extracted && <Tag color="green">待保存 {extracted.items.length} 条</Tag>}
             </div>
             {!extracted ? (
               <>
-                <textarea className="textarea" rows={2} value={meetingText} onChange={(e) => setMeetingText(e.target.value)}
-                  placeholder="例：韩老师：对比实验要控制变量，backbone 规模差异要说明；补三个种子的实验…" />
-                <button className="btn btn-soft btn-sm mt-2" onClick={extract} disabled={extracting}>
-                  {extracting ? <span className="spinner" /> : <Icon name="spark" size={12} />} 智能抽取建议
+                <textarea className="textarea" rows={3} value={meetingText} onChange={(e) => setMeetingText(e.target.value)}
+                  placeholder="例：韩老师：对比实验要控制变量，backbone 规模差异要说明；补三个种子的实验…" style={{ lineHeight: 1.6 }} />
+                <button className="btn btn-soft btn-sm mt-3" onClick={extract} disabled={extracting} style={{ padding: '6px 14px' }}>
+                  {extracting ? <span className="spinner" /> : <Icon name="spark" size={13} />} 智能抽取建议
                 </button>
               </>
             ) : (
-              <div className="anim-pop" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="anim-pop" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="text-xs text-muted">来源：{extracted.meeting} · {extracted.from} · {extracted.source}</div>
                 {extracted.items.map((it: any, i: number) => (
-                  <div key={i} className="row g-2 text-small" style={{ alignItems: 'flex-start' }}>
+                  <div key={i} className="row g-2 text-small" style={{ alignItems: 'flex-start', padding: '4px 0' }}>
                     <Tag color="gray" style={{ flex: 'none' }}>{it.category}</Tag>
                     <span style={{ flex: 1, lineHeight: 1.7 }}>{it.content}</span>
                   </div>
                 ))}
-                <div className="row g-1 mt-1">
-                  <button className="btn btn-primary btn-sm" onClick={saveExtracted}><Icon name="check" size={12} />保存到记录</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setExtracted(null)}>放弃</button>
+                <div className="row g-2 mt-2">
+                  <button className="btn btn-primary btn-sm" onClick={saveExtracted} style={{ padding: '6px 14px' }}><Icon name="check" size={13} />保存到记录</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setExtracted(null)} style={{ padding: '6px 14px' }}>放弃</button>
                 </div>
               </div>
             )}
@@ -184,22 +186,22 @@ export default function Meeting() {
             shown.map((a, i) => {
               const meta = STATUS_META[a.status] || STATUS_META.todo;
               return (
-                <div key={a.id} className="card card-pad anim-in" style={{ display: 'flex', gap: 12, alignItems: 'flex-start', animationDelay: `${i * 40}ms` }}>
+                <div key={a.id} className="card card-pad anim-in" style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px 20px', animationDelay: `${i * 40}ms` }}>
                   <button className="btn btn-icon btn-sm" style={{ flex: 'none', marginTop: 2, color: `var(--${a.status === 'done' ? 'brand' : a.status === 'doing' ? 'amber' : 'muted'})` }}
                     onClick={() => cycleStatus(a)} title="点击切换状态">
-                    <Icon name={meta.icon as any} size={15} />
+                    <Icon name={meta.icon as any} size={16} />
                   </button>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div className="row g-2 wrap mb-1">
+                    <div className="row g-2 wrap mb-2">
                       <Tag color="gray">{a.category}</Tag>
                       <span className="text-xs text-muted">{a.meeting} · {a.from} · {String(a.date).slice(0, 10)}</span>
                     </div>
-                    <p className="text-small" style={{ lineHeight: 1.75, textDecoration: a.status === 'done' ? 'line-through' : 'none', opacity: a.status === 'done' ? 0.6 : 1 }}>
+                    <p className="text-small" style={{ lineHeight: 1.75, fontSize: 13.5, textDecoration: a.status === 'done' ? 'line-through' : 'none', opacity: a.status === 'done' ? 0.6 : 1 }}>
                       {a.content}
                     </p>
                     {a.todo && a.status !== 'done' && (
-                      <div className="text-xs mt-1" style={{ color: 'var(--brand-strong)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Icon name="target" size={12} /> 待办：{a.todo}
+                      <div className="text-xs mt-2" style={{ color: 'var(--brand-strong)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                        <Icon name="target" size={13} /> 待办：{a.todo}
                       </div>
                     )}
                   </div>

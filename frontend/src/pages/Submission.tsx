@@ -134,20 +134,19 @@ export default function Submission() {
   });
 
   return (
-    <div className="page" style={{ gap: 16 }}>
-      {/* ===== 页头：Tabs + 紧跟其后的搜索与 CCF 筛选组件 ===== */}
+    <div className="page" style={{ gap: 20 }}>
+      {/* ===== 页头三大 Tab 栏 ===== */}
       <div
         className="card card-pad"
         style={{
           display: 'flex',
           alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 14,
+          justifyContent: 'space-between',
           padding: '12px 18px',
+          flex: 'none',
         }}
       >
-        {/* 左侧三大核心 Tab */}
-        <div className="tabs" style={{ background: 'transparent', padding: 0, margin: 0, flexShrink: 0 }}>
+        <div className="tabs" style={{ background: 'transparent', padding: 0, margin: 0 }}>
           {([
             ['journals', '期刊会议大全', 'mail'],
             ['tracks', `投稿追踪 (${tracks.length})`, 'clock'],
@@ -158,133 +157,138 @@ export default function Submission() {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* 紧接在“期刊智能匹配”按钮右边的搜索框与 CCF 筛选群 */}
-        {tab === 'journals' && (
+      {/* ===== 期刊会议大全专属筛选栏（点击“期刊会议大全”时在下方单独显示） ===== */}
+      {tab === 'journals' && (
+        <div
+          className="card card-pad anim-in"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 14,
+            padding: '14px 20px',
+            borderRadius: 14,
+            border: '1px solid #e2e8f0',
+            background: '#ffffff',
+            boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
+          }}
+        >
+          {/* 会议/期刊快速切换 */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 10,
-              paddingLeft: 8,
-              borderLeft: '1px solid var(--line)',
-              flex: 1,
+              background: 'var(--bg-deep)',
+              borderRadius: 8,
+              padding: 2,
+              border: '1px solid var(--line)',
             }}
           >
-            {/* 会议/期刊快速切换 */}
-            <div
-              style={{
-                display: 'flex',
-                background: 'var(--bg-deep)',
-                borderRadius: 8,
-                padding: 2,
-                border: '1px solid var(--line)',
-              }}
-            >
-              {(['all', '会议', '期刊'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTypeFilter(t)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    fontWeight: typeFilter === t ? 700 : 500,
-                    borderRadius: 6,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: typeFilter === t ? '#ffffff' : 'transparent',
-                    color: typeFilter === t ? 'var(--ink)' : 'var(--muted)',
-                    boxShadow: typeFilter === t ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
-                  }}
-                >
-                  {t === 'all' ? '全部' : t}
-                </button>
-              ))}
-            </div>
-
-            {/* 搜索框 */}
-            <div style={{ position: 'relative', width: 200 }}>
-              <input
-                className="input"
-                style={{ width: '100%', height: 32, fontSize: 12.5, paddingLeft: 28, borderRadius: 8 }}
-                placeholder="搜索会议 / 期刊…"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-              />
-              <span
+            {(['all', '会议', '期刊'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTypeFilter(t)}
                 style={{
-                  position: 'absolute',
-                  left: 9,
-                  top: 8,
-                  color: 'var(--muted)',
-                  display: 'flex',
-                  alignItems: 'center',
+                  padding: '4px 12px',
+                  fontSize: 12.5,
+                  fontWeight: typeFilter === t ? 700 : 500,
+                  borderRadius: 6,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: typeFilter === t ? '#ffffff' : 'transparent',
+                  color: typeFilter === t ? 'var(--ink)' : 'var(--muted)',
+                  boxShadow: typeFilter === t ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <Icon name="search" size={13} />
-              </span>
-            </div>
-
-            {/* CCF 等级胶囊按钮 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              {[
-                { key: '', label: '全部 CCF' },
-                { key: 'A', label: 'CCF-A' },
-                { key: 'B', label: 'CCF-B' },
-                { key: 'C', label: 'CCF-C' },
-              ].map((c) => (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => setCcf(c.key)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    fontWeight: ccf === c.key ? 700 : 500,
-                    borderRadius: 7,
-                    border: ccf === c.key ? '1px solid var(--brand)' : '1px solid var(--line)',
-                    background: ccf === c.key ? 'var(--brand-soft)' : '#ffffff',
-                    color: ccf === c.key ? 'var(--brand-strong)' : 'var(--ink-2)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-
-            {/* 截稿时间快速筛选 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-              {[
-                { key: 'all', label: '全部时间' },
-                { key: '30', label: '30天内' },
-                { key: '90', label: '90天内' },
-              ].map((tm) => (
-                <button
-                  key={tm.key}
-                  type="button"
-                  onClick={() => setTimeFilter(tm.key as any)}
-                  style={{
-                    padding: '4px 9px',
-                    fontSize: 11.5,
-                    fontWeight: timeFilter === tm.key ? 700 : 500,
-                    borderRadius: 6,
-                    border: timeFilter === tm.key ? '1px solid #94a3b8' : '1px solid var(--line)',
-                    background: timeFilter === tm.key ? '#f1f5f9' : '#ffffff',
-                    color: timeFilter === tm.key ? '#0f172a' : 'var(--muted)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {tm.label}
-                </button>
-              ))}
-            </div>
+                {t === 'all' ? '全部' : t}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+
+          {/* 搜索框 */}
+          <div style={{ position: 'relative', width: 220 }}>
+            <input
+              className="input"
+              style={{ width: '100%', height: 34, fontSize: 13, paddingLeft: 30, borderRadius: 8 }}
+              placeholder="搜索会议 / 期刊…"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+            <span
+              style={{
+                position: 'absolute',
+                left: 10,
+                top: 9,
+                color: 'var(--muted)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Icon name="search" size={14} />
+            </span>
+          </div>
+
+          {/* CCF 等级胶囊按钮 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {[
+              { key: '', label: '全部 CCF' },
+              { key: 'A', label: 'CCF-A' },
+              { key: 'B', label: 'CCF-B' },
+              { key: 'C', label: 'CCF-C' },
+            ].map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setCcf(c.key)}
+                style={{
+                  padding: '5px 12px',
+                  fontSize: 12.5,
+                  fontWeight: ccf === c.key ? 700 : 500,
+                  borderRadius: 7,
+                  border: ccf === c.key ? '1px solid var(--brand)' : '1px solid var(--line)',
+                  background: ccf === c.key ? 'var(--brand-soft)' : '#ffffff',
+                  color: ccf === c.key ? 'var(--brand-strong)' : 'var(--ink-2)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 截稿时间快速筛选 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+            {[
+              { key: 'all', label: '全部时间' },
+              { key: '30', label: '30天内' },
+              { key: '90', label: '90天内' },
+            ].map((tm) => (
+              <button
+                key={tm.key}
+                type="button"
+                onClick={() => setTimeFilter(tm.key as any)}
+                style={{
+                  padding: '5px 11px',
+                  fontSize: 12,
+                  fontWeight: timeFilter === tm.key ? 700 : 500,
+                  borderRadius: 6,
+                  border: timeFilter === tm.key ? '1px solid #94a3b8' : '1px solid var(--line)',
+                  background: timeFilter === tm.key ? '#f1f5f9' : '#ffffff',
+                  color: timeFilter === tm.key ? '#0f172a' : 'var(--muted)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {tm.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ===== 期刊列表（电脑端一行 3 个卡片 · 现代典雅卡片样式） ===== */}
       {tab === 'journals' && (

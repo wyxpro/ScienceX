@@ -52,11 +52,6 @@ const PERSONA_SCENARIOS: PersonaScenario[] = [
         title: 'Baseline 实验复现困难',
         desc: '开源实验代码环境配置繁琐、基线复现屡屡失败，消融实验缺乏规范的对比维度。',
       },
-      {
-        icon: 'pen',
-        title: '初稿写作与降重查重压力',
-        desc: '学术逻辑表达生硬，图表排版与格式规范易出错，重复率高且修改耗费心力。',
-      },
     ],
     keywords: ['开题调研', '文献精读', 'Baseline 对比', '消融实验', '查重降重'],
   },

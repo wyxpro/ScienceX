@@ -166,19 +166,19 @@ export default function Reproduce() {
   const diffColor = (d: number, tol: number) => (Math.abs(d) <= tol ? 'var(--brand)' : Math.abs(d) <= tol * 2 ? 'var(--accent)' : 'var(--red)');
 
   return (
-    <div className="page" style={{ gap: 16 }}>
+    <div className="page" style={{ gap: 26, padding: '24px 28px', maxWidth: 1380, margin: '0 auto' }}>
       {/* ===== 页头 ===== */}
-      <div className="card card-pad" style={{ flex: 'none', background: 'linear-gradient(135deg, var(--brand-softer), var(--surface) 55%)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--brand)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 6px 16px -6px rgba(27,122,94,.55)' }}>
-          <Icon name="branch" size={22} />
+      <div className="card card-pad" style={{ flex: 'none', background: 'linear-gradient(135deg, var(--brand-softer), var(--surface) 55%)', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', padding: '18px 24px', borderRadius: 14 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--brand)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 6px 16px -6px rgba(27,122,94,.55)' }}>
+          <Icon name="branch" size={24} />
         </div>
         <div className="grow" style={{ minWidth: 240 }}>
-          <div className="fw-bold" style={{ fontSize: 16 }}>论文复现流水线</div>
-          <p className="text-xs text-muted" style={{ marginTop: 3 }}>
+          <div className="fw-bold" style={{ fontSize: 16.5 }}>论文复现流水线</div>
+          <p className="text-xs text-muted" style={{ marginTop: 4, lineHeight: 1.6 }}>
             选择一篇开源论文，自动完成 <b>代码解析 → 环境构建 → 数据准备 → 基线对齐 → 结果比对</b> 五阶段复现，输出与原文逐指标对照的可复现性报告。
           </p>
         </div>
-        <div className="row g-1 wrap" style={{ flex: 'none' }}>
+        <div className="row g-2 wrap" style={{ flex: 'none' }}>
           <Tag color="green"><Icon name="check" size={11} /> 沙箱隔离执行</Tag>
           <Tag color="blue"><Icon name="db" size={11} /> 产物归档项目库</Tag>
           <Tag color="gold"><Icon name="clock" size={11} /> 支持断点续跑</Tag>
@@ -187,11 +187,11 @@ export default function Reproduce() {
 
       {/* ===== 候选论文 ===== */}
       <div style={{ flex: 'none' }}>
-        <div className="row-between" style={{ marginBottom: 8 }}>
-          <span className="card-title"><Icon name="doc" size={15} /> 选择复现目标</span>
+        <div className="row-between items-center" style={{ marginBottom: 14 }}>
+          <span className="card-title" style={{ fontSize: 15 }}><Icon name="doc" size={16} /> 选择复现目标</span>
           <span className="text-xs text-muted">共 {CANDIDATES.length} 篇可复现论文（均含官方开源代码）</span>
         </div>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 20 }}>
           {CANDIDATES.map((c, i) => {
             const active = c.id === pickedId;
             return (
@@ -200,31 +200,31 @@ export default function Reproduce() {
                 className={`card card-hover anim-in ${active ? '' : ''}`}
                 onClick={() => { if (!running) { reset(); setPickedId(c.id); } }}
                 style={{
-                  cursor: running ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 8,
-                  animationDelay: `${i * 60}ms`, padding: '16px 18px',
+                  cursor: running ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 10,
+                  animationDelay: `${i * 60}ms`, padding: '20px 22px', borderRadius: 14,
                   borderColor: active ? 'var(--brand)' : undefined,
                   background: active ? 'var(--brand-softer)' : undefined,
                   boxShadow: active ? '0 0 0 3px rgba(27,122,94,.12)' : undefined,
                 }}
               >
                 <div className="row-between" style={{ alignItems: 'flex-start' }}>
-                  <span className="tag tag-outline" style={{ flex: 'none' }}><Icon name="book" size={11} /> {c.venue} {c.year}</span>
+                  <span className="tag tag-outline" style={{ flex: 'none', padding: '3px 10px' }}><Icon name="book" size={11} /> {c.venue} {c.year}</span>
                   <span className="row g-1" style={{ flex: 'none', color: active ? 'var(--brand)' : 'var(--muted)' }}>
                     <Icon name="star" size={12} /> <span className="mono text-xs">{c.stars}</span>
                   </span>
                 </div>
-                <div className="fw-bold text-small" style={{ lineHeight: 1.5 }}>{c.title}</div>
+                <div className="fw-bold text-small" style={{ lineHeight: 1.5, fontSize: 14 }}>{c.title}</div>
                 <div className="text-xs text-muted">{c.authors}</div>
-                <p className="text-xs clamp2" style={{ color: 'var(--ink-2)' }}>{c.abstract}</p>
-                <div className="row g-1 wrap" style={{ marginTop: 'auto' }}>
+                <p className="text-xs clamp2" style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>{c.abstract}</p>
+                <div className="row g-1 wrap" style={{ marginTop: 'auto', paddingTop: 6 }}>
                   <span className="tag tag-gray"><Icon name="cpu" size={11} /> {c.framework}</span>
                   <span className="tag tag-gray">{c.gpu}</span>
                   <span className="tag tag-gray"><Icon name="clock" size={11} /> 约 {c.estHours}h</span>
                   <Tag color={c.difficulty === '低' ? 'green' : c.difficulty === '中' ? 'amber' : 'red'} style={{ marginLeft: 'auto' }}>难度 {c.difficulty}</Tag>
                 </div>
                 {active && (
-                  <div className="text-xs" style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Icon name="check" size={12} /> 已选定 · <span className="mono">{c.codeUrl}</span>
+                  <div className="text-xs" style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500, marginTop: 4 }}>
+                    <Icon name="check" size={13} /> 已选定 · <span className="mono">{c.codeUrl}</span>
                   </div>
                 )}
               </div>
@@ -234,17 +234,17 @@ export default function Reproduce() {
       </div>
 
       {/* ===== 流水线 + 实时日志 ===== */}
-      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 4fr)', alignItems: 'start', flex: 'none' }}>
+      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 4fr)', alignItems: 'start', gap: 22, flex: 'none' }}>
         {/* 左：五阶段步骤条 */}
-        <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '22px 24px', borderRadius: 14 }}>
           <div className="row-between wrap g-2">
-            <span className="card-title"><Icon name="zap" size={15} /> 复现流水线</span>
+            <span className="card-title" style={{ fontSize: 15 }}><Icon name="zap" size={16} /> 复现流水线</span>
             {running ? (
               <button className="btn btn-danger btn-sm" onClick={() => { clearTimers(); setRunning(false); setLogs((x) => [...x, '⚠ 用户手动终止，已完成阶段产物已保留（支持断点续跑）']); toast('已终止，产物保留', 'info'); }}>
                 <Icon name="x" size={12} /> 终止执行
               </button>
             ) : (
-              <button className="btn btn-primary" onClick={launch}>
+              <button className="btn btn-primary" onClick={launch} style={{ padding: '8px 18px' }}>
                 <Icon name={finished ? 'refresh' : 'play'} size={14} /> {finished ? '重新复现' : '启动复现'}
               </button>
             )}
@@ -293,17 +293,17 @@ export default function Reproduce() {
         </div>
 
         {/* 右：实时执行日志 */}
-        <div className="card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 380 }}>
-          <div className="row-between" style={{ padding: '11px 16px', borderBottom: '1px solid var(--line)' }}>
-            <span className="fw-bold text-small"><Icon name="terminal" size={14} /> 执行日志</span>
+        <div className="card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 400, borderRadius: 14 }}>
+          <div className="row-between items-center" style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
+            <span className="fw-bold text-small" style={{ fontSize: 13.5 }}><Icon name="terminal" size={15} /> 执行日志</span>
             <span className="row g-1" style={{ alignItems: 'center' }}>
               <span className="typing-dot" style={{ animationPlayState: running ? 'running' : 'paused' }} />
               <span className="text-xs text-muted mono">{running ? 'streaming…' : logs.length ? 'idle' : 'waiting'}</span>
             </span>
           </div>
-          <div ref={logBox} style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', background: '#101a16', fontFamily: 'var(--font-mono)', fontSize: 11.8, lineHeight: 1.9, color: '#9fd3b8' }}>
+          <div ref={logBox} style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', background: '#101a16', fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.9, color: '#9fd3b8' }}>
             {logs.length === 0 ? (
-              <div style={{ color: '#4c6357' }}>$ 等待启动复现流水线…<br />$ 日志将在此实时输出（沙箱隔离环境）</div>
+              <div style={{ color: '#4c6357', lineHeight: 2 }}>$ 等待启动复现流水线…<br />$ 日志将在此实时输出（沙箱隔离环境）</div>
             ) : logs.map((l, i) => (
               <div key={i} className="anim-in" style={{ animationDuration: '.25s', color: l.startsWith('▸') ? '#e8c78a' : l.startsWith('⚠') ? '#ff9d94' : l.includes('成功') || l.includes('一致') ? '#8ae0b2' : '#9fd3b8', paddingLeft: l.startsWith('▸') ? 0 : 12 }}>
                 {l.startsWith('▸') ? l : <span><span style={{ color: '#4c6357' }}>›</span> {l}</span>}
@@ -315,20 +315,20 @@ export default function Reproduce() {
 
       {/* ===== 指标比对报告 ===== */}
       {finished && (
-        <div className="card card-pad anim-in" style={{ flex: 'none' }}>
+        <div className="card card-pad anim-in" style={{ flex: 'none', padding: '22px 26px', borderRadius: 14 }}>
           <div className="row-between wrap g-2 mb-3">
-            <span className="card-title"><Icon name="target" size={15} /> 可复现性比对报告 · {picked.venue} {picked.year}</span>
-            <div className="row g-1">
-              <button className="btn btn-soft btn-sm" onClick={() => toast('报告已导出为 PDF（演示）')}><Icon name="download" size={12} /> 导出报告</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => toast('已存入「MER 课题组」项目资产库')}><Icon name="layers" size={12} /> 存入项目</button>
+            <span className="card-title" style={{ fontSize: 15 }}><Icon name="target" size={16} /> 可复现性比对报告 · {picked.venue} {picked.year}</span>
+            <div className="row g-2">
+              <button className="btn btn-soft btn-sm" onClick={() => toast('报告已导出为 PDF（演示）')} style={{ padding: '6px 14px' }}><Icon name="download" size={13} /> 导出报告</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => toast('已存入「MER 课题组」项目资产库')} style={{ padding: '6px 14px' }}><Icon name="layers" size={13} /> 存入项目</button>
             </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ textAlign: 'left', color: 'var(--muted)', fontSize: 12 }}>
+                <tr style={{ textAlign: 'left', color: 'var(--muted)', fontSize: 12.5 }}>
                   {['评测指标', '论文原文', '本次复现', '偏差', '允许容差', '判定'].map((h) => (
-                    <th key={h} style={{ padding: '8px 12px', borderBottom: '1px solid var(--line)', fontWeight: 600 }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)', fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -338,21 +338,21 @@ export default function Reproduce() {
                   const okRow = Math.abs(d) <= m.tol;
                   return (
                     <tr key={m.metric} className="card-hover" style={{ borderBottom: '1px solid var(--line)' }}>
-                      <td style={{ padding: '10px 12px', fontWeight: 600 }}>{m.metric}</td>
-                      <td className="mono" style={{ padding: '10px 12px' }}>{m.paper.toFixed(3)}</td>
-                      <td className="mono" style={{ padding: '10px 12px', fontWeight: 700, color: diffColor(d, m.tol) }}>{m.repro.toFixed(3)}</td>
-                      <td className="mono" style={{ padding: '10px 12px', color: diffColor(d, m.tol) }}>{d > 0 ? '+' : ''}{d.toFixed(3)}</td>
-                      <td className="mono text-muted" style={{ padding: '10px 12px' }}>±{m.tol.toFixed(3)}</td>
-                      <td style={{ padding: '10px 12px' }}><Tag color={okRow ? 'green' : 'amber'}>{okRow ? '对齐' : '临界'}</Tag></td>
+                      <td style={{ padding: '12px 14px', fontWeight: 600 }}>{m.metric}</td>
+                      <td className="mono" style={{ padding: '12px 14px' }}>{m.paper.toFixed(3)}</td>
+                      <td className="mono" style={{ padding: '12px 14px', fontWeight: 700, color: diffColor(d, m.tol) }}>{m.repro.toFixed(3)}</td>
+                      <td className="mono" style={{ padding: '12px 14px', color: diffColor(d, m.tol) }}>{d > 0 ? '+' : ''}{d.toFixed(3)}</td>
+                      <td className="mono text-muted" style={{ padding: '12px 14px' }}>±{m.tol.toFixed(3)}</td>
+                      <td style={{ padding: '12px 14px' }}><Tag color={okRow ? 'green' : 'amber'}>{okRow ? '对齐' : '临界'}</Tag></td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          <div className="row g-2 wrap mt-3" style={{ padding: '12px 14px', background: 'var(--brand-softer)', borderRadius: 'var(--r-md)', alignItems: 'flex-start' }}>
-            <Icon name="check" size={16} />
-            <div className="grow text-small" style={{ color: 'var(--brand-deep)', lineHeight: 1.7 }}>
+          <div className="row g-2 wrap mt-3" style={{ padding: '14px 18px', background: 'var(--brand-softer)', borderRadius: 10, alignItems: 'flex-start' }}>
+            <Icon name="check" size={17} />
+            <div className="grow text-small" style={{ color: 'var(--brand-deep)', lineHeight: 1.7, fontSize: 13.5 }}>
               <b>结论：复现成功。</b>全部 {picked.metrics.length} 项核心指标与原文偏差均处于允许容差内；环境与超参快照已固化，可一键在同一协议下与自有方法对比。
             </div>
           </div>
@@ -360,18 +360,18 @@ export default function Reproduce() {
       )}
 
       {/* ===== 历史复现任务 ===== */}
-      <div className="card" style={{ flex: 'none', overflow: 'hidden' }}>
-        <div className="row-between" style={{ padding: '11px 16px', borderBottom: '1px solid var(--line)' }}>
-          <span className="fw-bold text-small"><Icon name="history" size={14} /> 历史复现任务</span>
+      <div className="card" style={{ flex: 'none', overflow: 'hidden', borderRadius: 14 }}>
+        <div className="row-between items-center" style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
+          <span className="fw-bold text-small" style={{ fontSize: 14 }}><Icon name="history" size={15} /> 历史复现任务</span>
           <span className="text-xs text-muted">{history.length} 条记录</span>
         </div>
         {history.length === 0 ? (
-          <div style={{ padding: 20 }}><Empty icon="history" text="暂无历史，启动一次复现试试" /></div>
+          <div style={{ padding: 24 }}><Empty icon="history" text="暂无历史，启动一次复现试试" /></div>
         ) : history.map((h, i) => (
-          <div key={i} className="row-between wrap g-2 card-hover" style={{ padding: '11px 16px', borderBottom: i < history.length - 1 ? '1px solid var(--line)' : 'none' }}>
-            <span className="row g-2" style={{ minWidth: 0 }}>
+          <div key={i} className="row-between wrap g-2 card-hover" style={{ padding: '13px 20px', borderBottom: i < history.length - 1 ? '1px solid var(--line)' : 'none' }}>
+            <span className="row g-2" style={{ minWidth: 0, alignItems: 'center' }}>
               <span className="tag tag-green" style={{ flex: 'none' }}><Icon name="check" size={11} /> 成功</span>
-              <span className="text-small ellipsis">{h.title}</span>
+              <span className="text-small ellipsis" style={{ fontSize: 13.5 }}>{h.title}</span>
             </span>
             <span className="text-xs text-muted mono" style={{ flex: 'none' }}>{h.at}</span>
           </div>
