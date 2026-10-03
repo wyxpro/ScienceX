@@ -1,0 +1,36 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', width: '100%', height: '100%' }}>
+    {/* 左侧 55% 文字区 */}
+    <Box style={{ width: '55%', height: '100%', padding: '64px 24px 48px 64px', justifyContent: 'center', gap: 18 }}>
+      <Text style={{ fontSize: 13, color: '#8A948D', letterSpacing: 3, fontWeight: 600 }}>YOUR NEXT DISCOVERY STARTS HERE</Text>
+      <Text style={{ fontSize: 56, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', lineHeight: 1.2 }}>
+        让科研更简单，<br />一站式科研 AI 搭子
+      </Text>
+      <Text style={{ fontSize: 20, color: '#4A554F', lineHeight: 1.6 }}>
+        <span style={{ fontWeight: 'bold', color: '#1B7A5E' }}>ScienceX · AI 科研工作台</span><br />
+        覆盖「选题 → 文献 → 复现 → 实验 → 分析 → 写作 → 投稿 → 协作」<br />全生命周期的下一代 AI 科研生产力中枢
+      </Text>
+      <Box style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+        <Box style={{ background: '#E3F1EA', borderRadius: 16, padding: '6px 14px', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <FAIcon name="check" style={{ fill: '#1B7A5E', width: 14, height: 14 }} />
+          <Text style={{ fontSize: 14, color: '#1B7A5E', fontWeight: 600 }}>免费开始</Text>
+        </Box>
+        <Box style={{ background: '#E3F1EA', borderRadius: 16, padding: '6px 14px', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <FAIcon name="lock" style={{ fill: '#1B7A5E', width: 14, height: 14 }} />
+          <Text style={{ fontSize: 14, color: '#1B7A5E', fontWeight: 600 }}>数据私有可控</Text>
+        </Box>
+        <Box style={{ background: '#E3F1EA', borderRadius: 16, padding: '6px 14px', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <FAIcon name="plug" style={{ fill: '#1B7A5E', width: 14, height: 14 }} />
+          <Text style={{ fontSize: 14, color: '#1B7A5E', fontWeight: 600 }}>接入任意大模型</Text>
+        </Box>
+      </Box>
+      <Text style={{ fontSize: 13, color: '#8A948D', marginTop: 16 }}>XX 团队 · 2026.10</Text>
+    </Box>
+    {/* 右侧 45% 满版产品视觉 */}
+    <Box style={{ width: '45%', height: '100%', position: 'relative', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(160deg, #F0EDE4 0%, #E7EFEA 55%, #F5EFE3 100%)' }}>
+      <Box style={{ position: 'absolute', top: 0, right: 0, width: 240, height: 240, borderRadius: '50%', background: '#1B7A5E', opacity: 0.08 }} />
+      <Box style={{ position: 'absolute', bottom: 0, left: 0, width: 190, height: 190, borderRadius: '50%', background: '#C2762B', opacity: 0.10 }} />
+      <Image src="assets/hero.png" style={{ width: 470, height: 470, objectFit: 'contain', position: 'relative', zIndex: 1 }} />
+    </Box>
+  </Box>
+</Slide>

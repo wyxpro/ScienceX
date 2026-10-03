@@ -1,0 +1,16 @@
+<Slide style={{ padding: 0, background: '#0E4A37' }}>
+  <Box style={{ width: '100%', height: '100%', position: 'relative', justifyContent: 'center', padding: '0 72px' }}>
+    {/* 背景网格纹理 */}
+    <Box style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.05, background: 'linear-gradient(0deg, transparent 31px, #FFFFFF 32px), linear-gradient(90deg, transparent 31px, #FFFFFF 32px)', backgroundSize: '32px 32px' }} />
+    {/* 超大半透明章节数字 */}
+    <Text style={{ position: 'absolute', right: 64, bottom: 8, fontSize: 260, fontWeight: 'bold', color: '#C2762B', opacity: 0.12, fontFamily: 'Noto Serif SC, Georgia, serif', lineHeight: 1 }}>01</Text>
+    <Box style={{ position: 'relative', zIndex: 1, gap: 22 }}>
+      <Text style={{ fontSize: 15, color: '#C2762B', letterSpacing: 5, fontWeight: 600 }}>PART 01 · 需求洞察</Text>
+      <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#FFFFFF', fontFamily: 'Noto Serif SC, Georgia, serif', lineHeight: 1.35 }}>
+        每一项伟大的研究背后，<br />都有 99% 不为人知的重复劳动。
+      </Text>
+      <Box style={{ width: 72, height: 4, background: '#C2762B', borderRadius: 2 }} />
+      <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.75)', lineHeight: 1.8 }}>科研选题、英文精读、实验设计、论文写作……<br />机械环节正一点点吞掉本该用于思考的时间。</Text>
+    </Box>
+  </Box>
+</Slide>
