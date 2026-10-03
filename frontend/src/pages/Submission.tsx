@@ -134,12 +134,12 @@ export default function Submission() {
   });
 
   return (
-    <div className="page" style={{ gap: 16 }}>
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* ===== 顶部主 Tabs 栏 ===== */}
       <div
         className="card card-pad"
         style={{
-          padding: '10px 18px',
+          padding: '12px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -166,16 +166,17 @@ export default function Submission() {
         )}
       </div>
 
-      {/* ===== 点击“期刊会议大全”时在下方展示的筛选工具条（与下方卡片间距合理匀称） ===== */}
+      {/* ===== 点击“期刊会议大全”时在下方展示的筛选工具条（与上方Tabs与下方卡片保持合理行距） ===== */}
       {tab === 'journals' && (
         <div
           className="card card-pad anim-in"
           style={{
-            padding: '12px 18px',
+            padding: '14px 20px',
             display: 'flex',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 12,
+            rowGap: 12,
+            columnGap: 14,
             background: '#ffffff',
             borderRadius: 14,
             border: '1px solid #e2e8f0',
@@ -238,7 +239,7 @@ export default function Submission() {
             </span>
           </div>
 
-          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 4px' }} />
+          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 2px' }} />
 
           {/* CCF 等级筛选胶囊 (全部 CCF / CCF-A / CCF-B / CCF-C) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -269,8 +270,10 @@ export default function Submission() {
             ))}
           </div>
 
-          {/* 截稿时间范围快捷筛选 (全部时间 / 30天内 / 90天内) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+          <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 2px' }} />
+
+          {/* 截稿时间范围快捷筛选 (全部时间 / 30天内 / 90天内) - 紧靠 CCF-C 右侧显示 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {[
               { key: 'all', label: '全部时间' },
               { key: '30', label: '30 天内' },
@@ -285,9 +288,9 @@ export default function Submission() {
                   fontSize: 12,
                   fontWeight: timeFilter === tm.key ? 700 : 500,
                   borderRadius: 7,
-                  border: timeFilter === tm.key ? '1px solid #94a3b8' : '1px solid var(--line)',
-                  background: timeFilter === tm.key ? '#f1f5f9' : '#ffffff',
-                  color: timeFilter === tm.key ? '#0f172a' : 'var(--muted)',
+                  border: timeFilter === tm.key ? '1px solid var(--brand)' : '1px solid var(--line)',
+                  background: timeFilter === tm.key ? 'var(--brand-soft)' : '#ffffff',
+                  color: timeFilter === tm.key ? 'var(--brand-strong)' : 'var(--ink-2)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -313,7 +316,8 @@ export default function Submission() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(max(31%, 320px), 1fr))',
-                gap: 16,
+                rowGap: 20,
+                columnGap: 18,
               }}
             >
               {filteredJournals.map((j) => {
@@ -331,10 +335,10 @@ export default function Submission() {
                       boxShadow: j.tracked
                         ? '0 6px 20px -4px rgba(27, 122, 94, 0.16)'
                         : '0 2px 10px rgba(15, 23, 42, 0.04)',
-                      padding: '18px 20px',
+                      padding: '20px 22px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 10,
+                      gap: 12,
                       cursor: 'pointer',
                       position: 'relative',
                       transition: 'all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)',
