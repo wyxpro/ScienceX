@@ -20,14 +20,14 @@ const router = express.Router();
 
 /* ---------- 模板库（对应 DreamPaper TemplateStore / PaperBananaBench 元数据，演示内置） ---------- */
 const dpTemplates = [
-  { id: 'tpl-diag-1', kind: 'diagram', name: '多阶段流水线', category: 'pipeline', visual_intent: '横向主流程 + 底部虚线训练支路，5-7 个阶段面板，嵌套模块分组', desc: '方法总览 / 系统架构' },
-  { id: 'tpl-diag-2', kind: 'diagram', name: '双塔对比架构', category: 'architecture', visual_intent: '左右双塔编码器 + 顶部融合层，跨塔虚线交互箭头', desc: '双分支 / 融合模型' },
-  { id: 'tpl-diag-3', kind: 'diagram', name: '机制示意（AU 拓扑）', category: 'mechanism', visual_intent: '中心节点图 + 环绕注意力标注，扇入扇出连接', desc: '模块内部机制' },
-  { id: 'tpl-plot-1', kind: 'plot', name: '消融对比柱状图', category: 'ablation', visual_intent: '分组柱状图 + 误差棒，colorblind-friendly 学术配色', desc: '配置间指标对比' },
-  { id: 'tpl-plot-2', kind: 'plot', name: '训练双曲线', category: 'curve', visual_intent: 'train/val 双曲线 + 最优 epoch 标注，图例置于外侧', desc: '收敛行为展示' },
-  { id: 'tpl-plot-3', kind: 'plot', name: '混淆矩阵热力图', category: 'matrix', visual_intent: '行归一化矩阵 + 对角高亮，含色条图例', desc: '分类结果分析' },
-  { id: 'tpl-master-1', kind: 'master', name: '学术蓝白母版', category: 'academic', visual_intent: '16:9，白底墨蓝标题带，左上 logo，底部页码，卡片圆角 8px', desc: '组会 / 答辩通用' },
-  { id: 'tpl-master-2', kind: 'master', name: '琥珀暖纸母版', category: 'warm', visual_intent: '16:9，暖纸底色，琥珀强调色，衬线标题层级', desc: '人文汇报风格' },
+  { id: 'tpl-diag-1', kind: 'diagram', name: '多阶段流水线', category: 'generative_learning', visual_intent: '横向主流程 + 底部虚线训练支路，5-7 个阶段面板，嵌套模块分组', desc: '方法总览 / 系统架构', image_url: '/dreampaper/tpl-diag-1.png' },
+  { id: 'tpl-diag-2', kind: 'diagram', name: '双塔对比架构', category: 'agent_reasoning', visual_intent: '左右双塔编码器 + 顶部融合层，跨塔虚线交互箭头', desc: '双分支 / 融合模型', image_url: '/dreampaper/tpl-diag-2.png' },
+  { id: 'tpl-diag-3', kind: 'diagram', name: '机制示意（AU 拓扑）', category: 'vision_perception', visual_intent: '中心节点图 + 环绕注意力标注，扇入扇出连接', desc: '模块内部机制', image_url: '/dreampaper/tpl-diag-3.png' },
+  { id: 'tpl-plot-1', kind: 'plot', name: '消融对比柱状图', category: 'ablation', visual_intent: '分组柱状图 + 误差棒，colorblind-friendly 学术配色', desc: '配置间指标对比', image_url: '/dreampaper/tpl-plot-1.png' },
+  { id: 'tpl-plot-2', kind: 'plot', name: '训练双曲线', category: 'curve', visual_intent: 'train/val 双曲线 + 最优 epoch 标注，图例置于外侧', desc: '收敛行为展示', image_url: '/dreampaper/tpl-plot-2.png' },
+  { id: 'tpl-plot-3', kind: 'plot', name: '混淆矩阵热力图', category: 'matrix', visual_intent: '行归一化矩阵 + 对角高亮，含色条图例', desc: '分类结果分析', image_url: '/dreampaper/tpl-plot-3.png' },
+  { id: 'tpl-master-1', kind: 'master', name: '学术蓝白母版', category: 'academic', visual_intent: '16:9，白底墨蓝标题带，左上 logo，底部页码，卡片圆角 8px', desc: '组会 / 答辩通用', image_url: '/dreampaper/tpl-master-1.png' },
+  { id: 'tpl-master-2', kind: 'master', name: '琥珀暖纸母版', category: 'warm', visual_intent: '16:9，暖纸底色，琥珀强调色，衬线标题层级', desc: '人文汇报风格', image_url: '/dreampaper/tpl-master-2.png' },
 ];
 
 /* ---------- 阶段权重（改编自 DreamPaper stage-weight 进度映射思路） ---------- */
