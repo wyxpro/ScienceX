@@ -264,3 +264,27 @@ test('客户端关闭任务 SSE 后移除任务监听器', { concurrency: false,
   await new Promise((resolve) => setTimeout(resolve, 20));
   assert.equal(store.tasks.get(taskId).listeners.length, 0);
 });
+
+test('选题三件套：双轨对接后响应结构稳定（无密钥时确定性回退）', async () => {
+  const t = await ensureToken();
+  const headers = { Authorization: `Bearer ${t}` };
+
+  const recommend = await request('/topic/recommend', { method: 'POST', headers, body: JSON.stringify({ tags: ['微表情识别'] }) });
+  assert.equal(recommend.body.code, 0);
+  assert.ok(Array.isArray(recommend.body.data.items) && recommend.body.data.items.length >= 3, '选题推荐应至少返回 3 条');
+  assert.ok(['live', 'fallback'].includes(recommend.body.data.mode), '应标明数据来源模式');
+  for (const item of recommend.body.data.items) {
+    assert.ok(item.title && typeof item.score === 'number' && item.score >= 0 && item.score <= 100);
+    assert.ok(Array.isArray(item.risks));
+  }
+
+  const feasibility = await request('/topic/feasibility', { method: 'POST', headers, body: JSON.stringify({ topic_desc: '跨数据集微表情识别的域适应方法研究' }) });
+  assert.equal(feasibility.body.code, 0);
+  assert.ok(typeof feasibility.body.data.overall === 'number');
+  assert.ok(Array.isArray(feasibility.body.data.dimensions) && feasibility.body.data.dimensions.length >= 3);
+
+  const proposal = await request('/topic/proposal', { method: 'POST', headers, body: JSON.stringify({ topic: '微表情识别中的跨层 AU 交互' }) });
+  assert.equal(proposal.body.code, 0);
+  assert.ok(proposal.body.data.task_id);
+  assert.equal(store.tasks.get(proposal.body.data.task_id).owner_id, 'u1');
+});

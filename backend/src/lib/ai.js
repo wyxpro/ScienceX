@@ -154,7 +154,7 @@ function createTask(type, stages, resultBuilder, ownerId = null) {
       }
       task.percent = 100;
       task.status = 'done';
-      task.result = resultBuilder(task);
+      task.result = await resultBuilder(task);
       publishTaskEvent(task, 'done');
     } catch (error) {
       task.status = 'failed';
