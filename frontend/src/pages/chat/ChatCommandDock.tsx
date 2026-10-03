@@ -16,7 +16,6 @@ interface ChatCommandDockProps {
   models: { builtin: any[]; custom: any[] };
   skills: SkillItem[];
   onInvokeSkill: (skill: SkillItem) => void;
-  projectName?: string;
   agentMode: AgentMode;
   onSelectAgentMode: (mode: AgentMode) => void;
 }
@@ -46,7 +45,6 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
   models,
   skills,
   onInvokeSkill,
-  projectName = '微表情识别（MER）研究',
   agentMode,
   onSelectAgentMode,
 }) => {
@@ -364,17 +362,6 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                 <Icon name="arrowUp" size={17} strokeWidth={2.4} />
               )}
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 底部附着托盘：关联课题 */}
-      <div className="chat-dock-tray" style={{ overflow: 'visible', position: 'relative' }}>
-        <div className="chat-tray-group">
-          {/* 关联项目胶囊 */}
-          <div className="chat-tray-pill" title="当前关联的课题与实验空间">
-            <Icon name="layers" size={12} style={{ color: '#0d9488' }} />
-            <span>{projectName}</span>
           </div>
         </div>
       </div>

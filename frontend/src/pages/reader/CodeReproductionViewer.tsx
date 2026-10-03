@@ -246,7 +246,7 @@ export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ 
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
+          justifyContent: 'flex-start',
           flexWrap: 'wrap',
           gap: 8,
           padding: '8px 12px',

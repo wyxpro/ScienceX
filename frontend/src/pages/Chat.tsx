@@ -7,7 +7,6 @@ import { api, chatStream } from '../api/client';
 import Icon, { type IconName } from '../components/Icon';
 import { useToast } from '../components/ui';
 import { useAuth } from '../stores/auth';
-import { useProject } from '../stores/project';
 import type { AgentMode, ChatMessage, Conversation, SkillItem } from '../types';
 import { ChatCommandDock } from './chat/ChatCommandDock';
 import { ChatMessages } from './chat/ChatMessages';
@@ -46,8 +45,6 @@ export default function Chat() {
   const [showMemoryDrawer, setShowMemoryDrawer] = useState(false);
   const [memoryCount, setMemoryCount] = useState<number>(4);
   const [sidebarOpen, setSidebarOpen] = useState(false); // 默认不显示，点击按钮才展开
-  const { currentProject } = useProject();
-  const projectName = currentProject?.name || currentProject?.title || '微表情识别（MER）研究';
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 初始化带有精确演示数据的看板状态
@@ -405,7 +402,6 @@ export default function Chat() {
               models={models}
               skills={skills}
               onInvokeSkill={invokeSkill}
-              projectName={projectName}
               agentMode={agentMode}
               onSelectAgentMode={setAgentMode}
             />
@@ -451,7 +447,6 @@ export default function Chat() {
                 models={models}
                 skills={skills}
                 onInvokeSkill={invokeSkill}
-                projectName={projectName}
                 agentMode={agentMode}
                 onSelectAgentMode={setAgentMode}
               />
