@@ -49,6 +49,7 @@ export const McpPapersCard: React.FC<McpPapersCardProps> = ({ papers }) => {
       }}
     >
       <div
+        className="chat-card-head"
         style={{
           padding: '8px 14px',
           background: 'rgba(139, 92, 246, 0.08)',
@@ -58,7 +59,7 @@ export const McpPapersCard: React.FC<McpPapersCardProps> = ({ papers }) => {
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div
             style={{
               width: 22,
@@ -111,7 +112,7 @@ export const McpPapersCard: React.FC<McpPapersCardProps> = ({ papers }) => {
                 boxShadow: '0 2px 6px -2px rgba(0,0,0,0.03)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              <div className="chat-paper-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.4 }}>
                     {p.title}
@@ -162,7 +163,7 @@ export const McpPapersCard: React.FC<McpPapersCardProps> = ({ papers }) => {
                 {p.abstract}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 10.5, color: 'var(--muted)' }}>
+              <div className="chat-paper-meta" style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 10.5, color: 'var(--muted)' }}>
                 {p.arxiv_id && <span>arXiv ID: <strong className="mono">{p.arxiv_id}</strong></span>}
                 {p.citations && <span>引用量: <strong style={{ color: '#059669' }}>{p.citations}</strong></span>}
                 <button

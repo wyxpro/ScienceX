@@ -106,6 +106,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                 {/* 底部模型与响应信息元数据 */}
                 {!m.streaming && (
                   <div
+                    className="chat-msg-meta"
                     style={{
                       display: 'flex',
                       alignItems: 'center',

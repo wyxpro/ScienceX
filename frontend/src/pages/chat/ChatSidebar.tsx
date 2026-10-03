@@ -14,6 +14,7 @@ interface ChatSidebarProps {
   onRenameConv: (id: string) => void;
   onRemoveConv: (id: string, e: React.MouseEvent) => void;
   collapsed?: boolean;
+  onClose?: () => void;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
@@ -27,9 +28,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onRenameConv,
   onRemoveConv,
   collapsed = false,
+  onClose,
 }) => {
   return (
-    <aside className={`chat-sidebar-card ${collapsed ? 'collapsed' : ''}`}>
+    <>
+      {/* 移动端抽屉遮罩：桌面端通过 CSS .chat-sidebar-scrim { display: none } 隐藏 */}
+      {!collapsed && <div className="chat-sidebar-scrim" onClick={onClose} aria-hidden="true" />}
+      <aside className={`chat-sidebar-card ${collapsed ? 'collapsed' : ''}`}>
       {/* 新对话按钮 */}
       <button
         className="chat-new-btn"
@@ -138,6 +143,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           })
         )}
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };

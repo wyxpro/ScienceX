@@ -4,11 +4,13 @@ import { api } from '../api/client';
 import Icon from '../components/Icon';
 import { GaugeRow } from '../components/charts';
 import { Modal, Tag, Tabs, useToast } from '../components/ui';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 type Tab = 'board' | 'gpu' | 'plan' | 'sota';
 
 export default function Experiment() {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState<Tab>('board');
   const [exps, setExps] = useState<any[] | null>(null);
   const [expId, setExpId] = useState<string>('');
@@ -78,7 +80,7 @@ export default function Experiment() {
       {tab === 'board' && exps && (
         <div className="anim-in">
           <div className="row g-2 wrap mb-3">
-            <select className="select" style={{ width: 300 }} value={expId} onChange={(e) => setExpId(e.target.value)}>
+            <select className="select" style={{ width: isMobile ? '100%' : 300 }} value={expId} onChange={(e) => setExpId(e.target.value)}>
               {exps.map((e) => <option key={e.id} value={e.id}>{e.name}（{e.runs.length} 次运行）</option>)}
             </select>
             <button className="btn btn-primary" onClick={() => setRunModal(true)}><Icon name="play" size={14} />新建实验</button>
@@ -164,7 +166,7 @@ export default function Experiment() {
 
       {/* ===== 方案生成 ===== */}
       {tab === 'plan' && (
-        <div className="anim-in grid grid-2" style={{ gridTemplateColumns: 'minmax(280px, 1fr) minmax(320px, 1.5fr)', alignItems: 'start' }}>
+        <div className="anim-in grid grid-2" style={{ gridTemplateColumns: isMobile ? '1fr' : 'minmax(280px, 1fr) minmax(320px, 1.5fr)', alignItems: 'start' }}>
           <div className="card card-pad">
             <div className="form-row">
               <label className="field-label">研究目标</label>
@@ -236,7 +238,7 @@ export default function Experiment() {
               <span className="text-xs text-muted">数据聚合自 Papers with Code 与文献复现</span>
             </div>
           </div>
-          <div className="seg mb-3">
+          <div className="seg mb-3" style={isMobile ? { flexWrap: 'wrap' } : undefined}>
             {sota.datasets.map((d: any, i: number) => (
               <button key={d.name} className={`seg-btn ${sotaDs === i ? 'active' : ''}`} onClick={() => setSotaDs(i)}>
                 {d.name}（{d.samples} 样本 · {d.subjects} 人 · {d.classes} 类）

@@ -5,6 +5,7 @@ import Icon from '../components/Icon';
 import { MetricBar } from '../components/charts';
 import { Empty, ScoreRing, Skeleton, Tabs, Tag, useToast } from '../components/ui';
 import { TaskRunner } from '../components/TaskRunner';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 type Tab = 'search' | 'recommend' | 'feasibility' | 'proposal' | 'review';
 
@@ -165,6 +166,7 @@ const DEFAULT_FEASIBILITY = {
 export default function Topic() {
   const [tab, setTab] = useState<Tab>('search');
   const toast = useToast();
+  const isMobile = useIsMobile();
 
   /* 检索 —— 默认展开微表情识别 Transformer 列表 */
   const ALL_SOURCES = ['arXiv', 'OpenAlex', 'Semantic Scholar', 'PubMed', '中文库'];
@@ -436,9 +438,9 @@ export default function Topic() {
           <div className="col g-2 stagger">
             {topics?.map((t: any, i: number) => (
               <div key={i} className="card card-pad card-hover">
-                <div className="row g-3" style={{ alignItems: 'flex-start' }}>
+                <div className="row g-3" style={{ alignItems: 'flex-start', flexWrap: isMobile ? 'wrap' : undefined }}>
                   <ScoreRing value={t.score} size={64} label="推荐度" />
-                  <div className="grow" style={{ minWidth: 220 }}>
+                  <div className="grow" style={{ minWidth: isMobile ? 0 : 220 }}>
                     <div className="row g-2 wrap items-center">
                       <span className="fw-bold" style={{ fontSize: 15, color: 'var(--ink)' }}>
                         {t.title}
@@ -490,7 +492,7 @@ export default function Topic() {
       {tab === 'feasibility' && (
         <div
           className="anim-in grid grid-2"
-          style={{ gridTemplateColumns: 'minmax(280px, 1fr) minmax(320px, 1.4fr)', alignItems: 'start', gap: 20 }}
+          style={{ gridTemplateColumns: isMobile ? '1fr' : 'minmax(280px, 1fr) minmax(320px, 1.4fr)', alignItems: 'start', gap: 20 }}
         >
           <div className="card card-pad">
             <label className="field-label" style={{ fontWeight: 700 }}>

@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../../components/Icon';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 type Highlight = { id: string; secId: string; paraIdx: number; start: number; end: number; text: string; color: string; note: string };
 type Match = { secId: string; paraIdx: number; start: number; end: number };
@@ -73,6 +74,7 @@ export default function ImmersiveReader({
 }) {
   const sections: any[] = doc?.structured?.sections || [];
   const activeQuery = query;
+  const isMobile = useIsMobile();
 
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [popup, setPopup] = useState<Popup | null>(null);
@@ -83,7 +85,8 @@ export default function ImmersiveReader({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
-  const selectingRef = useRef(false);
+  /** 划词时间戳：在此时间点之前的 mousedown 均视为「划词动作的一部分」，不关闭工具栏 */
+  const selectingRef = useRef<number>(0);
   const storeKey = `sx-highlights:${doc?.id || ''}`;
   const transStoreKey = TRANS_STORE(doc?.id);
 
@@ -162,10 +165,11 @@ export default function ImmersiveReader({
   useEffect(() => {
     if (!popup && !notePopup) return;
     const onDown = (e: MouseEvent) => {
-      if (selectingRef.current) return; // mouseup 期间的点击不关闭工具栏
+      // 划词刚结束（含 rAF 提交窗口）内的 mousedown 不关闭工具栏，避免闪现即消失
+      if (selectingRef.current || performance.now() < selectingRef.current) return;
       if (popupRef.current?.contains(e.target as Node)) return;
       const target = e.target as HTMLElement;
-      if (target.closest?.('[data-note-popup]')) return;
+      if (target.closest?.('[data-selection-popup]') || target.closest?.('[data-note-popup]')) return;
       setPopup(null);
       setNotePopup(null);
       setNoteDraft('');
@@ -232,14 +236,12 @@ export default function ImmersiveReader({
   };
 
   const handleMouseUp = (secId: string, paraIdx: number) => {
-    selectingRef.current = true;
+    // 记录划词时刻，覆盖接下来的选区稳定窗口（含 rAF 提交），避免工具栏闪现即被关闭
+    selectingRef.current = performance.now() + 350;
     // 选中后等浏览器选区稳定再取坐标，避免工具栏闪烁 / 跳动
     window.requestAnimationFrame(() => {
       const next = captureSelection(secId, paraIdx);
       if (next) setPopup(next);
-      window.setTimeout(() => {
-        selectingRef.current = false;
-      }, 0);
     });
   };
 
@@ -373,6 +375,7 @@ export default function ImmersiveReader({
             fontSize: 13.8,
             lineHeight: 1.9,
             textAlign: 'justify',
+            wordBreak: isMobile ? 'break-word' : undefined,
             margin: 0,
             padding: '6px 10px',
             borderRadius: 8,
@@ -430,7 +433,7 @@ export default function ImmersiveReader({
     <div ref={scrollRef} style={{ position: 'relative', flex: 1, overflowY: 'auto', minWidth: 0 }}>
       {/* 批注列表抽屉（由顶栏批注按钮控制展开） */}
       {notesOpen && (
-        <div className="card anim-in" style={{ margin: '10px 14px 0', padding: 10, maxHeight: 180, overflowY: 'auto' }}>
+        <div className="card anim-in" style={{ margin: isMobile ? '10px 10px 0' : '10px 14px 0', padding: 10, maxHeight: 180, overflowY: 'auto' }}>
           <div className="row g-1 mb-1">
             <span className="text-xs fw-bold">高亮与批注</span>
             <span className="text-xs text-muted">点击条目可跳回原文</span>
@@ -483,7 +486,7 @@ export default function ImmersiveReader({
       )}
 
       {/* 正文 */}
-      <div style={{ padding: '20px 24px' }}>
+      <div style={{ padding: isMobile ? '14px 12px' : '20px 24px' }}>
         <article className="anim-in" style={{ maxWidth: 720, margin: '0 auto' }}>
           <header style={{ borderBottom: '2px solid var(--brand)', paddingBottom: 12, marginBottom: 16 }}>
             <h1 className="text-serif" style={{ fontSize: 19, lineHeight: 1.5 }}>
@@ -534,11 +537,14 @@ export default function ImmersiveReader({
           data-selection-popup="true"
           style={{
             position: 'absolute',
-            left: popupLeft,
+            left: isMobile ? 8 : popupLeft,
+            right: isMobile ? 8 : undefined,
             top: popupTop,
             zIndex: 30,
             padding: 8,
             alignItems: 'center',
+            flexWrap: isMobile ? 'wrap' : undefined,
+            rowGap: isMobile ? 6 : undefined,
             boxShadow: '0 8px 28px rgba(0, 0, 0, .18)',
             willChange: 'transform',
           }}
@@ -571,7 +577,7 @@ export default function ImmersiveReader({
           </button>
           <input
             className="input"
-            style={{ width: 118, fontSize: 12, padding: '4px 8px' }}
+            style={{ width: 118, flex: isMobile ? '1 1 110px' : undefined, fontSize: 12, padding: '4px 8px' }}
             placeholder="批注（可选）…"
             value={noteDraft}
             onChange={(e) => setNoteDraft(e.target.value)}
@@ -592,11 +598,11 @@ export default function ImmersiveReader({
           data-note-popup="true"
           style={{
             position: 'absolute',
-            left: Math.max(8, Math.min(notePopup.x, (scrollRef.current?.clientWidth || 400) - 260)),
+            left: isMobile ? 8 : Math.max(8, Math.min(notePopup.x, (scrollRef.current?.clientWidth || 400) - 260)),
             top: notePopup.y,
             zIndex: 30,
             padding: 10,
-            width: 240,
+            width: isMobile ? 'calc(100% - 16px)' : 240,
             boxShadow: '0 8px 28px rgba(0, 0, 0, .18)',
           }}
         >

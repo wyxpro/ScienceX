@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import Icon, { type IconName } from '../components/Icon';
 import { useToast } from '../components/ui';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { TaskRunner } from '../components/TaskRunner';
 
 const ROLE_META: Record<string, { en: string; icon: IconName; color: string; bg: string }> = {
@@ -47,8 +48,8 @@ function RadarChart({ scores }: { scores: { label: string; score: number }[] }) 
   const dataPolygon = dataPoints.map((pt) => `${pt.x},${pt.y}`).join(' ');
 
   return (
-    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: size, margin: '0 auto' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ maxWidth: '100%', height: 'auto' }}>
         {/* 同心轴线网格 */}
         {ringPolygons.map((pts, idx) => (
           <polygon
@@ -124,6 +125,7 @@ function RadarChart({ scores }: { scores: { label: string; score: number }[] }) 
 
 export default function Review() {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [manuscripts, setManuscripts] = useState<any[]>([]);
   const [msId, setMsId] = useState('');
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -193,15 +195,17 @@ export default function Review() {
           background: '#ffffff',
           borderRadius: 14,
           border: '1px solid #e2e8f0',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
         }}
       >
-        <div className="row g-2 items-center">
+        <div className="row g-2 items-center" style={{ flexWrap: isMobile ? 'wrap' : undefined }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>评阅目标稿件：</span>
           <select
             className="select"
             value={msId}
             onChange={(e) => setMsId(e.target.value)}
-            style={{ width: 280, fontSize: 12.5, padding: '6px 10px' }}
+            style={{ width: 280, maxWidth: '100%', fontSize: 12.5, padding: '6px 10px' }}
           >
             {manuscripts.length ? (
               manuscripts.map((m) => (
@@ -215,7 +219,7 @@ export default function Review() {
           </select>
         </div>
 
-        <div className="row g-2">
+        <div className="row g-2" style={{ flexWrap: isMobile ? 'wrap' : undefined }}>
           <button
             className="btn btn-primary btn-sm"
             onClick={launch}
@@ -237,7 +241,7 @@ export default function Review() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+          gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
           gap: 16,
         }}
       >
@@ -406,7 +410,7 @@ export default function Review() {
 
         <div style={{ padding: '20px 24px' }}>
           {/* 标题栏与小修胶囊标签 */}
-          <div className="row-between items-center mb-3">
+          <div className="row-between items-center mb-3" style={{ flexWrap: isMobile ? 'wrap' : undefined }}>
             <div className="row g-2 items-center">
               <div
                 style={{
@@ -474,7 +478,7 @@ export default function Review() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
+                gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.1fr) minmax(0, 1fr)',
                 gap: 24,
                 alignItems: 'center',
                 padding: '10px 12px',
@@ -560,7 +564,7 @@ export default function Review() {
 
       {/* ===== 模块四：五位审稿 Agent 独立意见卡片（可展开折叠） ===== */}
       <div style={{ marginTop: 8 }}>
-        <div className="row-between items-center mb-2">
+        <div className="row-between items-center mb-2" style={{ flexWrap: isMobile ? 'wrap' : undefined }}>
           <span style={{ fontSize: 14.5, fontWeight: 700, color: '#0f172a' }}>
             五角色并行独立审稿意见
           </span>
@@ -569,7 +573,7 @@ export default function Review() {
           </span>
         </div>
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {(report?.roles || [
             {
               role: '理论审稿人',

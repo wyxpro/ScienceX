@@ -66,7 +66,7 @@ export const PlanFlowCard: React.FC<PlanFlowCardProps> = ({ plan, onRetryStep })
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="chat-card-head" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }} className="ellipsis">
                 {plan.title || '灵寻 (LingSeek) 科研任务规划执行流'}
               </span>
