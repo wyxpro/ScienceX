@@ -168,8 +168,8 @@ export default function Writing() {
             </div>
           </div>
 
-          {/* 工具选择 2×2 卡片 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '10px 12px', borderBottom: '1px solid var(--line)' }}>
+          {/* 工具选择：一行四卡 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, padding: '10px 12px', borderBottom: '1px solid var(--line)' }}>
             {TOOLS.map((t) => {
               const active = tool === t.key;
               return (
@@ -177,20 +177,18 @@ export default function Writing() {
                   key={t.key}
                   type="button"
                   onClick={() => switchTool(t.key)}
+                  title={`${t.label} · ${t.desc}`}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px',
-                    borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '10px 4px',
+                    borderRadius: 10, cursor: 'pointer',
                     border: active ? '1px solid var(--brand)' : '1px solid var(--line)',
                     background: active ? 'var(--brand-softer)' : '#ffffff',
                     boxShadow: active ? '0 2px 10px rgba(5,150,105,0.14)' : 'none',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <Icon name={t.icon} size={15} style={{ color: active ? 'var(--brand-strong)' : 'var(--muted)', flexShrink: 0 }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: active ? 'var(--brand-strong)' : 'var(--ink)' }}>{t.label}</div>
-                    <div className="text-xs text-muted" style={{ fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.desc}</div>
-                  </div>
+                  <Icon name={t.icon} size={16} style={{ color: active ? 'var(--brand-strong)' : 'var(--muted)' }} />
+                  <div style={{ fontSize: 12, fontWeight: 700, color: active ? 'var(--brand-strong)' : 'var(--ink)', whiteSpace: 'nowrap' }}>{t.label}</div>
                 </button>
               );
             })}

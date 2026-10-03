@@ -44,7 +44,7 @@ const TITLES: Record<string, [string, string]> = {
   '/features/meeting': ['组会汇报', 'PPT 一键生成 · 导师建议记录'],
   '/features/review': ['多智能体专家评审团', '五角色并行评审 · 冲突分析 · 审稿报告'],
   '/features/reproduce': ['论文复现', '代码解析 · 环境搭建 · 基线对齐 · 结果比对'],
-  '/account': ['设置与管理', '资料偏好 · 模型管理 · 用量 · 订阅 · 课题组 · 安全'],
+  '/account': ['设置与管理', '资料偏好 · 模型管理 · 用量 · 订阅 · 安全'],
 };
 
 export default function AppLayout() {

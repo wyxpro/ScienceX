@@ -182,22 +182,24 @@ export default function Account() {
           { key: 'models', label: <><Icon name="cpu" size={13} /> 模型管理</> },
           { key: 'usage', label: <><Icon name="chart" size={13} /> 用量统计</> },
           { key: 'billing', label: <><Icon name="card" size={13} /> 订阅计费</> },
-          { key: 'teams', label: <><Icon name="users" size={13} /> 课题组</> },
           { key: 'security', label: <><Icon name="shield" size={13} /> 安全</> },
         ]}
       />
 
-      {/* ===== 资料偏好 ===== */}
+      {/* ===== 资料偏好（课题组显示在昵称上方） ===== */}
       {tab === 'profile' && (
-        <ProfileSection
-          form={form}
-          setForm={setForm}
-          tagInput={tagInput}
-          setTagInput={setTagInput}
-          saving={saving}
-          onSave={saveProfile}
-          onAddTag={addTag}
-        />
+        <>
+          <TeamSection />
+          <ProfileSection
+            form={form}
+            setForm={setForm}
+            tagInput={tagInput}
+            setTagInput={setTagInput}
+            saving={saving}
+            onSave={saveProfile}
+            onAddTag={addTag}
+          />
+        </>
       )}
 
       {/* ===== 模型管理 ===== */}
@@ -228,9 +230,6 @@ export default function Account() {
           onBuy={buy}
         />
       )}
-
-      {/* ===== 课题组 ===== */}
-      {tab === 'teams' && <TeamSection />}
 
       {/* ===== 安全 ===== */}
       {tab === 'security' && security && (

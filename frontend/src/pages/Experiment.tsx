@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import Icon from '../components/Icon';
-import { BarChart, GaugeRow } from '../components/charts';
+import { GaugeRow } from '../components/charts';
 import { Modal, Tag, Tabs, useToast } from '../components/ui';
 
 type Tab = 'board' | 'gpu' | 'plan' | 'sota';
@@ -43,7 +43,6 @@ export default function Experiment() {
   }, [tab]);
 
   const exp = exps?.find((e) => e.id === expId);
-  const completedRuns = exp?.runs.filter((r: any) => r.status === 'completed') || [];
 
   const genPlan = async () => {
     setPlan(await api('/experiments/plan', { method: 'POST', body: { goal, method } }));
@@ -82,8 +81,7 @@ export default function Experiment() {
             <select className="select" style={{ width: 300 }} value={expId} onChange={(e) => setExpId(e.target.value)}>
               {exps.map((e) => <option key={e.id} value={e.id}>{e.name}（{e.runs.length} 次运行）</option>)}
             </select>
-            <button className="btn btn-primary" onClick={() => setRunModal(true)}><Icon name="play" size={14} />新建运行</button>
-            <button className="btn btn-ghost" onClick={() => toast('新建实验：请填写目标与参数（演示跳过）', 'info')}><Icon name="plus" size={14} />新建实验</button>
+            <button className="btn btn-primary" onClick={() => setRunModal(true)}><Icon name="play" size={14} />新建实验</button>
           </div>
 
           {exp && (
@@ -123,14 +121,6 @@ export default function Experiment() {
                   </tbody>
                 </table>
               </div>
-              {completedRuns.length > 0 && (
-                <div className="card card-pad">
-                  <div className="card-title mb-2"><Icon name="chart" size={15} />UF1 指标对比</div>
-                  <BarChart data={completedRuns.map((r: any) => ({ label: r.name, value: r.metrics.UF1 }))}
-                    max={1} format={(v) => v.toFixed(4)}
-                    highlight={(d) => d.value === Math.max(...completedRuns.map((r: any) => r.metrics.UF1))} />
-                </div>
-              )}
             </>
           )}
         </div>
@@ -274,7 +264,7 @@ export default function Experiment() {
         </div>
       )}
 
-      {/* 新建运行 */}
+      {/* 新建实验 */}
       <Modal open={runModal} onClose={() => setRunModal(false)} title="新建实验运行"
         footer={<><button className="btn btn-ghost" onClick={() => setRunModal(false)}>取消</button>
           <button className="btn btn-primary" onClick={submitRun}><Icon name="play" size={14} />提交运行</button></>}>
