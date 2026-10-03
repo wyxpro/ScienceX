@@ -26,6 +26,13 @@ const dpTemplates = [
   { id: 'tpl-plot-1', kind: 'plot', name: '消融对比柱状图', category: 'ablation', visual_intent: '分组柱状图 + 误差棒，colorblind-friendly 学术配色', desc: '配置间指标对比', image_url: '/dreampaper/tpl-plot-1.png' },
   { id: 'tpl-plot-2', kind: 'plot', name: '训练双曲线', category: 'curve', visual_intent: 'train/val 双曲线 + 最优 epoch 标注，图例置于外侧', desc: '收敛行为展示', image_url: '/dreampaper/tpl-plot-2.png' },
   { id: 'tpl-plot-3', kind: 'plot', name: '混淆矩阵热力图', category: 'matrix', visual_intent: '行归一化矩阵 + 对角高亮，含色条图例', desc: '分类结果分析', image_url: '/dreampaper/tpl-plot-3.png' },
+  { id: 'tpl-plot-4', kind: 'plot', name: '多序列折线图', category: 'line', visual_intent: '多条序列折线 + 空心标记点，图例横排置于顶部', desc: '多方法趋势对比' },
+  { id: 'tpl-plot-5', kind: 'plot', name: '散点相关性图', category: 'scatter', visual_intent: '散点 + 线性回归拟合线与 R² 标注，重叠点半透明', desc: '相关性 / 分布关系' },
+  { id: 'tpl-plot-6', kind: 'plot', name: '箱线分布图', category: 'box', visual_intent: '分组箱线 + 菱形离群点标注，须线 1.5×IQR', desc: '多组数据分布' },
+  { id: 'tpl-plot-7', kind: 'plot', name: '小提琴分布图', category: 'violin', visual_intent: '半边小提琴 + 内嵌箱线，密度曲线对称着色', desc: '分布形态对比' },
+  { id: 'tpl-plot-8', kind: 'plot', name: '雷达多维图', category: 'radar', visual_intent: '多维雷达 + 半透明填充叠加，轴线刻度统一', desc: '多维度能力对比' },
+  { id: 'tpl-plot-9', kind: 'plot', name: 'ROC 曲线', category: 'roc', visual_intent: '多模型 ROC 曲线 + 对角参考虚线，AUC 标注于图例', desc: '分类性能评估' },
+  { id: 'tpl-plot-10', kind: 'plot', name: '帕累托归因图', category: 'pareto', visual_intent: '降序柱状 + 累计占比折线双轴，80% 分界虚线', desc: '误差 / 因素归因排序' },
   { id: 'tpl-master-1', kind: 'master', name: '学术蓝白母版', category: 'academic', visual_intent: '16:9，白底墨蓝标题带，左上 logo，底部页码，卡片圆角 8px', desc: '组会 / 答辩通用', image_url: '/dreampaper/tpl-master-1.png' },
   { id: 'tpl-master-2', kind: 'master', name: '琥珀暖纸母版', category: 'warm', visual_intent: '16:9，暖纸底色，琥珀强调色，衬线标题层级', desc: '人文汇报风格', image_url: '/dreampaper/tpl-master-2.png' },
 ];

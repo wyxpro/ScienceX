@@ -191,7 +191,7 @@ export default function Reproduce() {
           <span className="card-title"><Icon name="doc" size={15} /> 选择复现目标</span>
           <span className="text-xs text-muted">共 {CANDIDATES.length} 篇可复现论文（均含官方开源代码）</span>
         </div>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 10 }}>
           {CANDIDATES.map((c, i) => {
             const active = c.id === pickedId;
             return (
@@ -200,8 +200,8 @@ export default function Reproduce() {
                 className={`card card-hover anim-in ${active ? '' : ''}`}
                 onClick={() => { if (!running) { reset(); setPickedId(c.id); } }}
                 style={{
-                  cursor: running ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 8,
-                  animationDelay: `${i * 60}ms`, padding: '16px 18px',
+                  cursor: running ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 5,
+                  animationDelay: `${i * 60}ms`, padding: '11px 14px',
                   borderColor: active ? 'var(--brand)' : undefined,
                   background: active ? 'var(--brand-softer)' : undefined,
                   boxShadow: active ? '0 0 0 3px rgba(27,122,94,.12)' : undefined,
@@ -213,9 +213,9 @@ export default function Reproduce() {
                     <Icon name="star" size={12} /> <span className="mono text-xs">{c.stars}</span>
                   </span>
                 </div>
-                <div className="fw-bold text-small" style={{ lineHeight: 1.5 }}>{c.title}</div>
+                <div className="fw-bold text-small clamp2" style={{ lineHeight: 1.45 }}>{c.title}</div>
                 <div className="text-xs text-muted">{c.authors}</div>
-                <p className="text-xs clamp2" style={{ color: 'var(--ink-2)' }}>{c.abstract}</p>
+                <p className="text-xs clamp2" style={{ color: 'var(--ink-2)', margin: 0 }}>{c.abstract}</p>
                 <div className="row g-1 wrap" style={{ marginTop: 'auto' }}>
                   <span className="tag tag-gray"><Icon name="cpu" size={11} /> {c.framework}</span>
                   <span className="tag tag-gray">{c.gpu}</span>
@@ -224,7 +224,7 @@ export default function Reproduce() {
                 </div>
                 {active && (
                   <div className="text-xs" style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Icon name="check" size={12} /> 已选定 · <span className="mono">{c.codeUrl}</span>
+                    <Icon name="check" size={12} /> 已选定 · <span className="mono ellipsis">{c.codeUrl}</span>
                   </div>
                 )}
               </div>

@@ -23,7 +23,7 @@ export default function Writing() {
   const [ms, setMs] = useState<any>(null);
   const [content, setContent] = useState('');
   const [saved, setSaved] = useState(true);
-  const [tool, setTool] = useState<Tool>('polish');
+  const [tool, setTool] = useState<Tool>('translate');
   const [input, setInput] = useState('');
   const [result, setResult] = useState<any>(null);
   const [busy, setBusy] = useState(false);
@@ -69,15 +69,15 @@ export default function Writing() {
     } finally { setBusy(false); }
   };
 
-  /* 首次进入：默认载入示例文本，并自动演示当前工具（学术润色），开箱即见效果 */
+  /* 首次进入：默认载入示例文本，并自动演示当前工具（中英互译），开箱即见效果 */
   useEffect(() => {
     if (booted.current) return;
     booted.current = true;
-    setInput(EXAMPLES.polish);
+    setInput(EXAMPLES.translate);
     (async () => {
       setBusy(true);
       try {
-        setResult(await api('/writing/polish', { method: 'POST', body: { text: EXAMPLES.polish, style: 'academic', target: 'ACM MM' } }));
+        setResult(await api('/writing/translate', { method: 'POST', body: { text: EXAMPLES.translate, direction: 'en2zh' } }));
       } catch { /* 演示环境异常时静默，保留示例文本 */ } finally { setBusy(false); }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

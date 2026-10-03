@@ -17,6 +17,9 @@ type DpResult = { kind: string; title: string; spec: any; design_mode?: string }
 
 const MAX_TEMPLATES = 3;
 
+/* 生图模型列表（Implement 阶段渲染引擎可选，默认 gpt-image-2） */
+const IMAGE_MODELS = ['gpt-image-2', 'gpt-image-1', 'dall-e-3', 'flux-1.1-pro', 'stable-diffusion-3.5', 'seedream-4.0'];
+
 /* 矢量管线图渲染（Implement 降级通道：diagram spec → SVG，可导出） */
 function DiagramRender({ spec }: { spec: any }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -109,7 +112,7 @@ function CircularProgress({ value, failed }: { value: number; failed?: boolean }
 export default function FigureStudio() {
   const toast = useToast();
   const [templates, setTemplates] = useState<DpTemplate[]>([]);
-  const [kind, setKind] = useState<Kind>('diagram');
+  const [kind, setKind] = useState<Kind>('plot');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [pane, setPane] = useState<Pane>('templates');
@@ -121,6 +124,7 @@ export default function FigureStudio() {
   const [fidelity, setFidelity] = useState('balanced');
   const [strength, setStrength] = useState('high');
   const [custom, setCustom] = useState('');
+  const [imgModel, setImgModel] = useState('gpt-image-2');
 
   /* 运行态 */
   const [running, setRunning] = useState(false);
@@ -157,7 +161,7 @@ export default function FigureStudio() {
       setRunning(true); setPercent(0); setStage('排队中'); setLogs([]); setDiagnosis(null); setResult(null); setHasJob(true); setPane('result');
       const r = await api<{ job_id: string; task_id: string }>('/dreampaper/jobs', {
         method: 'POST',
-        body: { mode: 'paper_figure', payload: { title, method, template_ids: selected, aspect_ratio: ratio, layout_fidelity: fidelity, style_strength: strength, custom } },
+        body: { mode: 'paper_figure', payload: { title, method, template_ids: selected, aspect_ratio: ratio, layout_fidelity: fidelity, style_strength: strength, custom, image_model: imgModel } },
       });
       taskStream(r.task_id, {
         onProgress: (d) => {
@@ -189,7 +193,7 @@ export default function FigureStudio() {
       setRunning(false);
       toast(err.message || '提交失败', 'err');
     }
-  }, [title, method, selected, ratio, fidelity, strength, custom, toast]);
+  }, [title, method, selected, ratio, fidelity, strength, custom, imgModel, toast]);
 
   const ready = Boolean(title.trim() && method.trim() && selected.length > 0);
 
@@ -247,7 +251,14 @@ export default function FigureStudio() {
             </div>
           </div>
           <footer className="fx-card-foot">
-            <span className="fx-foot-note">已选 {selected.length}/{MAX_TEMPLATES}</span>
+            <div className="fx-foot-side">
+              <span className="fx-foot-note">已选 {selected.length}/{MAX_TEMPLATES}</span>
+              <select className="fx-mini" value={imgModel} onChange={(e) => setImgModel(e.target.value)} aria-label="生图模型">
+                {IMAGE_MODELS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
             <button type="button" className="fx-primary" disabled={!ready || running} onClick={submit}>
               {running ? <span className="fx-spin" /> : <Icon name="spark" size={14} />}
               {running ? '生成中…' : '生成'}

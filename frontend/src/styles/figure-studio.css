@@ -122,6 +122,13 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+.fx-foot-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.fx-foot-side .fx-mini { max-width: 190px; }
 
 /* ---------- 分段 Tab ---------- */
 .fx-seg {
