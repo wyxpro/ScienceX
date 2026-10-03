@@ -3,6 +3,7 @@
  * 将 DeepSeek-Flash 的原生流式推演（含 Thinking 链）无缝转换为 ScienceX 前端所需的标准 SSE 事件
  */
 const { client } = require('./client');
+const { errorPayload } = require('./resilience');
 
 /**
  * 将 DeepSeek 流接入 Express SSE 响应
@@ -68,15 +69,13 @@ async function pipeDeepSeekToSSE(res, {
       onDone: (finalResult) => {
         send('done', {
           message_id: messageId,
-          tokens: finalResult.usage?.total_tokens || Math.round(finalResult.text.length * 0.7),
+          tokens: finalResult.usage?.total_tokens ?? (Number.isFinite(finalResult.usage?.prompt_tokens) && Number.isFinite(finalResult.usage?.completion_tokens) ? finalResult.usage.prompt_tokens + finalResult.usage.completion_tokens : null),
           model,
           agent_mode: agentMode,
           has_reasoning: Boolean(finalResult.reasoning),
         });
       },
-      onError: (err) => {
-        send('error', { message: err.message || '模型推演中断' });
-      },
+
     }, {
       model,
       temperature,
@@ -86,7 +85,7 @@ async function pipeDeepSeekToSSE(res, {
     return result;
   } catch (err) {
     if (!res.writableEnded) {
-      send('error', { message: err.message || '模型请求失败' });
+      send('error', errorPayload(err));
     }
     throw err;
   } finally {

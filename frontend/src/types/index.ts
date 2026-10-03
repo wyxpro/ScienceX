@@ -127,7 +127,9 @@ export interface CitationReference {
   doc_id?: string;
   title?: string;
   chunk_id?: string;
-  page?: number;
+  page?: number | null;
+  section?: string;
+  page_verified?: boolean;
   snippet?: string;
   score?: number;
 }
@@ -403,6 +405,7 @@ export type SSEEventName =
   | 'tool_call'
   | 'tool_result'
   | 'memory_injected'
+  | 'fallback'
   | 'error'
   | 'done';
 
@@ -460,7 +463,7 @@ export interface SSEDonePayload {
 
 export interface SSEErrorPayload {
   message?: string;
-  code?: number;
+  code?: number | string;
   retryable?: boolean;
   degraded?: boolean;
   [key: string]: any;
@@ -478,7 +481,7 @@ export type SSEEvent =
   | { event: 'thought'; data: ThoughtStep }
   | { event: 'tool_call' | 'tool_result'; data: SSEToolPayload }
   | { event: 'memory_injected'; data: NonNullable<ChatMessage['memory_injected']> }
-  | { event: 'error'; data: SSEErrorPayload }
+  | { event: 'error' | 'fallback'; data: SSEErrorPayload }
   | { event: 'done'; data: SSEDonePayload };
 
 /** 文献问答消息（docChatStream 入参） */

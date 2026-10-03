@@ -7,11 +7,25 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test test/api.test.js test/ai.test.js"
+    "test": "node --require ./test/env.cjs --test test/api.test.js test/ai.test.js test/ai-services.test.js",
+    "eval:ai": "node eval/run.js"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "fast-xml-parser": "^5.11.2",
+    "pino": "^9.14.0",
+    "rate-limiter-flexible": "^5.0.5",
+    "redis": "^4.7.1",
+    "swagger-jsdoc": "^6.3.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "c8": "^10.1.3"
   }
 }

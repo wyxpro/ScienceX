@@ -9,6 +9,8 @@ interface UsageData {
     total_calls: number;
     total_cost: number | string;
     period_days: number;
+    unpriced_calls?: number;
+    unreported_calls?: number;
   };
   by_day: Array<{ date: string; tokens: number; calls?: number; cost?: number }>;
   by_model: Array<{ model: string; tokens: number; calls: number; cost: number | string }>;
@@ -49,9 +51,10 @@ export const UsageSection: React.FC<UsageSectionProps> = ({
 
   return (
     <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="text-xs text-muted" role="status">未定价调用：{usage?.summary.unpriced_calls || 0} 次；未上报 Token：{usage?.summary.unreported_calls || 0} 次。未知费用未计入总额。</div>
       <div className="row-between wrap g-2">
         <span className="text-xs text-muted">
-          <Icon name="clock" size={12} /> 统计口径：最近 {range} 天的模型调用与费用，数据每日 00:00 归档
+          <Icon name="clock" size={12} /> 统计口径：最近 {range} 天的真实调用；费用按配置单价估算（人民币），不含演示模板
         </span>
         <div className="row g-1">
           {[7, 30, 90].map((d) => (

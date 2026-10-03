@@ -27,6 +27,8 @@ jobs:
         run: npm ci --prefix frontend
       - name: Backend tests
         run: npm test --prefix backend
+      - name: AI template quality regression
+        run: node backend/eval/run.js --check
       - name: Frontend typecheck
         run: npm run typecheck --prefix frontend
       - name: Frontend lint

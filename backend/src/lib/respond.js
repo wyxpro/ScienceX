@@ -47,7 +47,7 @@ function fail(res, httpStatus, code, message, details) {
 }
 
 const errors = {
-  param: (res, msg = '参数校验失败') => fail(res, 400, 40001, msg),
+  param: (res, msg = '参数校验失败') => fail(res, 400, 40011, msg),
   notFound: (res, msg = '资源不存在') => fail(res, 404, 40003, msg),
   forbidden: (res, msg = '无权限访问该资源') => fail(res, 403, 40009, msg),
   unauthorized: (res, msg = 'Token 已失效，请重新登录') => fail(res, 401, 40101, msg),

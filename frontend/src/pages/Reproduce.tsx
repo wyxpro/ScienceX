@@ -221,7 +221,7 @@ export default function Reproduce() {
       setRunning(false);
       setFinished(true);
       setHistory((h) => [{ title: `${picked.venue} ${picked.year} · ${picked.codeUrl.split('/')[1]} 复现`, at: new Date().toISOString().slice(0, 10), ok: true }, ...h]);
-      toast('复现流水线执行完成，指标已对齐', 'ok');
+      toast('演示流程完成，示例指标不代表真实实验', 'ok');
     }, t + 300));
   };
 
@@ -243,7 +243,7 @@ export default function Reproduce() {
           </p>
         </div>
         <div className="row g-1 wrap" style={{ flex: 'none' }}>
-          <Tag color="green"><Icon name="check" size={11} /> 沙箱隔离执行</Tag>
+          <Tag color="green"><Icon name="check" size={11} /> 演示流程 · 未执行代码</Tag>
           <Tag color="blue"><Icon name="db" size={11} /> 产物归档项目库</Tag>
           <Tag color="gold"><Icon name="clock" size={11} /> 支持断点续跑</Tag>
         </div>
@@ -321,7 +321,7 @@ export default function Reproduce() {
           </div>
         </div>
 
-        {/* 右：实时执行日志 */}
+        {/* 右：演示日志 */}
         <div className="card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 380 }}>
           <div className="row-between" style={{ padding: '11px 16px', borderBottom: '1px solid var(--line)' }}>
             <span className="fw-bold text-small"><Icon name="terminal" size={14} /> 执行日志</span>

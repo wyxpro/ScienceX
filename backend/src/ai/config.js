@@ -7,6 +7,7 @@ const fs = require('fs');
 
 // 优先加载 .env 文件（支持 Node 20+ 的 process.loadEnvFile 与轻量自解析回退）
 function loadEnvironment() {
+  if (process.env.SCIENCEX_SKIP_ENV_FILE === 'true') return;
   const envCandidates = [
     path.resolve(__dirname, '../../.env'),
     path.resolve(__dirname, '../../../.env'),
@@ -49,7 +50,7 @@ const config = {
   // Sophnet / DeepSeek 基础端点
   baseUrl: (process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://www.sophnet.com/api/open-apis/v1').replace(/\/+$/, ''),
   apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '',
-  model: process.env.DEEPSEEK_MODEL || 'DeepSeek-Flash',
+  model: process.env.DEEPSEEK_MODEL || process.env.OPENAI_MODEL || 'DeepSeek-Flash',
   modelDisplayName: 'DeepSeek V4.1 Flash',
   timeoutMs: Number(process.env.DEEPSEEK_TIMEOUT_MS || process.env.OPENAI_TIMEOUT_MS || 45000),
 
@@ -63,7 +64,7 @@ const config = {
     loadEnvironment();
     this.baseUrl = (process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://www.sophnet.com/api/open-apis/v1').replace(/\/+$/, '');
     this.apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '';
-    this.model = process.env.DEEPSEEK_MODEL || 'DeepSeek-Flash';
+    this.model = process.env.DEEPSEEK_MODEL || process.env.OPENAI_MODEL || 'DeepSeek-Flash';
   }
 };
 

@@ -3,16 +3,18 @@ const crypto = require('crypto');
 const SCRYPT_PREFIX = 'scrypt';
 const ACCESS_TTL_MS = 7 * 86400000;
 const REFRESH_TTL_MS = 30 * 86400000;
+require('../ai/config'); // 所有入口先加载环境配置，再派生密钥和检查生产配置。
 const configuredMasterKey = process.env.SCIENCEX_MASTER_KEY || '';
 const masterKey = crypto.createHash('sha256').update(configuredMasterKey || 'sciencex-development-key-change-me').digest();
 
 function assertProductionConfig() {
-  if (process.env.NODE_ENV === 'production' && configuredMasterKey.length < 32) {
-    // 生产环境未配置密钥时不再崩溃：回退演示密钥并告警，保证服务可用（serverless 部署场景）。
-    // 令牌签名与密钥加密仍可用（与开发环境同一回退密钥）；正式上线请在平台配置 SCIENCEX_MASTER_KEY。
-    console.warn('[ScienceX 安全提醒] 未配置 SCIENCEX_MASTER_KEY（至少 32 字符），已回退演示密钥。请在部署平台的环境变量中配置该项。');
+  if (process.env.NODE_ENV === 'production' && (configuredMasterKey.trim().length < 32 ||
+      ['sciencex-development-key-change-me', 'replace-with-a-long-random-secret'].includes(configuredMasterKey))) {
+    throw new Error('生产环境必须配置 SCIENCEX_MASTER_KEY（至少 32 字符的随机密钥），拒绝使用开发或示例密钥');
   }
 }
+
+assertProductionConfig();
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');

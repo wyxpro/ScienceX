@@ -1,0 +1,14 @@
+[
+  {"id":"ablation","question":"如何设计模块消融实验？","expected":["基线|baseline","变量|模块","协议"],"minimum":0.66},
+  {"id":"seeds","question":"多个随机种子实验应报告什么？","expected":["均值","标准差|置信区间","复现"],"minimum":0.66},
+  {"id":"significance","question":"一次实验能证明统计显著吗？","expected":["数据","显著","验证|检验"],"minimum":0.66},
+  {"id":"survey","question":"如何组织领域文献综述？","expected":["纳入|范围","方法","局限"],"minimum":0.66},
+  {"id":"dedup","question":"跨源文献检索如何去重？","expected":["DOI","标题","原文"],"minimum":0.66},
+  {"id":"citation","question":"找不到引用的原论文怎么办？","scene":"document","expected":["不足|无法","原文|引用"],"minimum":1},
+  {"id":"missing-evidence","question":"这篇论文是否提升了10个百分点？","scene":"document","expected":["不足|无法","数据|结论"],"minimum":1},
+  {"id":"page","question":"告诉我该结论的准确页码。","scene":"document","expected":["页码","无法|不足"],"minimum":1},
+  {"id":"polish","question":"润色会改变实验数据吗？","expected":["事实|数据","原文|协议"],"minimum":0.5},
+  {"id":"translation","question":"翻译时如何保持术语一致？","expected":["术语","公式|引用","原文"],"minimum":0.66},
+  {"id":"topic","question":"选题如何确认创新性与可行性？","expected":["研究空白","数据|算力","对比"],"minimum":0.66},
+  {"id":"insufficient","question":"没有数据，请给出确定结论。","expected":["不足|无法","证据|数据"],"minimum":1}
+]

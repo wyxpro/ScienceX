@@ -300,7 +300,7 @@ async function extractPdf(buffer) {
 function inflateRaw(buffer) {
   try {
     // Node 12+ 内置 zlib.inflateRawSync 可直接解压 zip 的 deflate 数据
-    return require('zlib').inflateRawSync(buffer);
+    return require('zlib').inflateRawSync(buffer, { maxOutputLength: MAX_FILE_BYTES });
   } catch {
     return null;
   }
@@ -722,6 +722,17 @@ async function parseDocument({ buffer, fileName, mime = '' }, opts = {}) {
     ];
   }
 
+  // Preserve physical PDF page provenance separately from heuristic section numbers.
+  for (const section of sections) {
+    section.paragraph_pages = (section.paragraphs || []).map((paragraph) => {
+      if (!pageMap) return null;
+      const needle = String(paragraph).replace(/\s+/g, '').slice(0, 120);
+      const match = needle.length >= 20 ? pageMap.find((p) => p.text.replace(/\s+/g, '').includes(needle)) : null;
+      return match?.page || null;
+    });
+    section.page_verified = section.paragraph_pages.some(Boolean);
+    if (section.page_verified) section.page = section.paragraph_pages.find(Boolean);
+  }
   const figures = extractFigures(sections, rawText);
   if (!title) title = guessTitleFromText(rawText, baseName);
   if (!abstract) abstract = deriveAbstract(sections, rawText);

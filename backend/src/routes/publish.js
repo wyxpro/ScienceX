@@ -1,5 +1,5 @@
 /** 投稿助手 / 组会汇报 / 专家评审团 / 项目与课题组 —— REQ-SUB-01, REQ-SPC-01/02, REQ-PRJ-01 */
-const express = require('express');
+
 const store = require('../lib/store');
 const { ok, errors, asyncHandler } = require('../lib/respond');
 const ai = require('../lib/ai');
@@ -7,7 +7,7 @@ const aiModule = require('../ai');
 const { auth } = require('./account');
 const { canAccess, canAccessTeam, canManageTeam } = require('../lib/access');
 
-const router = express.Router();
+const router = require('../lib/router').createRouter();
 
 /* ---------- CCF 期刊大全 REQ-SUB-01 ---------- */
 router.get('/journals', auth, (req, res) => {

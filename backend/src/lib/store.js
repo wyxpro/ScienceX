@@ -896,18 +896,18 @@ function hydrate() {
       }
     }
   } catch (error) {
-    console.warn('[ScienceX Store] 持久化数据读取失败，将使用内置演示数据:', error.message);
+    throw new Error('持久化数据读取失败，停止启动以免覆盖已有数据', { cause: error });
   }
 }
 
-function persist() {
-  try {
-    fs.mkdirSync(dataDir, { recursive: true });
-    const tempFile = `${dataFile}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(persistedCollections, null, 2), 'utf8');
-    fs.renameSync(tempFile, dataFile);
-  } catch (error) {
-    console.warn('[ScienceX Store] 持久化数据写入失败:', error.message);
+const persistence = require('./persistence').createPersistence(dataFile, () => persistedCollections);
+const persist = persistence.persist;
+const flush = persistence.flush;
+
+// 静态目录数据打标；用户导入与真实模型生成的内容保留各自来源。
+for (const collection of [gpuNodes, journals, literaturePool, sotaLeaderboard, skills, mcpServers, papersDaily, recentOutputs]) {
+  for (const item of Array.isArray(collection) ? collection : Object.values(collection)) {
+    if (item && typeof item === 'object') item.source = 'demo';
   }
 }
 
@@ -918,5 +918,5 @@ module.exports = {
   projects, teams, knowledgeBases, experiments, gpuNodes, sotaLeaderboard, charts,
   chartTemplates, journals, submissionTracks, manuscripts, reviewReports, adviceRecords,
   skills, mcpServers, usageRecords, orders, subscription, plans, auditLogs, papersDaily,
-  recentOutputs, tasks, researchMemories, id, now, daysAgo, daysAhead, persist,
+  recentOutputs, tasks, researchMemories, id, now, daysAgo, daysAhead, persist, flush,
 };

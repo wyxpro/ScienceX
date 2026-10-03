@@ -6,33 +6,15 @@ const store = require('./store');
 const gateway = require('./model-gateway');
 
 /** 根据用户输入生成模拟回答（Markdown 格式） */
-function generateReply(messages, scene = 'workbench', user = null) {
-  const lastUser = [...messages].reverse().find((m) => m.role === 'user');
-  const q = (lastUser && lastUser.content) || '';
-  const lower = q.toLowerCase();
-
-  if (scene === 'document') {
-    return `根据这篇论文的内容，针对你的问题「${q.slice(0, 40)}」：\n\n论文相关章节指出，AU 先验与光流引导是微表情识别的两类关键结构偏置，二者作用互补——AU 分支贡献约 **6.8 UF1 点**，光流质量差异约 **3.2 点**。作者在消融实验中使用了严格的 LOSO 协议与 5 个随机种子。\n\n**延伸思考**：如果将其迁移到你的 up 系列模型，可以优先尝试跨层注入（而非单点融合），这也与综述 (TPAMI 25) 中"AU 注入方式决定增益上限"的结论一致。`;
-  }
-
-  if (lower.includes('选题') || lower.includes('方向') || lower.includes('topic')) {
-    return `结合你的研究方向（微表情识别 / 情感计算 / Transformer），我建议关注以下选题：\n\n1. **跨层 AU 交互机制** ⭐ 推荐度 92%\n   - 与你 up9 的 AU 分支直接衔接，文献支撑充分（AUFormer、GraphAU）\n   - 风险：与现有工作需拉开差异，建议聚焦"跨层"而非"单点融合"\n\n2. **扩散模型数据增广缓解类别不均衡** ⭐ 推荐度 85%\n   - CASME II 长尾类（fear/disgust）样本 <30，痛点明确\n   - 可参考 Diffusion ME Synthesis (CVPR 25) 的合成策略\n\n3. **跨数据集域适应** ⭐ 推荐度 78%\n   - 综述指出跨数据集性能下降 12-20 点，学术价值高\n   - 工作量偏大，适合作为第二篇\n\n需要我对某个方向做**可行性评估**或直接生成**开题报告**吗？你可以直接在「选题灵感」页操作。`;
-  }
-
-  if (lower.includes('综述') || lower.includes('survey') || lower.includes('review')) {
-    return `综述撰写建议（以「微表情识别」为例）：\n\n## 结构骨架\n1. **背景与挑战**（数据稀缺 / 类别不均衡 / 跨域泛化）\n2. **数据集与协议**（SMIC / CASME II / SAMM + LOSO 规范）\n3. **方法演进**（手工特征 → CNN-RNN → Transformer+AU 先验）\n4. **统一评测对比**（同协议复现表格是综述的核心价值）\n5. **开放问题与展望**\n\n## 写作要点\n- 用时间轴图呈现方法演进，避免流水账式罗列\n- 对比表必须统一协议口径，标注 LOSO / hold-out\n- 每个方法指出其"结构偏置"：AU 先验、光流、时序对比学习等\n\n我可以在「选题灵感 → 综述生成」中为你生成带引用的完整草稿。`;
-  }
-
-  if (lower.includes('实验') || lower.includes('消融') || lower.includes('ablation')) {
-    return `针对实验设计的建议：\n\n## 消融实验设计\n| 配置 | AU 分支 | 跨层交互 | 光流增强 | 目的 |\n| --- | --- | --- | --- | --- |\n| baseline | ✓ | ✗ | ✗ | 基线 |\n| +cross-attn | ✓ | ✓ | ✗ | 验证跨层交互 |\n| +flow-boost | ✓ | ✓ | ✓ | 验证光流增强 |\n\n## 注意事项\n- **随机种子**：至少 3 个（7/13/42），报告均值 ± 标准差\n- **协议一致**：全部使用 LOSO，与 SOTA 对比需同口径\n- **记录规范**：每次运行记录 lr / batch / epochs / seed，可在「实验设计 → 参数看板」沉淀\n\n你当前 up9+cross-attn 的 UF1=0.6892，相比 baseline 提升 4.28 点（+6.6%），趋势健康。`;
-  }
-
-  if (lower.includes('润色') || lower.includes('翻译') || lower.includes('polish')) {
-    return `我可以帮你完成学术写作的多个环节：\n\n- **学术润色**：优化语法、逻辑与学术表达，支持指定期刊风格\n- **中英互译**：段落级双向翻译，自动对齐学术术语\n- **AI 查重**：相似度检测 + 重复片段定位\n- **AI 降重**：保义改写，附前后对比\n\n请直接在「论文写作」页粘贴文本操作，或把要润色的段落发给我。`;
-  }
-
-  const researchTag = user?.research_tags?.[0] || '你的研究方向';
-  return `关于「${q.slice(0, 60)}」，我的分析如下：\n\n**核心要点**\n- 这是一个与${researchTag}相关的科研问题，建议先界定问题边界与评价指标\n- 从文献看，该方向的成熟方案多采用结构先验 + 深度模型的组合思路\n- 建议优先复现 1-2 个代表性 baseline，在统一协议下再讨论创新点\n\n**建议的下一步**\n1. 在「选题灵感」检索相关文献，确认研究空白\n2. 在「文献阅读」精读 3 篇代表作，生成思维导图对比方法差异\n3. 在「实验设计」生成消融方案并记录参数\n\n需要我调用「文献综述生成」技能深入展开吗？`;
+function generateReply(messages, scene = 'workbench') {
+  const q = String([...messages].reverse().find((m) => m.role === 'user')?.content || '');
+  const prefix = '> 演示模板：未调用真实模型，以下仅为通用方法建议。\n\n';
+  if (scene === 'document') return prefix + '文档当前片段信息不足，无法确认问题中的结论、数据或页码。请检查原文和检索引用片段，配置模型后重试。';
+  if (/实验|消融|种子|方差|ablation|显著/i.test(q)) return prefix + '实验设计建议：\n1. 固定数据集、训练预算和评价协议，建立 baseline 基线。\n2. 单独移除各模块进行消融，避免多个变量一起变化。\n3. 使用多个随机种子，报告均值、标准差或置信区间；统计显著性需要真实实验数据验证。\n4. 区分相对提升与百分点，保留失败结果和运行配置以便复现。';
+  if (/综述|文献|survey|review|检索/i.test(q)) return prefix + '文献综述建议：明确检索范围与纳入标准，使用真实来源，按 DOI 和标题去重；按方法演进组织综述，比较数据集、评价协议及局限。所有引用都需核对原文，不能凭空编造论文和实验指标。';
+  if (/润色|翻译|polish|translation/i.test(q)) return prefix + '请提供原文与目标语言。润色和翻译必须保留事实、数据、术语、公式和引用；不能增加未证实的结论。模型尚不可用，因此未生成可作为正式译文的结果。';
+  if (/选题|方向|topic/i.test(q)) return prefix + '选题建议：界定研究问题，检索真实文献确认研究空白；检查数据、算力、时间等可行性，明确 baseline 基线和评价指标。创新性需要与已有方法进行证据充分的对比，不能仅依据题目判断。';
+  return prefix + '建议先界定研究问题和可用证据，核对数据与评价协议，再制定可复现的验证方案。当前信息不足，无法确认具体结论；请补充原文、数据或实验记录。';
 }
 
 /** 优先调用已配置的 OpenAI 兼容网关，没有密钥时保留本地演示回退。 */
@@ -45,26 +27,17 @@ async function generateResponse(messages, { scene = 'workbench', model, signal, 
     throw error;
   }
   try {
-    const remote = await gateway.complete(messages, { model, signal, userId });
+    const remote = await gateway.complete(messages, { model, signal, userId, scene });
     if (remote) {
-      if (userId && remote.usage) {
-        const promptTokens = Number(remote.usage.prompt_tokens) || 0;
-        const completionTokens = Number(remote.usage.completion_tokens) || 0;
-        store.usageRecords.unshift({
-          id: store.id('usage'), owner_id: userId, date: store.now().slice(0, 10),
-          scene, model: remote.model, prompt_tokens: promptTokens, completion_tokens: completionTokens,
-          calls: 1, cost: 0, source: 'gateway',
-        });
-      }
       return remote;
     }
   } catch (error) {
-    if (model) throw error;
+    if (signal?.aborted || model) throw error;
     console.warn('[ScienceX AI] 模型网关调用失败，回退到演示生成器:', error.message);
   }
   const user = userId ? store.users.find((item) => item.id === userId) : null;
   const text = generateReply(messages, scene, user);
-  return { text, model: model || 'sim-model', usage: { total_tokens: Math.round(text.length * 0.7) }, fallback: true };
+  return { text, model: model || 'sim-model', usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }, fallback: true };
 }
 
 /** 模拟生成图表的提示词模板（image2 生成通道的替代演示） */
@@ -91,7 +64,7 @@ function sseStream(res, { onDelta, onEvent, totalDelay = 1600, chunkCount = 40, 
 }
 
 /** 模拟逐字流式输出一段 Markdown 文本 */
-async function streamText(res, text, { onDone, beforeStream, model = 'sim-model' } = {}) {
+async function streamText(res, text, { onDone, beforeStream, model = 'sim-model', fallback = model === 'sim-model', retrieval, usage } = {}) {
   sseStream(res);
   const messageId = store.id('msg');
   let closed = false;
@@ -103,7 +76,8 @@ async function streamText(res, text, { onDone, beforeStream, model = 'sim-model'
   };
   res.on('close', onClose);
   try {
-    sendWithId('start', { message_id: messageId, model });
+    sendWithId('start', { message_id: messageId, model, fallback, mode: fallback ? 'fallback' : 'live', retrieval });
+    if (fallback) sendWithId('fallback', { code: 'MODEL_UNAVAILABLE', degraded: true, retryable: true, message: '已降级为演示模板' });
     if (beforeStream) beforeStream(sendWithId);
 
     // 按 2~5 个字符切分为 token 块
@@ -120,9 +94,10 @@ async function streamText(res, text, { onDone, beforeStream, model = 'sim-model'
       sendWithId('delta', { text: c });
       await sleep(perChunk);
     }
-    const tokens = Math.round(text.length * 0.7);
+    const tokens = Number.isFinite(usage?.prompt_tokens) && Number.isFinite(usage?.completion_tokens)
+      ? usage.prompt_tokens + usage.completion_tokens : null;
     if (closed || res.writableEnded) return false;
-    sendWithId('done', { message_id: messageId, tokens, ...onDone });
+    sendWithId('done', { message_id: messageId, tokens: fallback ? 0 : tokens, usage_status: tokens === null ? 'unreported' : 'reported', fallback, mode: fallback ? 'fallback' : 'live', ...onDone });
     res.end();
     return true;
   } finally {
@@ -155,11 +130,12 @@ function createTask(type, stages, resultBuilder, ownerId = null) {
       task.percent = 100;
       task.result = await resultBuilder(task);
       task.status = 'done';
+      await store.persist();
       publishTaskEvent(task, 'done');
     } catch (error) {
       task.status = 'failed';
       task.error = '任务执行失败';
-      console.error('[ScienceX Task]', { task_id: task.id, message: error?.message || String(error) });
+      require('./logger').getLogger().error({ event: 'task_failed', task_id: task.id, err: error });
       publishTaskEvent(task, 'error');
     }
   })();

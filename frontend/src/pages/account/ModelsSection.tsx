@@ -21,7 +21,7 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
     <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className="row-between">
         <span className="text-xs text-muted">
-          内置模型（平台托管）与自定义模型（OpenAI 兼容协议接入）
+          内置模型（平台托管）与自定义模型（OpenAI / Anthropic / Gemini / Ollama）
         </span>
         <button
           className="btn btn-primary btn-sm"

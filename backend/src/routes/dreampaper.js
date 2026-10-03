@@ -8,7 +8,7 @@
  * 降级策略：ScienceX 网关仅支持文本 chat 协议，无图像生成端点 ——
  *  Implement 阶段产出矢量 spec（diagram / plot / deck），由前端 SVG/图表组件渲染，可导出 SVG 与 JSON。
  */
-const express = require('express');
+
 const store = require('../lib/store');
 const ai = require('../lib/ai');
 const { ok, errors } = require('../lib/respond');
@@ -16,7 +16,7 @@ const { auth } = require('./account');
 const gateway = require('../lib/model-gateway');
 const dp = require('../lib/dp-prompts');
 
-const router = express.Router();
+const router = require('../lib/router').createRouter();
 
 /* ---------- 模板库（对应 DreamPaper TemplateStore / PaperBananaBench 元数据，演示内置） ---------- */
 const dpTemplates = [

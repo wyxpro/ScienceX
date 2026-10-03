@@ -10,103 +10,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 type Tab = 'search' | 'recommend' | 'feasibility' | 'proposal' | 'review';
 
 /* 默认论文列表（微表情识别 Transformer） */
-const DEFAULT_PAPERS = [
-  {
-    id: 'lit1',
-    title: 'Micro-expression Recognition: A Survey of Trends, Methods and Challenges',
-    authors: 'Li Y., Wei J., et al.',
-    venue: 'IEEE TPAMI',
-    year: 2025,
-    citations: 12,
-    has_code: false,
-    doi: '10.1109/TPAMI.2025.0012345',
-    source: 'OpenAlex',
-    abstract: '系统梳理 MER 2010-2025 的数据集、方法与挑战，统一 LOSO 协议复现 14 种代表方法。',
-    relevance: 0.96,
-  },
-  {
-    id: 'lit2',
-    title: 'AU-aware Transformer with Optical Flow Guidance for MER',
-    authors: 'Wang X., Zhang Q., et al.',
-    venue: 'ACM MM',
-    year: 2024,
-    citations: 35,
-    has_code: true,
-    code_url: 'github.com/mer-lab/AUFormer',
-    doi: '10.1145/3664647.3664701',
-    source: 'Semantic Scholar',
-    abstract: 'AU 图编码 + RAFT 光流时序注意力，三数据集 LOSO 达到 SOTA 性能。',
-    relevance: 0.94,
-  },
-  {
-    id: 'lit3',
-    title: 'Diffusion-based Micro-expression Data Synthesis',
-    authors: 'Chen L., et al.',
-    venue: 'CVPR',
-    year: 2025,
-    citations: 8,
-    has_code: true,
-    code_url: 'github.com/diff-me/MEGen',
-    doi: '10.1109/CVPR.2025.00211',
-    source: 'arXiv',
-    abstract: '以扩散模型合成稀有类别微表情样本，缓解类别不均衡，CASME II 上 UF1 提升 4.2 点。',
-    relevance: 0.91,
-  },
-  {
-    id: 'lit4',
-    title: 'MER 2024: The Fifth Challenge on Micro-expression Recognition',
-    authors: 'Li Y., et al.',
-    venue: 'ACM MM Workshop',
-    year: 2024,
-    citations: 40,
-    has_code: true,
-    code_url: 'github.com/merchallenge/MER2024',
-    doi: '10.1145/3664647.3689012',
-    source: 'OpenAlex',
-    abstract: 'MER 系列挑战赛综述，提供统一评测平台与跨库泛化新基准指标。',
-    relevance: 0.88,
-  },
-  {
-    id: 'lit5',
-    title: 'Graph Reasoning over Action Units for Facial Behavior Analysis',
-    authors: 'Kumar A., et al.',
-    venue: 'IJCV',
-    year: 2024,
-    citations: 87,
-    has_code: false,
-    doi: '10.1007/s11263-024-01989-x',
-    source: 'Semantic Scholar',
-    abstract: 'AU 关系图推理的通用框架，可迁移至宏/微表情与 AU 动作单元协同检测。',
-    relevance: 0.85,
-  },
-  {
-    id: 'lit6',
-    title: 'Spatio-temporal Contrastive Pretraining for Micro-expression Analysis',
-    authors: 'Zhao H., et al.',
-    venue: 'T-AFFC',
-    year: 2025,
-    citations: 15,
-    has_code: false,
-    doi: '10.1109/TAFFC.2025.00112',
-    source: 'arXiv',
-    abstract: '自监督对比预训练缓解 MER 数据稀缺瓶颈，无需昂贵的 AU 手工细粒度标注。',
-    relevance: 0.83,
-  },
-  {
-    id: 'lit7',
-    title: 'Remote Physiological Signal Fusion for Emotion Recognition',
-    authors: 'Liu M., et al.',
-    venue: 'IEEE TBME',
-    year: 2023,
-    citations: 120,
-    has_code: true,
-    code_url: 'github.com/rppg-lab/fusion',
-    doi: '10.1109/TBME.2023.00456',
-    source: 'PubMed',
-    abstract: 'rPPG 远端生理信号与人脸微表情特征融合，显著增强情感识别鲁棒性。',
-    relevance: 0.74,
-  },
-];
+
 
 /* 默认选题推荐示例 */
 const DEFAULT_TOPICS = [
@@ -169,27 +73,29 @@ export default function Topic() {
   const isMobile = useIsMobile();
 
   /* 检索 —— 默认展开微表情识别 Transformer 列表 */
-  const ALL_SOURCES = ['arXiv', 'OpenAlex', 'Semantic Scholar', 'PubMed', '中文库'];
+  const ALL_SOURCES = ['arXiv', 'OpenAlex', 'Semantic Scholar'];
   const [query, setQuery] = useState('微表情识别 Transformer');
-  const [sources, setSources] = useState<string[]>(['arXiv', 'OpenAlex', 'Semantic Scholar', 'PubMed', '中文库']);
+  const [sources, setSources] = useState<string[]>(['arXiv', 'OpenAlex', 'Semantic Scholar']);
   const [hasCode, setHasCode] = useState(false);
   const [yearFrom, setYearFrom] = useState(2020);
-  const [results, setResults] = useState<any[] | null>(DEFAULT_PAPERS);
+  const [results, setResults] = useState<any[] | null>(null);
   const [searching, setSearching] = useState(false);
 
   const search = async () => {
+    if (!sources.length) return toast('请至少选择一个检索源', 'info');
     if (!query.trim()) return toast('请输入检索关键词', 'info');
     setSearching(true);
     try {
-      const r = await api<{ items: any[]; dedup_removed: number }>('/literature/search', {
+      const r = await api<{ items: any[]; dedup_removed: number; warnings?: Array<{ source: string; message: string }> }>('/literature/search', {
         method: 'POST',
         body: { query, sources, year_range: [yearFrom, 2026], has_code: hasCode },
       });
       setResults(r.items);
+      if (r.warnings?.length) toast(r.warnings.map((w) => `${w.source}: ${w.message}`).join('；'), 'info');
       toast(`检索完成：共 ${r.items.length} 篇，去重移除 ${r.dedup_removed} 条`);
     } catch {
-      // 容灾保持默认展示
-      setResults(DEFAULT_PAPERS);
+      setResults([]);
+      toast('文献检索失败，请稍后重试', 'err');
     } finally {
       setSearching(false);
     }
@@ -324,7 +230,7 @@ export default function Topic() {
                 </button>
               ))}
               <span className="text-xs text-muted" style={{ marginLeft: 6 }}>
-                ✅ 默认全源聚合 · 2020-2026 · 语义去重 · 论文列表已默认展开
+                真实 API 聚合 · DOI / arXiv ID / 标题去重 · 有代码仅表示源链接已验证
               </span>
             </div>
           </div>
@@ -349,7 +255,7 @@ export default function Topic() {
                       {p.title}
                     </div>
                     <div className="text-small text-muted mt-1">
-                      {p.authors} · <span className="text-serif" style={{ color: 'var(--brand-deep)', fontWeight: 600 }}>{p.venue}</span> {p.year} · 被引 {p.citations} · 相关性 {(p.relevance * 100).toFixed(0)}%
+                      {p.authors} · <span className="text-serif" style={{ color: 'var(--brand-deep)', fontWeight: 600 }}>{p.venue}</span> {p.year} · 被引 {p.citations} · 来源 {p.sources?.join(' / ')}
                     </div>
                     <p className="text-small mt-2 clamp2" style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>
                       {p.abstract}
@@ -374,7 +280,7 @@ export default function Topic() {
                     {p.has_code && (
                       <button
                         className="btn btn-ghost btn-sm"
-                        onClick={() => window.open(`https://${p.code_url}`, '_blank')}
+                        onClick={() => window.open(p.code_url, '_blank', 'noopener,noreferrer')}
                       >
                         <Icon name="link" size={13} /> 代码仓库
                       </button>

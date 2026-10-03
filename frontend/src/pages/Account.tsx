@@ -24,7 +24,7 @@ export default function Account() {
   /* 模型 */
   const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>({ builtin: [], custom: [] });
   const [addOpen, setAddOpen] = useState(false);
-  const [mForm, setMForm] = useState({ name: '', base_url: '', model_name: '', api_key: '', priority: 1 });
+  const [mForm, setMForm] = useState({ name: '', base_url: '', model_name: '', api_key: '', priority: 1, provider: 'openai' });
   const [testing, setTesting] = useState<string | null>(null);
   const [delTarget, setDelTarget] = useState<any>(null);
 
@@ -109,14 +109,16 @@ export default function Account() {
     const m = await api<any>('/models', { method: 'POST', body: mForm });
     setModels((x) => ({ ...x, custom: [...x.custom, m] }));
     setAddOpen(false);
-    setMForm({ name: '', base_url: '', model_name: '', api_key: '', priority: 1 });
+    setMForm({ name: '', base_url: '', model_name: '', api_key: '', priority: 1, provider: 'openai' });
     toast('自定义模型已添加');
   };
 
   const testModel = async (id: string) => {
     setTesting(id);
     try {
-      const r = await api<any>(`/models/${id}/test`);
+      const r = await api<any>(`/models/${id}/test`, { method: 'POST' });
+      if (!r.success) return toast(r.sample || '模型未配置', 'info');
+      setModels((x) => ({ ...x, custom: x.custom.map((m) => m.id === id ? { ...m, status: 'connected' } : m) }));
       toast(`连通正常 · ${r.latency_ms}ms`);
     } finally {
       setTesting(null);
@@ -255,6 +257,14 @@ export default function Account() {
       >
         <div className="field-label">显示名称</div>
         <input className="input mb-2" value={mForm.name} onChange={(e) => setMForm({ ...mForm, name: e.target.value })} placeholder="例：DeepSeek-V3" />
+        <div className="field-label">模型协议</div>
+        <select className="input mb-2" value={mForm.provider} onChange={(e) => setMForm({ ...mForm, provider: e.target.value })}>
+          <option value="openai">OpenAI 兼容 / DeepSeek / BGE</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="gemini">Gemini</option>
+          <option value="ollama">Ollama 本地模型</option>
+        </select>
+        <div className="text-xs text-muted mb-2">Base URL：OpenAI / Anthropic 使用 /v1，Gemini 使用 /v1beta，Ollama 使用服务根地址。</div>
         <div className="field-label">Base URL *</div>
         <input className="input mb-2" value={mForm.base_url} onChange={(e) => setMForm({ ...mForm, base_url: e.target.value })} placeholder="https://api.example.com/v1" />
         <div className="field-label">模型名 *</div>

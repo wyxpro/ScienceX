@@ -1,12 +1,12 @@
 /** 实验设计 / GPU / SOTA / 图表分析 / 论文写作 —— REQ-EXP-01/02, REQ-ANA-01/02, REQ-WRT-01 */
-const express = require('express');
+
 const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
 const ai = require('../lib/ai');
 const { auth } = require('./account');
 const { canAccess } = require('../lib/access');
 
-const router = express.Router();
+const router = require('../lib/router').createRouter();
 
 /* ---------- 实验 REQ-EXP-01 ---------- */
 router.get('/experiments', auth, (req, res) => {

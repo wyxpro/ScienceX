@@ -9,6 +9,7 @@ import type {
   DocChatMessage,
   PlanFlowData,
   SSEDonePayload,
+  SSEErrorPayload,
   SSEProgressPayload,
   SSEReferencePayload,
   SSEStartPayload,
@@ -287,7 +288,8 @@ export interface SSEHandlers {
   onReference?: (d: SSEReferencePayload) => void;
   onTool?: (d: SSEToolPayload) => void;
   onDone?: (d: SSEDonePayload) => void;
-  onError?: (msg: string) => void;
+  onError?: (msg: string, details?: SSEErrorPayload) => void;
+  onFallback?: (details: SSEErrorPayload) => void;
   /* LingXiAgent 多智能体扩展事件 */
   onPlan?: (data: PlanFlowData) => void;
   onStepStart?: (data: SSEStepPayload) => void;
@@ -492,8 +494,11 @@ async function readSSE(stream: ReadableStream<Uint8Array>, handlers: SSEHandlers
       case 'memory_injected':
         handlers.onMemoryInjected?.(data);
         break;
+      case 'fallback':
+        handlers.onFallback?.(data);
+        break;
       case 'error':
-        handlers.onError?.(data.message || '模型生成遇到异常');
+        handlers.onError?.(data.message || '模型生成遇到异常', data);
         break;
       case 'done':
         handlers.onDone?.(data);

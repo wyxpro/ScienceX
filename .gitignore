@@ -5,6 +5,7 @@ backend/.port
 *.log
 */node_modules/
 .pnpm-store/
+.npm-cache/
 **/pnpm-lock.yaml
 **/pnpm-workspace.yaml
 

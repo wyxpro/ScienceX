@@ -288,10 +288,11 @@ export default function Chat() {
           setStreaming(false);
           api<any>('/conversations').then((r: any) => setConvs(r?.items || (Array.isArray(r) ? r : [])));
         },
-        onError: (msg) => {
-          toast(msg, 'err');
+        onFallback: (details) => toast(details.message || '已降级为演示模板', 'info'),
+        onError: (msg, details) => {
+          toast(`${msg}${details?.retryable ? '，可稍后重试' : ''}`, 'err');
           setStreaming(false);
-          setMessages((m) => m.filter((x) => x.id !== aiMsg.id));
+          setMessages((m) => m.map((x) => x.id === aiMsg.id ? { ...x, streaming: false, content: x.content + '\n\n> 生成中断：' + msg } : x));
         },
       }
     );

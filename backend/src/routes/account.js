@@ -1,13 +1,26 @@
 /** 认证 / 用户 / 模型管理 / 计费 / 安全 —— REQ-USER-01~05, REQ-CHAT-02 */
-const express = require('express');
+
 const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
 const { ACCESS_TTL_MS, REFRESH_TTL_MS, createSignedToken, verifySignedToken, hashPassword, verifyPassword, parseBearer, encryptSecret } = require('../lib/security');
 const gateway = require('../lib/model-gateway');
 const ai = require('../lib/ai');
 const { canAccess } = require('../lib/access');
+const { rateLimit } = require('../lib/rate-limit');
+const authenticatedLimits = new Map();
+function continueAuthenticated(req, res, next) {
+  const route = req.route.path;
+  const scope = route === '/chat/completions' ? 'chat' : route.startsWith('/writing') ? 'writing' :
+    route.startsWith('/literature') ? 'literature' : req.method + ':' + route;
+  if (!authenticatedLimits.has(scope)) authenticatedLimits.set(scope, rateLimit({
+    scope, max: scope === 'chat' ? 30 : ['writing', 'literature'].includes(scope) ? 60 : 120,
+  }));
+  authenticatedLimits.get(scope)(req, res, () => {
+    require('../ai/usage').context.run({ userId: req.user.id, scene: req.path.split('/').filter(Boolean)[0] || 'chat' }, next);
+  });
+}
 
-const router = express.Router();
+const router = require('../lib/router').createRouter();
 
 /* ---------- 会话签发：无状态签名令牌（Serverless 多实例可验签）+ 内存会话镜像（单实例下支持即时吊销） ---------- */
 function issueSession(user) {
@@ -34,7 +47,7 @@ function auth(req, res, next) {
       if (sessionUser) {
         req.user = sessionUser;
         req.authToken = token;
-        return next();
+        return continueAuthenticated(req, res, next);
       }
     }
   }
@@ -44,7 +57,7 @@ function auth(req, res, next) {
   if (!user) return errors.unauthorized(res);
   req.user = user;
   req.authToken = token;
-  next();
+  continueAuthenticated(req, res, next);
 }
 
 /* ---------- 认证 REQ-USER-05 ---------- */
@@ -119,14 +132,15 @@ router.get('/models', auth, (req, res) => {
 });
 
 router.post('/models', auth, (req, res) => {
-  const { name, base_url, model_name, api_key, priority } = req.body || {};
+  const { name, base_url, model_name, api_key, priority, provider = 'openai' } = req.body || {};
+  if (!require('../ai/providers').PROVIDERS.includes(provider)) return errors.param(res, '不支持的模型协议');
   if (!base_url || !model_name) return errors.param(res, 'BaseURL 与模型名为必填项');
   try { gateway.parseModelBaseUrl(base_url); } catch (error) { return errors.param(res, error.message); }
   const model = {
-    id: store.id('m'), owner_id: req.user.id, name: name || model_name, provider: 'custom', base_url, model_name,
+    id: store.id('m'), owner_id: req.user.id, name: name || model_name, provider, base_url, model_name,
     api_key_masked: `sk-****-****-${String(api_key || '').slice(-4)}`,
     api_key_encrypted: encryptSecret(api_key),
-    enabled: true, priority: priority || 1, builtin: false, status: 'connected', created_at: store.now(),
+    enabled: true, priority: priority || 1, builtin: false, status: 'untested', created_at: store.now(),
   };
   store.customModels.push(model);
   const { api_key_encrypted: _secret, ...publicModel } = model;
@@ -145,10 +159,11 @@ router.post('/models/:id/test', auth, async (req, res) => {
   if (!m) return errors.notFound(res, '模型不存在');
   const started = Date.now();
   if (!gateway.enabled(m.id, req.user.id)) {
-    return ok(res, { success: true, mode: 'demo-fallback', latency_ms: Date.now() - started, sample: '模型已保存；配置 OPENAI_API_KEY 或模型密钥后将启用真实调用。' });
+    return ok(res, { success: false, mode: 'not-configured', latency_ms: Date.now() - started, sample: '模型已保存；配置 OPENAI_API_KEY 或模型密钥后将启用真实调用。' });
   }
   try {
     const result = await gateway.complete([{ role: 'user', content: '请只回复：连接正常' }], { model: m.id, userId: req.user.id });
+    m.status = 'connected';
     ok(res, { success: true, mode: 'live', latency_ms: Date.now() - started, sample: result.text.slice(0, 80) });
   } catch (error) {
     errors.modelTimeout(res, `模型连接失败：${error.message}`);
@@ -157,30 +172,29 @@ router.post('/models/:id/test', auth, async (req, res) => {
 
 /* ---------- 用量统计 REQ-USER-03 ---------- */
 router.get('/usage', auth, (req, res) => {
-  const { range = 30 } = req.query;
-  const days = Number(range) || 30;
-  const cutoff = new Date(Date.now() - Math.max(1, days) * 86400000).toISOString().slice(0, 10);
-  const records = store.usageRecords.filter((record) => canAccess(record, req.user.id) && record.date >= cutoff);
-  const byDay = {};
-  const byModel = {};
-  const byScene = {};
-  let totalTokens = 0, totalCost = 0, totalCalls = 0;
+  const days = Math.max(1, Math.min(365, Number(req.query.range) || 30));
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const records = store.usageRecords.filter((r) => r.source === 'live' && canAccess(r, req.user.id) && r.date >= cutoff);
+  const byDay = {}, byModel = {}, byScene = {};
+  let totalTokens = 0, totalCost = 0, totalCalls = 0, unpriced = 0, unreported = 0;
   for (const r of records) {
-    totalTokens += r.prompt_tokens + r.completion_tokens;
-    totalCost += r.cost;
-    totalCalls += r.calls;
-    byDay[r.date] = (byDay[r.date] || 0) + r.prompt_tokens + r.completion_tokens;
-    byModel[r.model] = byModel[r.model] || { tokens: 0, cost: 0, calls: 0 };
-    byModel[r.model].tokens += r.prompt_tokens + r.completion_tokens;
-    byModel[r.model].cost += r.cost;
-    byModel[r.model].calls += r.calls;
-    byScene[r.scene] = byScene[r.scene] || { calls: 0 };
-    byScene[r.scene].calls += r.calls;
+    const tokens = r.prompt_tokens + r.completion_tokens;
+    const cost = r.cost || 0;
+    totalTokens += tokens; totalCost += cost; totalCalls += r.calls;
+    if (r.cost === null) unpriced += r.calls;
+    if (r.usage_status === 'unreported') unreported += r.calls;
+    for (const [bucket, key] of [[byDay, r.date], [byModel, r.model]]) {
+      bucket[key] ||= { tokens: 0, cost: 0, calls: 0, unpriced_calls: 0 };
+      bucket[key].tokens += tokens; bucket[key].cost += cost; bucket[key].calls += r.calls;
+      if (r.cost === null) bucket[key].unpriced_calls += r.calls;
+    }
+    byScene[r.scene] ||= { calls: 0 }; byScene[r.scene].calls += r.calls;
   }
   ok(res, {
-    summary: { total_tokens: totalTokens, total_cost: +totalCost.toFixed(2), total_calls: totalCalls, period_days: days },
-    by_day: Object.entries(byDay).map(([date, tokens]) => ({ date, tokens })),
-    by_model: Object.entries(byModel).map(([model, v]) => ({ model, ...v, cost: +v.cost.toFixed(2) })),
+    source: 'live', currency: 'CNY',
+    summary: { total_tokens: totalTokens, total_cost: +totalCost.toFixed(6), total_calls: totalCalls, period_days: days, unpriced_calls: unpriced, unreported_calls: unreported },
+    by_day: Object.entries(byDay).sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({ date, ...v, cost: +v.cost.toFixed(6) })),
+    by_model: Object.entries(byModel).map(([model, v]) => ({ model, ...v, cost: +v.cost.toFixed(6) })),
     by_scene: Object.entries(byScene).map(([scene, v]) => ({ scene, ...v })),
   });
 });

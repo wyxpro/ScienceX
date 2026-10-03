@@ -1,17 +1,20 @@
 /** 文档导入 / 结构化 / 分析 / 引用图谱 / 论文问答 / 知识库 —— REQ-READ-01~04 */
-const express = require('express');
+
 const store = require('../lib/store');
 const { ok, errors, asyncHandler } = require('../lib/respond');
 const ai = require('../lib/ai');
 const { auth } = require('./account');
 const { canAccess } = require('../lib/access');
 const parser = require('../lib/parser');
+const upload = require('../lib/upload');
+const rag = require('../ai/rag');
+const prompts = require('../ai/prompts');
 
-const router = express.Router();
+const router = require('../lib/router').createRouter();
 
 /* ---------- 文档列表与导入 REQ-READ-01 ---------- */
 router.get('/documents', auth, (req, res) => {
-  const items = store.documents.filter((doc) => canAccess(doc, req.user.id)).map(({ structured, mindmap, seven_summary, citation_graph, ...meta }) => ({
+  const items = store.documents.filter((doc) => canAccess(doc, req.user.id)).map(({ structured, mindmap, seven_summary, citation_graph, rag_chunks, ...meta }) => ({
     ...meta, summary_ready: !!(mindmap && seven_summary), graph_ready: !!citation_graph,
   }));
   ok(res, { items, total: items.length });
@@ -75,74 +78,20 @@ router.post('/documents/upload', auth, asyncHandler(async (req, res) => {
   const { file_name, url, content, file_content, project_id = 'p1' } = req.body || {};
   if (!file_name && !url) return errors.param(res, '请提供文件名或 URL');
   if (!canAccess(store.projects.find((project) => project.id === project_id), req.user.id)) return errors.forbidden(res, '无权向该项目上传文档');
-  const name = file_name || url.split('/').pop() || 'untitled';
-  const isUrl = /^https?:\/\//i.test(String(url || '')) && !file_name;
-
-  let buffer = Buffer.alloc(0);
-  let predecodedText = '';
-  if (file_content) {
-    try {
-      buffer = Buffer.from(String(file_content), 'base64');
-    } catch {
-      return errors.param(res, 'file_content 必须是 Base64 编码');
-    }
-  } else if (typeof content === 'string' && content) {
-    buffer = Buffer.from(content, 'utf8');
-    predecodedText = content;
-  }
-
-  if (buffer.length > parser.MAX_FILE_BYTES) {
-    return errors.param(res, `文件大小 ${(buffer.length / 1024 / 1024).toFixed(1)}MB 超过 50MB 单文件上限`);
-  }
-
-  let parsed;
+  const name = upload.cleanFileName(file_name || decodeURIComponent(new URL(url).pathname.split('/').pop()) || 'document.pdf');
+  const isUrl = !!url && !file_content && content === undefined;
+  let buffer;
+  let mime = req.body.mime || '';
+  if (file_content !== undefined) buffer = upload.decodeBase64(file_content);
+  else if (content !== undefined) buffer = Buffer.from(content, 'utf8');
+  else if (isUrl) {
+    const downloaded = await upload.fetchDocument(url);
+    buffer = downloaded.buffer;
+    mime = downloaded.mime;
+  } else throw Object.assign(new Error('请提供文件内容或 URL'), { statusCode: 400, businessCode: 40011, publicMessage: '请提供文件内容或 URL' });
+  upload.inspectFile(buffer, name, mime);
   const baseName = name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || '未命名文献';
-  if (buffer.length) {
-    try {
-      parsed = await parser.parseDocument(
-        { buffer, fileName: name, mime: req.body?.mime },
-        { text: predecodedText }
-      );
-    } catch (error) {
-      return errors.param(res, error?.publicMessage || error?.message || '文件解析失败');
-    }
-  } else {
-    // 仅给文件名 / URL 时走轻量降级：URL 场景尝试抓取可阅读文本
-    let fetched = '';
-    if (isUrl) {
-      try {
-        const resp = await fetch(url, { redirect: 'follow' });
-        const ct = resp.headers.get('content-type') || '';
-        if (resp.ok && cv(ct) !== 'binary') {
-          const body = Buffer.from(await resp.arrayBuffer());
-          if (parser.extOf(url) === 'pdf' || ct.includes('pdf')) {
-            const r = await parser.parseDocument({ buffer: body, fileName: name });
-            parsed = r;
-          } else {
-            fetched = body.toString('utf8').slice(0, parser.MAX_FILE_BYTES);
-          }
-        }
-      } catch {
-        /* 抓取失败时继续走占位结构化 */
-      }
-    }
-    if (!parsed) {
-      const fallback = buildStructuredFromText({ fileName: name, text: fetched, baseName });
-      parsed = {
-        title: fallback.docTitle,
-        authors: 'ScienceX Imported Doc',
-        abstract: fallback.paragraphs.length
-          ? fallback.paragraphs[0].slice(0, 240) + '…'
-          : `本文针对《${fallback.docTitle}》展开系统性学术解析，构建了多模态知识拓扑结构与核心论证脉络。`,
-        sections: fallback.sections,
-        figures: [],
-        text: fetched,
-        pages: Math.max(4, Math.ceil((fallback.paragraphs.length || 6) * 1.5)),
-        meta: { ext: parser.extOf(name), size: fetched.length, engine: 'placeholder', degraded: true, degradedReason: 'metadata-only' },
-      };
-    }
-  }
-
+  const parsed = await parser.parseDocument({ buffer, fileName: name, mime });
   const doc = {
     id: store.id('d'), owner_id: req.user.id, project_id,
     title: parsed.title || baseName,
@@ -154,7 +103,8 @@ router.post('/documents/upload', auth, asyncHandler(async (req, res) => {
     pages: parsed.pages || 4,
     parsed_status: parsed.meta?.degraded ? 'parsed_degraded' : 'parsing',
     has_code: false,
-    doi: '10.1109/SCIENCE.2026.001',
+    doi: null,
+    source: isUrl ? 'url' : 'upload',
     abstract: parsed.abstract,
     created_at: store.now(),
     structured: { sections: parsed.sections, figures: parsed.figures || [] },
@@ -168,14 +118,17 @@ router.post('/documents/upload', auth, asyncHandler(async (req, res) => {
   const task = ai.createTask(
     'parse',
     ['读取文件', '版面解析', '公式与图表识别', '构建结构化正文'],
-    () => ({ doc_id: doc.id, sections: doc.structured.sections.length, figures: doc.structured.figures.length }),
+    () => {
+      doc.parsed_status = parsed.meta?.degraded ? 'parsed_degraded' : 'parsed';
+      return { doc_id: doc.id, sections: doc.structured.sections.length, figures: doc.structured.figures.length };
+    },
     req.user.id
   );
   task.listeners.push((_task, entry) => {
-    if (entry.event === 'done') doc.parsed_status = 'parsed';
+    if (entry.event === 'done') doc.parsed_status = parsed.meta?.degraded ? 'parsed_degraded' : 'parsed';
     if (entry.event === 'error') doc.parsed_status = 'failed';
   });
-  store.persist();
+  await store.persist();
 
   ok(
     res,
@@ -199,7 +152,8 @@ function cv(ct = '') {
 router.get('/documents/:id', auth, (req, res) => {
   const doc = store.documents.find((d) => d.id === req.params.id && canAccess(d, req.user.id));
   if (!doc) return errors.notFound(res, '文档不存在');
-  ok(res, doc);
+  const { rag_chunks, ...publicDoc } = doc;
+  ok(res, publicDoc);
 });
 
 router.delete('/documents/:id', auth, (req, res) => {
@@ -282,27 +236,30 @@ router.get('/documents/:id/citation-graph', auth, (req, res) => {
 });
 
 /* ---------- 论文问答（SSE + 引用溯源） REQ-READ-03 ---------- */
-router.post('/documents/:id/chat', auth, async (req, res) => {
+router.post('/documents/:id/chat', auth, asyncHandler(async (req, res) => {
   const doc = store.documents.find((d) => d.id === req.params.id && canAccess(d, req.user.id));
   if (!doc) return errors.notFound(res, '文档不存在');
   const { messages, model } = req.body || {};
-  const questionMessages = Array.isArray(messages) && messages.length ? messages : [{ role: 'user', content: '这篇论文的核心贡献是什么？' }];
-  const context = doc.structured?.sections?.flatMap((section) => section.paragraphs || []).join('\n').slice(0, 18000) || doc.abstract || '';
+  if (messages && (!Array.isArray(messages) || messages.some((m) => typeof m.content !== 'string' || !['user', 'assistant'].includes(m.role)))) return errors.param(res, 'messages 格式无效');
+  const questionMessages = messages?.length ? messages : [{ role: 'user', content: '这篇论文的核心贡献是什么？' }];
+  const query = [...questionMessages].reverse().find((m) => m.role === 'user')?.content || '';
+  const abort = new AbortController();
+  const close = () => { if (!res.writableEnded) abort.abort(); };
+  res.on('close', close);
   try {
-    const result = await ai.generateResponse([
-      { role: 'system', content: `你正在回答论文《${doc.title}》的问题。仅基于下列文档内容回答；如果内容不足请明确说明。\n\n${context}` },
-      ...questionMessages,
-    ], { scene: 'document', model, userId: req.user.id });
-    const text = result.text;
-    await ai.streamText(res, text, {
-      beforeStream: (send) => {
-        send('reference', { doc_id: doc.id, chunk_id: `${doc.id}_s1_1`, page: doc.structured?.sections?.[0]?.page || 1, title: doc.title });
-      },
+    const chunks = rag.chunksFromDocument(doc);
+    const old = new Map((doc.rag_chunks || []).map((c) => [c.id, c]));
+    for (const c of chunks) if (old.get(c.id)?.text === c.text) Object.assign(c, old.get(c.id));
+    const retrieval = chunks.length ? await rag.retrieve(chunks, query, { topK: 5, userId: req.user.id, model, signal: abort.signal }) : { items: [], mode: 'unavailable', degraded: true };
+    doc.rag_chunks = chunks;
+    await store.persist();
+    const result = retrieval.items.length ? await ai.generateResponse(prompts.render('document', { title: doc.title, items: retrieval.items, messages: questionMessages }), { scene: 'document', model, userId: req.user.id, signal: abort.signal }) : { text: '文档没有可用于回答此问题的有效片段，请上传可解析的正文或调整问题。', model: 'unavailable', fallback: true };
+    await ai.streamText(res, result.text, {
+      model: result.model, usage: result.usage, fallback: !!result.fallback, retrieval: { mode: retrieval.mode, degraded: retrieval.degraded, reranked: retrieval.reranked },
+      beforeStream: (send) => retrieval.items.forEach((c) => send('reference', { doc_id: doc.id, chunk_id: c.id, page: c.page, section: c.section, page_verified: c.page_verified, title: doc.title, text: c.text, score: c.score })),
     });
-  } catch {
-    if (!res.headersSent) errors.modelTimeout(res, '文献问答模型请求失败，请稍后重试');
-  }
-});
+  } finally { res.removeListener('close', close); }
+}));
 
 /* ---------- 知识库 REQ-READ-04 / REQ-PRJ-01 ---------- */
 router.get('/knowledge-bases', auth, (req, res) => {
@@ -324,44 +281,34 @@ router.delete('/knowledge-bases/:id', auth, (req, res) => {
   ok(res, {}, '知识库已删除');
 });
 
-router.post('/knowledge-bases/:id/query', auth, (req, res) => {
+router.post('/knowledge-bases/:id/query', auth, asyncHandler(async (req, res) => {
   const kb = store.knowledgeBases.find((k) => k.id === req.params.id && canAccess(k, req.user.id));
   if (!kb) return errors.notFound(res, '知识库不存在');
   const { q = '', top_k = 3 } = req.body || {};
-  if (!q) return errors.param(res, '查询不能为空');
-  if (kb.chunks.length === 0) return ok(res, { items: [], hint: '知识库为空，请先上传文档建立索引' }, '知识库为空');
-  const terms = q.toLowerCase().match(/[\u4e00-\u9fff]|[a-z0-9]+/gi) || [];
-  const scored = kb.chunks
-    .map((c) => {
-      const haystack = `${c.title || ''} ${c.text || c.content || ''}`.toLowerCase();
-      const hits = terms.reduce((count, term) => count + (haystack.includes(term) ? 1 : 0), 0);
-      return { ...c, score: +(hits / Math.max(1, terms.length)).toFixed(3) };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, top_k);
-  ok(res, { query: q, items: scored });
-});
+  if (typeof q !== 'string' || !q.trim() || q.length > 4000 || !Number.isInteger(top_k) || top_k < 1 || top_k > 20) return errors.param(res, '查询不能为空，top_k 必须为 1-20 的整数');
+  const chunks = kb.chunks.filter((c) => !c.doc_id || store.documents.some((d) => d.id === c.doc_id && canAccess(d, req.user.id)));
+  if (!chunks.length) return ok(res, { items: [], mode: 'empty', hint: '知识库为空，请先上传文档建立索引' });
+  ok(res, { query: q, ...await rag.retrieve(chunks, q, { topK: top_k, userId: req.user.id }) });
+}));
 
 router.post('/knowledge-bases/:id/ingest', auth, (req, res) => {
   const kb = store.knowledgeBases.find((k) => k.id === req.params.id && canAccess(k, req.user.id));
   if (!kb) return errors.notFound(res, '知识库不存在');
-  const doc = req.body?.document_id
-    ? store.documents.find((item) => item.id === req.body.document_id && canAccess(item, req.user.id))
-    : null;
-  if (req.body?.document_id && !doc) return errors.notFound(res, '待入库文档不存在');
-  const task = ai.createTask('ingest', ['读取文档', '语义切分', '向量化 (Embedding)', '写入向量库'], () => {
-    const paragraphs = doc?.structured?.sections?.flatMap((section) => section.paragraphs.map((text, index) => ({
-      id: `${doc.id}_${section.id}_${index + 1}`,
-      doc_id: doc.id,
-      title: doc.title,
-      page: section.page,
-      text,
-    }))) || [];
-    if (paragraphs.length) kb.chunks.push(...paragraphs);
-    kb.doc_count += 1;
-    kb.chunk_count = kb.chunks.length || kb.chunk_count + 1;
-    kb.size_mb += doc ? Math.max(1, Math.round(JSON.stringify(doc).length / 1024 / 1024)) : 1;
-    return { doc_count: kb.doc_count, chunk_count: kb.chunk_count };
+  const doc = store.documents.find((d) => d.id === req.body?.document_id && canAccess(d, req.user.id));
+  if (!doc) return errors.notFound(res, '待入库文档不存在');
+  const chunks = rag.chunksFromDocument(doc);
+  if (!chunks.length) return errors.param(res, '文档尚无有效正文，无法入库');
+  const task = ai.createTask('ingest', ['读取文档', '段落切分', '建立检索索引'], async () => {
+    let mode = 'vector', warning = null;
+    try { await rag.indexChunks(chunks, { userId: req.user.id }); }
+    catch (error) { mode = 'keyword-fallback'; warning = error.code || 'EMBEDDING_UNAVAILABLE'; }
+    if (!store.documents.includes(doc) || !store.knowledgeBases.includes(kb)) throw new Error('文档或知识库已删除');
+    kb.chunks = [...kb.chunks.filter((c) => c.doc_id !== doc.id), ...chunks];
+    kb.doc_count = new Set(kb.chunks.map((c) => c.doc_id).filter(Boolean)).size;
+    kb.chunk_count = kb.chunks.length;
+    kb.size_mb = +(Buffer.byteLength(JSON.stringify(kb.chunks)) / 1024 / 1024).toFixed(3);
+    await store.persist();
+    return { doc_count: kb.doc_count, chunk_count: kb.chunk_count, mode, degraded: mode !== 'vector', warning };
   }, req.user.id);
   ok(res, { task_id: task.id }, '入库任务已提交');
 });

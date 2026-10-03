@@ -1,12 +1,12 @@
 /** 文献检索 / 选题灵感 / 综述生成（异步任务） —— REQ-LIT-01/02 */
-const express = require('express');
+
 const store = require('../lib/store');
 const { ok, errors, asyncHandler } = require('../lib/respond');
 const ai = require('../lib/ai');
 const aiModule = require('../ai');
 const { auth } = require('./account');
 
-const router = express.Router();
+const router = require('../lib/router').createRouter();
 
 /* ---------- 选题三件套：真实大模型优先（DeepSeek），失败确定性回退演示数据 ---------- */
 
@@ -30,24 +30,13 @@ function extractJSON(text) {
 const clampScore = (value, dflt) => Math.max(0, Math.min(100, Math.round(Number(value) || dflt)));
 
 /* ---------- 多源文献检索 REQ-LIT-01 ---------- */
-router.post('/literature/search', auth, (req, res) => {
-  const { query = '', sources = ['arXiv', 'OpenAlex', 'Semantic Scholar', 'PubMed'], year_range = [2020, 2026], has_code = false } = req.body || {};
-  if (!query) return errors.param(res, '检索关键词不能为空');
-  const kw = query.toLowerCase();
-  let items = store.literaturePool.filter((p) => {
-    const hit = p.title.toLowerCase().includes(kw) || p.abstract.includes(query) ||
-      /micro|expression|facial|emotion|au |transformer/.test(kw) || query.includes('微表情') || query.includes('情感');
-    return hit;
-  });
-  if (has_code) items = items.filter((p) => p.has_code);
-  items = items.filter((p) => p.year >= year_range[0] && p.year <= year_range[1]);
-  ok(res, {
-    items: items.map((p) => ({ ...p, sources })),
-    total: items.length,
-    dedup_removed: 3,
-    search_time_ms: 420,
-  });
-});
+router.post('/literature/search', auth, asyncHandler(async (req, res) => {
+  const { query, sources, year_range, has_code = false } = req.body || {};
+  if (typeof query !== 'string' || !query.trim() || query.length > 500) return errors.param(res, '请输入 1-500 字检索关键词');
+  if (sources && (!Array.isArray(sources) || !sources.length || sources.some((s) => typeof s !== 'string'))) return errors.param(res, 'sources 必须是非空检索源数组');
+  if (year_range && (!Array.isArray(year_range) || year_range.length !== 2 || !year_range.every(Number.isInteger) || year_range[0] > year_range[1])) return errors.param(res, '年份范围无效');
+  ok(res, await require('../ai/literature').search({ query: query.trim(), sources, year_range, has_code }));
+}));
 
 /* ---------- 选题推荐 REQ-LIT-02 ---------- */
 router.post('/topic/recommend', auth, asyncHandler(async (req, res) => {

@@ -1,279 +1,81 @@
-/**
- * ScienceX AI 模块 —— DeepSeek V4.1 Flash 模型专有通讯客户端
- * 采用原生 HTTPS 模块与标准 fetch，完全兼容 OpenAI 接口与 Sophnet 协议
- * 支持非流式推演与流式思维链 (Reasoning Content) 实时解析
- */
-const https = require('https');
-const http = require('http');
 const config = require('./config');
+const { requestFor } = require('./providers');
+const { AIError, withRetry, withCircuit, circuitKey, fetchBody } = require('./resilience');
+const { recordUsage } = require('./usage');
 
 class DeepSeekClient {
-  constructor(cfg = config) {
-    this.config = cfg;
+  constructor(cfg = config) { this.config = cfg; }
+  async request(messages, options, consume) {
+    if (!this.config.hasKey()) throw new AIError('未配置模型密钥', 'MODEL_NOT_CONFIGURED');
+    const request = requestFor(this.config.provider || 'openai', this.config, messages, options);
+    return withCircuit(circuitKey(request.url, this.config.apiKey), () => withRetry(() => fetchBody(request.url, {
+      method: 'POST', headers: request.headers, body: JSON.stringify(request.body), signal: options.signal,
+    }, (response) => consume(response, request), options.timeoutMs || this.config.timeoutMs || 30000), { signal: options.signal, retries: options.retries }));
   }
-
-  /**
-   * 非流式对话推演
-   * @param {Array<{role: string, content: string}>} messages 对话列表
-   * @param {Object} options 选项 (temperature, max_tokens, signal, model)
-   * @returns {Promise<{text: string, reasoning: string, usage: Object, model: string}>}
-   */
-  async chatCompletion(messages, options = {}, retryCount = 1) {
-    if (!this.config.hasKey()) {
-      throw new Error('未配置 DeepSeek API Key，请检查 .env 文件中的 DEEPSEEK_API_KEY');
-    }
-
-    const endpoint = `${this.config.baseUrl}/chat/completions`;
-    const model = options.model || this.config.model;
-    const temperature = options.temperature !== undefined ? options.temperature : 0.3;
-
-    const payload = JSON.stringify({
-      model,
-      messages,
-      temperature,
-      stream: false,
-      ...(options.max_tokens ? { max_tokens: options.max_tokens } : {}),
+  async chatCompletion(messages, options = {}) {
+    const result = await this.request(messages, options, async (response, request) => {
+      const result = request.parse(await response.json());
+      if (typeof result.text !== 'string' || !result.text.trim()) throw new AIError('模型返回了空内容', 'INVALID_RESPONSE');
+      return result;
     });
-
-    const parsedUrl = new URL(endpoint);
-    const transport = parsedUrl.protocol === 'https:' ? https : http;
-
-    return new Promise((resolve, reject) => {
-      const req = transport.request(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.config.apiKey}`,
-          'Content-Length': Buffer.byteLength(payload),
-        },
-        timeout: options.timeoutMs || this.config.timeoutMs,
-      }, (res) => {
-        let body = '';
-        res.on('data', (chunk) => { body += chunk; });
-        res.on('end', () => {
-          if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-            return reject(new Error(`DeepSeek API 请求失败 [HTTP ${res.statusCode}]: ${body.slice(0, 200)}`));
-          }
-          try {
-            const data = JSON.parse(body);
-            const choice = data.choices?.[0];
-            const message = choice?.message || {};
-            const content = message.content || '';
-            const reasoning = message.reasoning_content || '';
-            const usage = data.usage || {
-              prompt_tokens: Math.round(JSON.stringify(messages).length / 4),
-              completion_tokens: Math.round(content.length / 4),
-              total_tokens: 0,
-            };
-            resolve({
-              text: content,
-              reasoning,
-              model: data.model || model,
-              usage,
-              id: data.id,
-            });
-          } catch (jsonErr) {
-            reject(new Error(`解析 DeepSeek 返回数据失败: ${jsonErr.message}`));
-          }
-        });
-      });
-
-      req.on('timeout', () => {
-        req.destroy();
-        if (retryCount > 0) {
-          console.warn('[DeepSeekClient] 请求超时，正在重试...');
-          return resolve(this.chatCompletion(messages, options, retryCount - 1));
-        }
-        reject(new Error('DeepSeek API 请求超时'));
-      });
-
-      req.on('error', (err) => {
-        if (retryCount > 0) {
-          console.warn('[DeepSeekClient] 网络异常，正在重试:', err.message);
-          return resolve(this.chatCompletion(messages, options, retryCount - 1));
-        }
-        reject(err);
-      });
-
-      if (options.signal) {
-        options.signal.addEventListener('abort', () => {
-          req.destroy();
-          reject(new Error('请求已被调用方取消'));
-        }, { once: true });
-      }
-
-      req.write(payload);
-      req.end();
-    });
+    await recordUsage(result, options);
+    return result;
   }
-
-  /**
-   * 流式对话推演，原生支持 SSE 数据流解析
-   * 可分别捕获 DeepSeek 思维链 (Reasoning Content) 与正文 (Delta Content)
-   * @param {Array<{role: string, content: string}>} messages 
-   * @param {Object} callbacks 回调函数 { onThought, onDelta, onDone, onError }
-   */
   async streamChatCompletion(messages, callbacks = {}, options = {}) {
-    if (!this.config.hasKey()) {
-      const err = new Error('未配置 DeepSeek API Key，请检查 .env 文件中的 DEEPSEEK_API_KEY');
-      if (callbacks.onError) callbacks.onError(err);
-      throw err;
-    }
-
-    const endpoint = `${this.config.baseUrl}/chat/completions`;
-    const model = options.model || this.config.model;
-    const temperature = options.temperature !== undefined ? options.temperature : 0.3;
-
-    const payload = JSON.stringify({
-      model,
-      messages,
-      temperature,
-      stream: true,
-      ...(options.max_tokens ? { max_tokens: options.max_tokens } : {}),
-    });
-
-    const parsedUrl = new URL(endpoint);
-    const transport = parsedUrl.protocol === 'https:' ? https : http;
-
-    return new Promise((resolve, reject) => {
-      let fullContent = '';
-      let fullReasoning = '';
-      let finalUsage = null;
-      let isDone = false;
-
-      const req = transport.request(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.config.apiKey}`,
-        },
-      }, (res) => {
-        if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-          let errBody = '';
-          res.on('data', (d) => { errBody += d; });
-          res.on('end', () => {
-            const error = new Error(`DeepSeek API 流式请求错误 [HTTP ${res.statusCode}]: ${errBody.slice(0, 200)}`);
-            if (callbacks.onError) callbacks.onError(error);
-            reject(error);
-          });
-          return;
-        }
-
-        let buffer = '';
-        res.on('data', (chunk) => {
-          buffer += chunk.toString('utf8');
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // 保留尚未闭合的一行
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith('data:')) continue;
-
-            const dataStr = trimmed.slice(5).trim();
-            if (dataStr === '[DONE]') {
-              isDone = true;
-              continue;
-            }
-
-            try {
-              const parsed = JSON.parse(dataStr);
-              const choice = parsed.choices?.[0];
-              const delta = choice?.delta;
-
-              if (delta) {
-                // 处理思考链输出 (CoT reasoning_content)
-                if (delta.reasoning_content) {
-                  fullReasoning += delta.reasoning_content;
-                  if (callbacks.onThought) callbacks.onThought(delta.reasoning_content, fullReasoning);
-                }
-                // 处理正文输出
-                if (delta.content) {
-                  fullContent += delta.content;
-                  if (callbacks.onDelta) callbacks.onDelta(delta.content, fullContent);
-                }
-              }
-
-              // 捕获用量数据
-              if (parsed.usage) {
-                finalUsage = parsed.usage;
-              }
-            } catch (parseErr) {
-              // 忽略不完整的 JSON 碎片
-            }
-          }
-        });
-
-        res.on('end', () => {
-          const result = {
-            text: fullContent,
-            reasoning: fullReasoning,
-            usage: finalUsage || {
-              prompt_tokens: Math.round(JSON.stringify(messages).length / 4),
-              completion_tokens: Math.round(fullContent.length / 4),
-              total_tokens: Math.round((JSON.stringify(messages).length + fullContent.length) / 4),
-            },
-            model,
-          };
-          if (callbacks.onDone) callbacks.onDone(result);
-          resolve(result);
-        });
-
-        res.on('error', (err) => {
-          if (callbacks.onError) callbacks.onError(err);
-          reject(err);
-        });
-      });
-
-      req.on('error', (err) => {
-        if (callbacks.onError) callbacks.onError(err);
-        reject(err);
-      });
-
-      // 监听外部终止信号
-      if (options.signal) {
-        options.signal.addEventListener('abort', () => {
-          req.destroy();
-          reject(new Error('请求已被调用方取消'));
-        }, { once: true });
+    let emitted = false;
+    try {
+      if (['anthropic', 'gemini', 'ollama'].includes(this.config.provider)) {
+        const result = await this.chatCompletion(messages, options);
+        callbacks.onDelta?.(result.text, result.text);
+        callbacks.onDone?.(result);
+        return result;
       }
-
-      req.write(payload);
-      req.end();
-    });
+      const result = await this.request(messages, { ...options, stream: true }, async (response) => {
+        let text = '', reasoning = '', buffer = '', complete = false, usage = {}, model = options.model || this.config.model;
+        const decoder = new TextDecoder();
+        const line = (value) => {
+          if (!value.startsWith('data:')) return;
+          const raw = value.slice(5).trim();
+          if (raw === '[DONE]') { complete = true; return; }
+          if (!raw) return;
+          let data;
+          try { data = JSON.parse(raw); } catch { throw new AIError('模型流数据格式无效', 'INVALID_STREAM'); }
+          if (data.error) throw new AIError('模型流返回错误', 'UPSTREAM_STREAM_ERROR');
+          const delta = data.choices?.[0]?.delta;
+          if (delta?.reasoning_content) { emitted = true; reasoning += delta.reasoning_content; callbacks.onThought?.(delta.reasoning_content, reasoning); }
+          if (delta?.content) { emitted = true; text += delta.content; callbacks.onDelta?.(delta.content, text); }
+          if (data.usage) usage = data.usage;
+          if (data.model) model = data.model;
+          if (data.choices?.[0]?.finish_reason) complete = true;
+        };
+        try {
+          for await (const chunk of response.body) {
+            buffer += decoder.decode(chunk, { stream: true });
+            const lines = buffer.split(/\r?\n/);
+            buffer = lines.pop();
+            lines.forEach(line);
+          }
+          buffer += decoder.decode();
+          if (buffer.trim()) line(buffer.trim());
+          if (!complete || !text) throw new AIError('模型流未正常完成', 'STREAM_INTERRUPTED', { retryable: true });
+        } catch (error) { error.sentDelta = emitted; throw error; }
+        return { text, reasoning, usage, model };
+      });
+      await recordUsage(result, options);
+      callbacks.onDone?.(result);
+      return result;
+    } catch (error) {
+      error.sentDelta = emitted;
+      callbacks.onError?.(error);
+      throw error;
+    }
   }
-
-  /**
-   * 连通性测试
-   */
   async testConnection() {
     const started = Date.now();
     try {
-      const res = await this.chatCompletion([
-        { role: 'user', content: '请只回复：连接正常' }
-      ], { temperature: 0.1 });
-      const latencyMs = Date.now() - started;
-      return {
-        success: true,
-        latencyMs,
-        model: res.model,
-        sample: res.text,
-        reasoning: res.reasoning,
-        endpoint: this.config.baseUrl,
-      };
-    } catch (err) {
-      return {
-        success: false,
-        latencyMs: Date.now() - started,
-        error: err.message,
-        endpoint: this.config.baseUrl,
-      };
-    }
+      const result = await this.chatCompletion([{ role: 'user', content: '请只回复：连接正常' }]);
+      return { success: true, latencyMs: Date.now() - started, model: result.model, sample: result.text, endpoint: this.config.baseUrl };
+    } catch (error) { return { success: false, latencyMs: Date.now() - started, error: error.message, endpoint: this.config.baseUrl }; }
   }
 }
-
-const defaultClient = new DeepSeekClient();
-
-module.exports = {
-  DeepSeekClient,
-  client: defaultClient,
-};
+module.exports = { DeepSeekClient, client: new DeepSeekClient() };
