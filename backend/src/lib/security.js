@@ -28,13 +28,42 @@ function verifyPassword(password, encoded) {
   return actualBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
-function createToken(prefix) {
-  return `${prefix}_${crypto.randomBytes(24).toString('hex')}`;
-}
-
 function parseBearer(req) {
   const header = String(req.headers.authorization || '');
   return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+}
+
+/* ---------- 无状态签名令牌（Serverless 多实例共用） ----------
+   Vercel 等环境下实例内存不共享，随机不透明令牌 + 内存会话表会导致
+   "Token 已失效，请重新登录"。改为 HMAC-SHA256 自包含令牌：
+   密钥来自 SCIENCEX_MASTER_KEY（跨实例一致），任何实例均可离线验签。 */
+const SIGNED_TOKEN_PREFIX = 'sx1.';
+
+function signTokenBody(body) {
+  return crypto.createHmac('sha256', masterKey).update(body).digest('base64url');
+}
+
+function createSignedToken(userId, type, ttlMs) {
+  const nowMs = Date.now();
+  const body = Buffer.from(JSON.stringify({ uid: userId, typ: type, iat: nowMs, exp: nowMs + ttlMs }), 'utf8').toString('base64url');
+  return `${SIGNED_TOKEN_PREFIX}${body}.${signTokenBody(body)}`;
+}
+
+function verifySignedToken(token, expectedType) {
+  if (typeof token !== 'string' || !token.startsWith(SIGNED_TOKEN_PREFIX)) return null;
+  const [body, sig] = token.slice(SIGNED_TOKEN_PREFIX.length).split('.');
+  if (!body || !sig) return null;
+  const actual = Buffer.from(sig);
+  const expected = Buffer.from(signTokenBody(body));
+  if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload?.uid || typeof payload.exp !== 'number' || payload.exp <= Date.now()) return null;
+    if (expectedType && payload.typ !== expectedType) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 function encryptSecret(value) {
@@ -57,4 +86,4 @@ function decryptSecret(value) {
   }
 }
 
-module.exports = { ACCESS_TTL_MS, REFRESH_TTL_MS, hashPassword, verifyPassword, createToken, parseBearer, encryptSecret, decryptSecret, assertProductionConfig };
+module.exports = { ACCESS_TTL_MS, REFRESH_TTL_MS, hashPassword, verifyPassword, createSignedToken, verifySignedToken, parseBearer, encryptSecret, decryptSecret, assertProductionConfig };

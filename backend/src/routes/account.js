@@ -2,24 +2,47 @@
 const express = require('express');
 const store = require('../lib/store');
 const { ok, errors } = require('../lib/respond');
-const { ACCESS_TTL_MS, REFRESH_TTL_MS, createToken, hashPassword, verifyPassword, parseBearer, encryptSecret } = require('../lib/security');
+const { ACCESS_TTL_MS, REFRESH_TTL_MS, createSignedToken, verifySignedToken, hashPassword, verifyPassword, parseBearer, encryptSecret } = require('../lib/security');
 const gateway = require('../lib/model-gateway');
 const ai = require('../lib/ai');
 const { canAccess } = require('../lib/access');
 
 const router = express.Router();
 
-/* ---------- 鉴权中间件 ---------- */
+/* ---------- 会话签发：无状态签名令牌（Serverless 多实例可验签）+ 内存会话镜像（单实例下支持即时吊销） ---------- */
+function issueSession(user) {
+  const token = createSignedToken(user.id, 'access', ACCESS_TTL_MS);
+  const refreshToken = createSignedToken(user.id, 'refresh', REFRESH_TTL_MS);
+  store.sessions.set(token, { user_id: user.id, refresh_token: refreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
+  return { token, refreshToken };
+}
+
+/* ---------- 鉴权中间件 ----------
+   先查本实例内存会话（命中即可支持登出即时吊销）；
+   未命中时回退为无状态签名校验，保证 Vercel 多实例/冷启动后令牌仍然有效。 */
 function auth(req, res, next) {
   // EventSource cannot set Authorization, so query tokens are accepted only for GET streams.
   const token = parseBearer(req) || (req.method === 'GET' && req.path.endsWith('/stream') ? String(req.query.token || '') : '');
+  if (!token) return errors.unauthorized(res);
+
   const session = store.sessions.get(token);
-  if (!session || session.expires_at <= Date.now()) {
-    if (token) store.sessions.delete(token);
-    return errors.unauthorized(res);
+  if (session) {
+    if (session.expires_at <= Date.now()) {
+      store.sessions.delete(token);
+    } else {
+      const sessionUser = store.users.find((u) => u.id === session.user_id);
+      if (sessionUser) {
+        req.user = sessionUser;
+        req.authToken = token;
+        return next();
+      }
+    }
   }
-  req.user = store.users.find((u) => u.id === session.user_id);
-  if (!req.user) return errors.unauthorized(res);
+
+  const payload = verifySignedToken(token, 'access');
+  const user = payload && store.users.find((u) => u.id === payload.uid);
+  if (!user) return errors.unauthorized(res);
+  req.user = user;
   req.authToken = token;
   next();
 }
@@ -29,9 +52,7 @@ router.post('/auth/login', (req, res) => {
   const { email, password } = req.body || {};
   const user = store.users.find((u) => u.email === email && verifyPassword(password, u.password));
   if (!user) return errors.param(res, '邮箱或密码错误（演示账号 demo@sciencex.cn / 123456）');
-  const token = createToken('tk');
-  const refreshToken = createToken('rf');
-  store.sessions.set(token, { user_id: user.id, refresh_token: refreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
+  const { token, refreshToken } = issueSession(user);
   const { password: _p, ...profile } = user;
   ok(res, { token, refresh_token: refreshToken, user: profile });
 });
@@ -42,22 +63,30 @@ router.post('/auth/register', (req, res) => {
   if (store.users.some((u) => u.email === email)) return errors.param(res, '该邮箱已注册');
   const user = { id: store.id('u'), email, password: hashPassword(password), name, title: '研究者', avatar: '', research_tags: [], lang: 'zh', plan: 'free', created_at: store.now() };
   store.users.push(user);
-  const token = createToken('tk');
-  const refreshToken = createToken('rf');
-  store.sessions.set(token, { user_id: user.id, refresh_token: refreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
+  const { token, refreshToken } = issueSession(user);
   const { password: _p, ...profile } = user;
   ok(res, { token, refresh_token: refreshToken, user: profile }, '注册成功');
 });
 
 router.post('/auth/refresh', (req, res) => {
   const { refresh_token } = req.body || {};
+  // 1) 无状态刷新令牌：签名与有效期即可换新令牌对，不依赖实例内存
+  const payload = verifySignedToken(refresh_token, 'refresh');
+  if (payload) {
+    const user = store.users.find((u) => u.id === payload.uid);
+    if (user) {
+      const { token, refreshToken } = issueSession(user);
+      return ok(res, { token, refresh_token: refreshToken });
+    }
+  }
+  // 2) 兼容旧版内存会话刷新令牌（升级窗口期）
   const old = [...store.sessions.entries()].find(([, session]) => session.refresh_token === refresh_token);
   if (!old || old[1].refresh_expires_at <= Date.now()) return errors.unauthorized(res, 'Refresh Token 已失效');
+  const user = store.users.find((u) => u.id === old[1].user_id);
+  if (!user) return errors.unauthorized(res, 'Refresh Token 已失效');
   store.sessions.delete(old[0]);
-  const newToken = createToken('tk');
-  const newRefreshToken = createToken('rf');
-  store.sessions.set(newToken, { user_id: old[1].user_id, refresh_token: newRefreshToken, expires_at: Date.now() + ACCESS_TTL_MS, refresh_expires_at: Date.now() + REFRESH_TTL_MS });
-  ok(res, { token: newToken, refresh_token: newRefreshToken });
+  const { token, refreshToken } = issueSession(user);
+  ok(res, { token, refresh_token: refreshToken });
 });
 
 router.post('/auth/logout', auth, (req, res) => {
