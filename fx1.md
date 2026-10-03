@@ -135,3 +135,19 @@ routes (chat/documents/research/publish/...)
 配置、验收及明确边界见 [AI 服务接入与验收](backend/AI-SERVICES.md)。当前向量检索采用现有存储加进程内精确检索，MCP 样板采用进程内传输；向量数据库索引、远程 MCP 部署和新增 Provider 原生流式协议仍属于后续扩展。
 
 **验收**：后端 32 项通过、3 项真实模型测试跳过；12 题模板回归通过；前端构建通过，Lint 0 error / 248 warning。外部服务真实连通性及付费模型评测未在本次离线验收中验证。
+
+## 九、实施记录（2026-10-04，第三节「后端分析与建议」落地）
+
+| # | 条目 | 状态 | 落地内容 |
+| :--- | :--- | :---: | :--- |
+| B1 | 数据存储 | 🔶 短期完成 | 仓储层已有 `lib/persistence.js` 写互斥队列（同一实例按入队次序串行落盘）+ 原子写（临时文件 `wx 0o600` → fsync → rename，失败清理）；本次补齐 `server.js` 响应尾部 `store.persist()` 失败捕获并记结构化告警（不再产生 unhandledRejection 风险）。新增 5 项存储层测试（并发次序、单次失败不阻塞队列、快照序列化异常隔离、真实磁盘并发无半写、store 队列共享）。SQLite/PostgreSQL 迁移为中期项，store.js 接口未变可直接做仓储适配。 |
+| B2 | 输入校验 | ✅ 已完成 | `shared/api-schemas.js` 统一 zod 契约（浏览器/服务端可复用），`lib/router.js` 的 `createRouter` 按 method+path 自动注入 `validate` 中间件，失败返回 400 + 40011 + 字段级明细；未声明字段被 `z.object` 剥离（防批量赋值）。补齐契约测试验证登录校验与字段剔除。 |
+| B3 | 限流局限 | ✅ 已完成 | 限流后端三级可选：memory / Upstash REST / Redis（`rate-limiter-flexible`，Lua 原子计数），Vercel 生产环境强制共享限流否则拒绝启动；本次修复两个关键缺口：① `chat/writing/literature` 三个挂载点各自独立 `scope`（此前共享默认桶，共享后端下不同阈值互踩）；② 限流中间件跑在认证之前，现在先验签 `sx1.` Bearer 令牌取 userId 分桶（此前 req.user 未填充永远落到 ip 桶，校园网/NAT 共享 IP 误伤登录用户），匿名才降级 ip。新增 3 项限流测试。 |
+| B4 | 密钥兜底 | ✅ 已收敛 | `assertProductionConfig` 在 `security.js` 模块加载与 `startServer` 双入口均调用，覆盖所有启动路径。策略按既有决策（a4cbe5a）收敛为：生产缺 `SCIENCEX_MASTER_KEY` 时输出显式告警并回退演示密钥，保证 Serverless 演示可用性；对应测试「生产环境未配置主密钥时告警回退并正常启动」守护该行为。正式上线仍必须在部署平台配置 32+ 字符随机密钥。 |
+| B5 | 日志与可观测 | ✅ 已完成 | pino JSON 结构化日志（敏感字段 authorization/token/password/api_key 自动脱敏）；请求中间件输出 `event:request`（method/path/status/duration_ms/request_id），AsyncLocalStorage 将子 logger 贯穿到业务代码与全局错误处理；未处理异常落完整堆栈（err 序列化）；启动/端口切换/持久化失败/AI 调用耗时与 token 用量全部事件化。 |
+| B6 | 测试覆盖 | ✅ 主体完成 | 新增 `test/persistence.test.js`（5 项）与 `test/routes.contract.test.js`（13 项：documents 上传→列表→详情→删除全链路、伪装扩展名拒绝、实验创建→调度→详情、GPU/期刊 demo 打标、投稿追踪 CRUD、40003 错误契约、OpenAPI 同源、限流键/429/Retry-After、X-Request-Id）；全套 53 项：50 通过 / 0 失败 / 3 跳过（真实模型用例）；新增 `npm run coverage`（c8 阈值 lines 55 / functions 50 / branches 60，实测 58.3/53.6/65.3）并接入 CI 门禁。 |
+| B7 | 上传安全 | ✅ 已完成 | `lib/upload.js`：后缀白名单（PDF/DOC/DOCX/MD/CAJ）+ 魔数嗅探（%PDF-/PK…/OLE/CAJ 头，docx 校验 zip 内部 document.xml）+ 50MB 上限 + 文件名清洗（basename、控制字符、Windows 保留名）+ URL 导入 SSRF 防护（仅公网 HTTPS、固定已校验地址防 DNS 重绑定、不跟随重定向）。 |
+| B8 | 模拟数据残留 | ✅ 已完成 | `store.js` 启动时对 gpuNodes/journals/literaturePool/sotaLeaderboard/skills/mcpServers/papersDaily/recentOutputs 统一打 `source: 'demo'`；用户导入（source: 'upload'/'url'）与真实检索（`source: 'live'` + degraded 标记）保留各自来源不被污染；契约测试断言打标不回退。 |
+| B9 | API 文档 | ✅ 已完成 | 新增 `lib/openapi.js`：由共享 zod 契约 + `registeredRoutes` 自动生成 OpenAPI 3.0.3 文档，`GET /api/v1/openapi.json` 对外暴露（与运行时校验同源，不可能脱节）；含 securitySchemes（sx1. 签名令牌）、requestBody/query/path 参数与统一响应信封。前端类型可由该 schema 生成（打通 F2）。未采用 swagger-jsdoc 注释方案（契约已在 schema 中，注释会引入双源）。 |
+
+**验收**：`npm test` 53 项（50 通过 / 0 失败 / 3 跳过真实模型用例）；`npm run coverage` 阈值门禁 EXIT=0；OpenAPI/限流/存储并发均为新增自动化测试覆盖。SQLite/PostgreSQL 迁移、前端「演示数据」徽标展示为后续演进项。

@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --require ./test/env.cjs --test test/api.test.js test/ai.test.js test/ai-services.test.js",
+    "test": "node --require ./test/env.cjs --test test/api.test.js test/ai.test.js test/ai-services.test.js test/persistence.test.js test/routes.contract.test.js",
+    "coverage": "c8 --check-coverage --lines 55 --functions 50 --branches 60 --reporter text-summary node --require ./test/env.cjs --test test/api.test.js test/ai.test.js test/ai-services.test.js test/persistence.test.js test/routes.contract.test.js",
     "eval:ai": "node eval/run.js"
   },
   "engines": {

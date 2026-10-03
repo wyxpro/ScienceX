@@ -27,6 +27,8 @@ jobs:
         run: npm ci --prefix frontend
       - name: Backend tests
         run: npm test --prefix backend
+      - name: Backend coverage threshold
+        run: npm run coverage --prefix backend
       - name: AI template quality regression
         run: node backend/eval/run.js --check
       - name: Frontend typecheck
