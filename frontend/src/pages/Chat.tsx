@@ -129,6 +129,12 @@ export default function Chat() {
     toast('正在聆听…再次点击结束（演示模拟 Web Speech API）', 'info');
   };
 
+  const handleUpload = (file?: File) => {
+    if (!file) return toast('附件上传：演示环境已就绪', 'info');
+    const sizeKb = (file.size / 1024).toFixed(0);
+    toast(`已添加附件「${file.name}」（${sizeKb} KB），发送后随消息一并提交`, 'ok');
+  };
+
   const send = async (text?: string, skillId?: string) => {
     const content = (text ?? input).trim();
     if (!content || streaming) return;
@@ -382,7 +388,7 @@ export default function Chat() {
             </div>
 
             {/* 标题与副标题 */}
-            <h1 className="chat-hero-title">ScienceX AI</h1>
+            <h1 className="chat-hero-title">Science X</h1>
             <p className="chat-hero-subtitle">
               全周期 AI 科研智能体中枢 · 覆盖选题、文献、实验、写作与评审
             </p>
@@ -395,7 +401,7 @@ export default function Chat() {
               streaming={streaming}
               recording={recording}
               onVoiceInput={voiceInput}
-              onUploadClick={() => toast('附件上传：演示环境已就绪', 'info')}
+              onUploadClick={handleUpload}
               onEnhancePrompt={enhancePrompt}
               model={model}
               onSelectModel={setModel}
@@ -440,7 +446,7 @@ export default function Chat() {
                 streaming={streaming}
                 recording={recording}
                 onVoiceInput={voiceInput}
-                onUploadClick={() => toast('附件上传：演示环境已就绪', 'info')}
+                onUploadClick={handleUpload}
                 onEnhancePrompt={enhancePrompt}
                 model={model}
                 onSelectModel={setModel}

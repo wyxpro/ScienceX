@@ -207,9 +207,9 @@
 }
 
 .chat-hero-badge {
-  width: 66px;
-  height: 66px;
-  border-radius: 18px;
+  width: 86px;
+  height: 86px;
+  border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,8 +271,8 @@
 
 .chat-dock-textarea {
   width: 100%;
-  min-height: 48px;
-  max-height: 180px;
+  min-height: 72px;
+  max-height: 200px;
   border: none;
   background: transparent;
   outline: none;
@@ -321,13 +321,15 @@
   border-color: #e2e8f0;
 }
 
-/* 带文字标签的动作药丸（文件上传 / 提示词增强，紧靠模型列表右侧） */
+/* 图标动作药丸（文件上传 / 提示词增强，仅图标 + title 提示，紧靠模型列表右侧） */
 .chat-action-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  width: 32px;
   height: 30px;
-  padding: 0 11px;
+  padding: 0;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: #f8fafc;

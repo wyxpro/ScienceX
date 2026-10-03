@@ -23,7 +23,7 @@ interface ChatCommandDockProps {
 const AGENT_MODES: Array<{ mode: AgentMode; label: string; icon: any; desc: string }> = [
   { mode: 'plan_execute', label: '多智能体专家', icon: 'layers', desc: '分步拆解 · 自动化全流程' },
   { mode: 'general', label: '通用学术对话', icon: 'spark', desc: '记忆注入 · 学术全景分析' },
-  { mode: 'react', label: 'ReAct 思维推演', icon: 'compass', desc: '思维链推导 · 工具闭环检验' },
+  { mode: 'react', label: 'ReAct 思维推演', icon: 'target', desc: '思维链推导 · 工具闭环检验' },
   { mode: 'codeact', label: 'CodeAct 实验代码', icon: 'chart', desc: 'Python 沙箱 · 消融图表可视化' },
   { mode: 'mcp', label: 'MCP 学术检索', icon: 'globe', desc: 'arXiv 直连 · 顶会顶刊抓取' },
   { mode: 'skill', label: '学术技能编排', icon: 'zap', desc: '综述大纲 · LaTeX · 实验向导' },
@@ -285,7 +285,6 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
               aria-label="文件上传"
             >
               <Icon name="upload" size={14} />
-              <span>文件上传</span>
             </button>
             <input
               ref={fileInputRef}
@@ -306,7 +305,6 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
               aria-label="提示词增强"
             >
               <Icon name="spark" size={14} />
-              <span>提示词增强</span>
             </button>
           </div>
 
