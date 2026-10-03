@@ -20,81 +20,81 @@ interface PersonaScenario {
   metrics: string[];
 }
 
-// 三大核心学术角色：硕博研究生、青年学者/博士后、课题组导师/PI
+// 三大核心用户角色：大学生/研究生、高校教师、科研人员
 const PERSONA_SCENARIOS: PersonaScenario[] = [
   {
-    id: 'grad-student',
-    role: '硕士 / 博士研究生',
-    tag: '学术探索 · 开题与精读',
+    id: 'student',
+    role: '大学生 / 研究生',
+    tag: '学业深造 · 开题与精读',
     coverImg: gradStudentImg,
     avatarIcon: 'book',
-    themeColor: '#1b7a5e',
-    badgeBg: 'rgba(27, 122, 94, 0.12)',
-    cardActiveBg: 'rgba(27, 122, 94, 0.05)',
-    shadowColor: 'rgba(27, 122, 94, 0.28)',
-    sceneTitle: '开题破局、文献精读与基线消融实验',
+    themeColor: '#0284c7',
+    badgeBg: 'rgba(2, 132, 199, 0.1)',
+    cardActiveBg: 'rgba(2, 132, 199, 0.04)',
+    shadowColor: 'rgba(2, 132, 199, 0.25)',
+    sceneTitle: '开题调研破局、文献公式精读与毕业论文 baseline 实验',
     pains: [
-      '开题调研面对海量外文文献茫然无措，难以精准捕捉核心创新点与研究空白；',
-      '外文顶刊长难句与公式推导繁杂，逐字阅读耗费数周时间；',
-      '消融实验方案设计不周全，缺乏严密的 Baseline 对比和可复现性。',
+      '开题调研面对海量外文文献茫然无措，难以精准捕捉研究空白与创新点；',
+      '外文顶刊长难句、专业术语与公式推导繁杂，逐篇通读耗费大量宝贵时间；',
+      '毕业设计/学位论文消融实验设计不周全，缺乏严密 Baseline 对比，查重降重繁琐。',
     ],
     solves: [
-      '智能选题雷达：结合顶刊顶会趋势与已有研究生成选题可行性分析；',
-      '三栏结构化精读：提取七段式核心总结、一键生成交互式思维导图与引用网络；',
-      '实验方案自动推导：输出标准消融对照矩阵与 UF1 柱状图/混淆矩阵。',
+      '智能选题雷达：结合前沿趋势与个人背景，智能输出开题报告与可行性论证；',
+      '三栏结构化精读：提取七段式核心创新、交互式思维导图与公式可视化拆解；',
+      '实验助手与查重降重：一键生成消融对照矩阵，提供学术级中英双语对照润色。',
     ],
     metrics: ['开题周期缩短 60%', '文献精读提速 3x', '消融设计一次成型'],
   },
   {
-    id: 'early-scholar',
-    role: '青年学者 / 博士后',
-    tag: '顶会冲刺 · 地道写作',
+    id: 'teacher',
+    role: '高校教师',
+    tag: '教研并进 · 课题申报与指导',
     coverImg: earlyScholarImg,
     avatarIcon: 'pen',
-    themeColor: '#c2762b',
-    badgeBg: 'rgba(194, 118, 43, 0.12)',
-    cardActiveBg: 'rgba(194, 118, 43, 0.05)',
-    shadowColor: 'rgba(194, 118, 43, 0.28)',
-    sceneTitle: '多线程赶 Deadline、期刊风格润色与智能选刊',
+    themeColor: '#059669',
+    badgeBg: 'rgba(5, 150, 105, 0.1)',
+    cardActiveBg: 'rgba(5, 150, 105, 0.04)',
+    shadowColor: 'rgba(5, 150, 105, 0.25)',
+    sceneTitle: '国家/省部级基金申报书撰写、课题把控与学生论文预审',
     pains: [
-      '多个顶会顶刊截稿日期并轨推进，精力分散难以保证高质量交付；',
-      '论文英文表达存在中式思维，审稿人常因“语言生硬”给出负面评价；',
-      '投稿选刊难以决策，不清楚审稿周期、录用偏好与影响因子变化。',
+      '教学、科研与行政多线推进，国家/省部级基金申报与立项论证撰写时间极其紧缺；',
+      '花费大量精力逐字修改学生提交的初稿硬伤，每周组会进展混乱难以高效调度；',
+      '学生毕业流动导致论文实验数据、代码和文献库流失，课题资产缺乏统一数字化沉淀。',
     ],
     solves: [
-      '期刊风格精准润色：注入领域权威术语库，实现原汁原味的学术英语重构；',
-      'CCF 会议期刊大全：根据论文摘要智能匹配期刊，实时提供倒计时预警；',
-      '查重降重对照工作台：左右双栏实时对照，保留学术核心语义。',
+      '基金申报助手：快速梳理国内外研究现状综述，辅助提炼科学假说与技术路线图；',
+      '多智能体初审把关：让学生在提交前先完成 5 维同行模拟盲审，提前消除格式与逻辑硬伤；',
+      '集中式课题资产库：文献库、实验代码、图表与项目全周期数据统一留存与传承。',
     ],
-    metrics: ['稿件润色效率提升 4x', '选刊匹配准确率 92%', '大修一次通过率提高'],
+    metrics: ['申报书筹备提速 50%', '组会指导效率翻倍', '课题资产 100% 留存'],
   },
   {
-    id: 'lab-pi',
-    role: '课题组导师 / 实验室 PI',
-    tag: '团队统筹 · 资产沉淀',
+    id: 'researcher',
+    role: '科研人员',
+    tag: '顶刊攻关 · 原创突破与交叉',
     coverImg: labPiImg,
-    avatarIcon: 'users',
-    themeColor: '#2563eb',
-    badgeBg: 'rgba(37, 99, 235, 0.12)',
-    cardActiveBg: 'rgba(37, 99, 235, 0.05)',
-    shadowColor: 'rgba(37, 99, 235, 0.28)',
-    sceneTitle: '组会汇报材料自动化、指导把控与科研资产库',
+    avatarIcon: 'flask',
+    themeColor: '#7c3aed',
+    badgeBg: 'rgba(124, 58, 237, 0.1)',
+    cardActiveBg: 'rgba(124, 58, 237, 0.04)',
+    shadowColor: 'rgba(124, 58, 237, 0.25)',
+    sceneTitle: '顶刊顶会攻关、前沿学术雷达、严谨消融与同行盲审对抗',
     pains: [
-      '多位学生实验进展格式散乱，每周组会材料准备耗费学生与导师大量时间；',
-      '花费大量精力纠正论文初稿中的逻辑硬伤与格式问题；',
-      '学生毕业流动导致论文数据、实验代码与文献笔记散落丢失。',
+      '瞄准 Nature/IEEE/ACM 顶刊，对创新性（Novelty）与理论深度要求极高；',
+      '跨学科交叉研究文献壁垒高，复现复杂算法与大规模消融验证难度大；',
+      '投稿周期长、审稿人评审意见犀利，缺乏针对性的抗辩（Rebuttal）策略推演。',
     ],
     solves: [
-      '一键生成汇报 PPTX：把实验消融进展直接转化为标准 12 页汇报幻灯片；',
-      '模拟初审把关：让学生在提交前先过一遍多智能体自查，规避硬伤；',
-      '集中式项目资产空间：文献库、代码实验、图表与稿件全生命周期资产留存。',
+      '前沿雷达与创新量化：多源交叉追踪全球最新突破，精准推演理论创新增量；',
+      '全生命周期消融矩阵：自动推导参数敏感性看板与可复现性存证报告；',
+      '5 维智能体盲审陪练：全方位模拟严苛审稿人视角，辅助生成高质量 Rebuttal 辩护。',
     ],
-    metrics: ['组会筹备节省 80% 时间', '实验室数字资产 100% 留存', '指导沟通零损耗'],
+    metrics: ['顶刊录用率提升 42%', '实验复现耗时削减 70%', 'Rebuttal 成功率提升'],
   },
 ];
 
 export const LandingPersonas: React.FC = () => {
-  const [selectedId, setSelectedId] = useState<string>('grad-student');
+  const [selectedId, setSelectedId] = useState<string>('student');
 
   return (
     <section id="personas" className="landing-section" style={{ maxWidth: 1320, margin: '0 auto', padding: '60px 24px' }}>
@@ -103,12 +103,12 @@ export const LandingPersonas: React.FC = () => {
         <h2 className="section-title" style={{ fontSize: 'clamp(26px, 3.2vw, 36px)', marginTop: 8 }}>
           用户画像与科研场景
         </h2>
-        <p className="section-sub" style={{ maxWidth: 720, margin: '10px auto 0', color: 'var(--muted)', fontSize: 15.5 }}>
-          从开题破局、多线程写作到组会统筹与成果沉淀，ScienceX 量身赋能每一位科研工作者的关键决策时刻。
+        <p className="section-sub" style={{ maxWidth: 740, margin: '10px auto 0', color: 'var(--muted)', fontSize: 15.5 }}>
+          针对大学生/研究生、高校教师与专业科研人员的学术成长路径，ScienceX 量身定制全链路科研协作中枢。
         </p>
       </div>
 
-      {/* 三大画像场景卡片网格（带精致封面图与多主题交互） */}
+      {/* 三大画像场景卡片网格 */}
       <div
         style={{
           display: 'grid',
@@ -125,12 +125,12 @@ export const LandingPersonas: React.FC = () => {
               style={{
                 borderRadius: 22,
                 overflow: 'hidden',
-                background: isSelected ? p.cardActiveBg : 'rgba(255, 255, 255, 0.75)',
+                background: isSelected ? p.cardActiveBg : 'rgba(255, 255, 255, 0.85)',
                 backdropFilter: 'blur(16px)',
                 border: isSelected ? `2.5px solid ${p.themeColor}` : '1.5px solid var(--line)',
                 boxShadow: isSelected
                   ? `0 20px 48px -10px ${p.shadowColor}, 0 4px 16px rgba(0, 0, 0, 0.06)`
-                  : '0 6px 20px -6px rgba(0, 0, 0, 0.06)',
+                  : '0 6px 20px -6px rgba(0, 0, 0, 0.05)',
                 display: 'flex',
                 flexDirection: 'column',
                 cursor: 'pointer',
@@ -149,7 +149,7 @@ export const LandingPersonas: React.FC = () => {
                 if (!isSelected) {
                   e.currentTarget.style.borderColor = 'var(--line)';
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 6px 20px -6px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px -6px rgba(0, 0, 0, 0.05)';
                 }
               }}
               role="button"
@@ -177,7 +177,7 @@ export const LandingPersonas: React.FC = () => {
                     backdropFilter: 'blur(6px)',
                   }}
                 >
-                  <Icon name="check" size={12} /> 聚焦方案
+                  <Icon name="check" size={12} /> 聚焦场景
                 </div>
               )}
 
@@ -209,7 +209,7 @@ export const LandingPersonas: React.FC = () => {
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(to top, rgba(14, 29, 23, 0.88) 0%, rgba(14, 29, 23, 0.25) 50%, rgba(0,0,0,0.1) 100%)',
+                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.88) 0%, rgba(15, 23, 42, 0.25) 50%, rgba(0,0,0,0.1) 100%)',
                     pointerEvents: 'none',
                   }}
                 />
@@ -233,7 +233,7 @@ export const LandingPersonas: React.FC = () => {
                         width: 40,
                         height: 40,
                         borderRadius: 12,
-                        background: 'rgba(255, 255, 255, 0.92)',
+                        background: 'rgba(255, 255, 255, 0.95)',
                         color: p.themeColor,
                         display: 'flex',
                         alignItems: 'center',
@@ -248,7 +248,7 @@ export const LandingPersonas: React.FC = () => {
                       <div
                         style={{
                           fontWeight: 800,
-                          fontSize: 16.5,
+                          fontSize: 17,
                           color: '#ffffff',
                           textShadow: '0 2px 8px rgba(0, 0, 0, 0.7)',
                           lineHeight: 1.25,
@@ -259,7 +259,7 @@ export const LandingPersonas: React.FC = () => {
                       <div
                         style={{
                           fontSize: 11.5,
-                          color: '#d1e3d9',
+                          color: '#e2e8f0',
                           marginTop: 3,
                           textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
                         }}
@@ -282,7 +282,7 @@ export const LandingPersonas: React.FC = () => {
                     marginBottom: 14,
                     padding: '8px 12px',
                     borderRadius: 10,
-                    background: isSelected ? 'rgba(255, 255, 255, 0.9)' : 'var(--bg-deep)',
+                    background: isSelected ? 'rgba(255, 255, 255, 0.95)' : 'var(--bg-deep)',
                     border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid var(--line)',
                     transition: 'all 0.25s ease',
                   }}
@@ -295,11 +295,11 @@ export const LandingPersonas: React.FC = () => {
                   <div
                     style={{
                       fontSize: 12.5,
-                      color: '#8b3d36',
-                      background: 'rgba(194, 74, 66, 0.06)',
+                      color: '#991b1b',
+                      background: 'rgba(239, 68, 68, 0.06)',
                       padding: '11px 13px',
                       borderRadius: 12,
-                      border: '1px solid rgba(194, 74, 66, 0.12)',
+                      border: '1px solid rgba(239, 68, 68, 0.12)',
                     }}
                   >
                     <div style={{ fontWeight: 700, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -318,7 +318,7 @@ export const LandingPersonas: React.FC = () => {
                     style={{
                       fontSize: 12.5,
                       color: 'var(--ink)',
-                      background: isSelected ? 'rgba(255, 255, 255, 0.95)' : 'var(--brand-softer)',
+                      background: isSelected ? 'rgba(255, 255, 255, 0.95)' : 'rgba(248, 250, 252, 0.85)',
                       border: isSelected ? `1px solid ${p.themeColor}33` : '1px solid var(--line)',
                       padding: '11px 13px',
                       borderRadius: 12,

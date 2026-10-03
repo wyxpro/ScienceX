@@ -1,6 +1,6 @@
 /* ============================================================
    ScienceX 电脑端全屏沉浸式登录 / 注册页 (Full-screen Split Canvas)
-   青春动态科技视觉 · 极简开阔大方 · 移除冗余组件
+   清新通透视觉清晰风格 · 告别暗黑蓝黑 · 呼吸感开阔大方
    ============================================================ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -68,7 +68,7 @@ export default function Login() {
       }}
     >
       {/* ============================================================
-          左侧：全屏沉浸式科研展示长卷 (占屏 55%，青春动态科技极光蓝夜)
+          左侧：全屏沉浸式科研展示长卷 (占屏 55%，清新明亮·天霁蓝与冰川青·视觉清晰)
           ============================================================ */}
       <div
         className="desktop-only"
@@ -76,68 +76,68 @@ export default function Login() {
           flex: '0 0 55%',
           width: '55%',
           height: '100vh',
-          background: 'linear-gradient(145deg, #090e1a 0%, #0d1b2a 40%, #14213d 75%, #0d273d 100%)',
-          color: '#f0f6fc',
+          background: 'linear-gradient(155deg, #f0f7ff 0%, #e0f2fe 38%, #eefbf7 75%, #f5f3ff 100%)',
+          color: '#0f172a',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 'clamp(44px, 5vw, 68px) clamp(44px, 5vw, 76px)',
           position: 'relative',
           overflow: 'hidden',
-          borderRight: '1px solid rgba(56, 189, 248, 0.15)',
-          boxShadow: '12px 0 45px rgba(5, 12, 28, 0.25)',
+          borderRight: '1px solid #e2e8f0',
+          boxShadow: '10px 0 36px rgba(15, 23, 42, 0.04)',
         }}
       >
-        {/* 背景活力极光流动光球与微网格 */}
+        {/* 背景轻盈极光柔光与清爽微网格 */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-          {/* 左上炫彩天蓝光晕 */}
+          {/* 左上淡海天蓝光晕 */}
           <div
             style={{
               position: 'absolute',
               top: '-15%',
               left: '-10%',
-              width: 560,
-              height: 560,
+              width: 580,
+              height: 580,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(14, 165, 233, 0.08) 45%, transparent 70%)',
-              filter: 'blur(75px)',
+              background: 'radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(14, 165, 233, 0.08) 50%, transparent 70%)',
+              filter: 'blur(70px)',
             }}
           />
-          {/* 中右极光紫蓝光晕 */}
+          {/* 中右轻薄荷青光晕 */}
           <div
             style={{
               position: 'absolute',
-              top: '30%',
-              right: '-10%',
-              width: 520,
-              height: 520,
+              top: '35%',
+              right: '-12%',
+              width: 500,
+              height: 500,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, rgba(129, 140, 248, 0.05) 50%, transparent 70%)',
-              filter: 'blur(80px)',
+              background: 'radial-gradient(circle, rgba(45, 212, 191, 0.22) 0%, rgba(20, 184, 166, 0.06) 50%, transparent 70%)',
+              filter: 'blur(75px)',
             }}
           />
-          {/* 左下青春青绿活力光晕 */}
+          {/* 左下轻浅紫霞光晕 */}
           <div
             style={{
               position: 'absolute',
               bottom: '-15%',
-              left: '15%',
+              left: '10%',
               width: 480,
               height: 480,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(20, 184, 166, 0.18) 0%, transparent 65%)',
+              background: 'radial-gradient(circle, rgba(167, 139, 250, 0.18) 0%, transparent 65%)',
               filter: 'blur(75px)',
             }}
           />
-          {/* 细腻科技微网格 */}
-          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.28 }}>
+          {/* 细腻学术坐标细网格 */}
+          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.35 }}>
             <defs>
-              <pattern id="tech-dynamic-grid" width="36" height="36" patternUnits="userSpaceOnUse">
-                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.8" />
-                <circle cx="36" cy="0" r="1.2" fill="rgba(56, 189, 248, 0.35)" />
+              <pattern id="light-academic-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(2, 132, 199, 0.08)" strokeWidth="0.8" />
+                <circle cx="36" cy="0" r="1.2" fill="rgba(2, 132, 199, 0.16)" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#tech-dynamic-grid)" />
+            <rect width="100%" height="100%" fill="url(#light-academic-grid)" />
           </svg>
         </div>
 
@@ -149,15 +149,15 @@ export default function Login() {
           >
             <div
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 13,
-                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 60%, #0f766e 100%)',
+                width: 46,
+                height: 46,
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 60%, #0d9488 100%)',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 6px 20px rgba(2, 132, 199, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+                boxShadow: '0 6px 18px rgba(2, 132, 199, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
               }}
             >
               <Icon name="flask" size={24} />
@@ -166,16 +166,16 @@ export default function Login() {
               <div
                 style={{
                   fontFamily: 'var(--font-serif)',
-                  fontSize: 25,
+                  fontSize: 26,
                   fontWeight: 800,
-                  color: '#ffffff',
+                  color: '#0f172a',
                   letterSpacing: '-0.3px',
                   lineHeight: 1.1,
                 }}
               >
                 ScienceX
               </div>
-              <div style={{ fontSize: 11.5, color: '#94a3b8', letterSpacing: 0.5, marginTop: 2, fontWeight: 500 }}>
+              <div style={{ fontSize: 11.5, color: '#475569', letterSpacing: 0.5, marginTop: 2, fontWeight: 600 }}>
                 AI 科研全流程协同工作台
               </div>
             </div>
@@ -183,53 +183,23 @@ export default function Login() {
         </div>
 
         {/* 左侧主体内容：学术愿景与科技链路卡片 */}
-        <div style={{ position: 'relative', zIndex: 2, margin: 'auto 0', padding: '20px 0' }}>
-          {/* 态势标签 */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 16px',
-              borderRadius: 999,
-              background: 'rgba(56, 189, 248, 0.1)',
-              border: '1px solid rgba(56, 189, 248, 0.28)',
-              color: '#38bdf8',
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 24,
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: '#38bdf8',
-                boxShadow: '0 0 12px #38bdf8',
-                display: 'inline-block',
-              }}
-            />
-            2026 AI 原生学术生产力中枢
-          </div>
-
+        <div style={{ position: 'relative', zIndex: 2, margin: 'auto 0', padding: '16px 0' }}>
           {/* 醒目标题 */}
           <h1
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(32px, 3vw, 45px)',
+              fontSize: 'clamp(32px, 3.2vw, 46px)',
               lineHeight: 1.28,
-              fontWeight: 700,
-              margin: '0 0 20px',
-              color: '#ffffff',
+              fontWeight: 800,
+              margin: '0 0 18px',
+              color: '#0f172a',
               letterSpacing: '-0.5px',
             }}
           >
             让科研更简单。<br />
             <span
               style={{
-                background: 'linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #34d399 100%)',
+                background: 'linear-gradient(90deg, #0284c7 0%, #0369a1 40%, #0d9488 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
@@ -240,17 +210,18 @@ export default function Login() {
 
           <p
             style={{
-              color: '#94a3b8',
+              color: '#334155',
               fontSize: 15.5,
               lineHeight: 1.85,
               marginBottom: 36,
               maxWidth: '92%',
+              fontWeight: 450,
             }}
           >
             覆盖「选题 → 文献 → 实验 → 分析 → 写作 → 投稿 → 组会 / 评审」全流程，把繁复机械的工具链交给 AI 智能体，让学者专注提出好问题与科学创新本身。
           </p>
 
-          {/* 四大科研支柱网格卡片 */}
+          {/* 四大科研支柱网格卡片（白玉微玻璃拟态 · 视觉清晰锐利） */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
             {[
               {
@@ -258,32 +229,32 @@ export default function Login() {
                 title: '选题灵感与前沿雷达',
                 desc: '多源趋势聚类 · 创新可行性评估',
                 tag: 'CVPR / Nature',
-                accent: '#38bdf8',
-                bg: 'rgba(56, 189, 248, 0.14)',
+                accent: '#0284c7',
+                bg: 'rgba(2, 132, 199, 0.1)',
               },
               {
                 icon: 'book',
                 title: '文献沉浸精读与导图',
                 desc: 'AUFormer 导图 · 跨模态公式拆解',
                 tag: '双语对照',
-                accent: '#818cf8',
-                bg: 'rgba(129, 140, 248, 0.14)',
+                accent: '#6366f1',
+                bg: 'rgba(99, 102, 241, 0.1)',
               },
               {
                 icon: 'flask',
                 title: '实验设计与资产复现',
                 desc: '消融实验矩阵 · GPU 调度看板',
                 tag: '可复现追踪',
-                accent: '#2dd4bf',
-                bg: 'rgba(45, 212, 191, 0.14)',
+                accent: '#0d9488',
+                bg: 'rgba(13, 148, 136, 0.1)',
               },
               {
                 icon: 'shield',
                 title: '多智能体专家严谨预审',
                 desc: '5 维盲审同行体检 · 避坑指南',
                 tag: '顶刊标准',
-                accent: '#a78bfa',
-                bg: 'rgba(167, 139, 250, 0.14)',
+                accent: '#8b5cf6',
+                bg: 'rgba(139, 92, 246, 0.1)',
               },
             ].map((item) => (
               <div
@@ -291,12 +262,14 @@ export default function Login() {
                 style={{
                   padding: '16px 18px',
                   borderRadius: 16,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(10px)',
+                  background: 'rgba(255, 255, 255, 0.88)',
+                  border: '1px solid rgba(226, 232, 240, 0.9)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 4px 16px -2px rgba(15, 23, 42, 0.05)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 8,
+                  transition: 'all 0.2s ease',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -319,33 +292,34 @@ export default function Login() {
                       fontSize: 11,
                       padding: '3px 8px',
                       borderRadius: 6,
-                      background: 'rgba(255, 255, 255, 0.08)',
+                      background: item.bg,
                       color: item.accent,
-                      fontWeight: 600,
+                      fontWeight: 700,
                     }}
                   >
                     {item.tag}
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 14.5, color: '#f8fafc' }}>{item.title}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3, lineHeight: 1.45 }}>{item.desc}</div>
+                  <div style={{ fontWeight: 700, fontSize: 14.5, color: '#0f172a' }}>{item.title}</div>
+                  <div style={{ fontSize: 12, color: '#475569', marginTop: 3, lineHeight: 1.45 }}>{item.desc}</div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* 科研学术数据指标展示 */}
+          {/* 科研学术数据指标展示（纯白浮雕卡） */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
               gap: 16,
-              marginTop: 28,
+              marginTop: 26,
               padding: '16px 20px',
               borderRadius: 16,
-              background: 'rgba(15, 23, 42, 0.45)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
             }}
           >
             {[
@@ -358,21 +332,21 @@ export default function Login() {
                 <div
                   style={{
                     fontFamily: 'var(--font-serif)',
-                    fontSize: 20,
+                    fontSize: 21,
                     fontWeight: 800,
-                    color: '#38bdf8',
+                    color: '#0284c7',
                   }}
                 >
                   {s.val}
                 </div>
-                <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 2 }}>{s.lbl}</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, fontWeight: 500 }}>{s.lbl}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* 左侧底部留白自然过渡 */}
-        <div style={{ height: 10 }} />
+        <div style={{ height: 6 }} />
       </div>
 
       {/* ============================================================
@@ -412,7 +386,7 @@ export default function Login() {
                 color: '#ffffff',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
                 marginBottom: 16,
               }}
             >
