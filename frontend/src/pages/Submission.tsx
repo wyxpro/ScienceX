@@ -329,29 +329,29 @@ export default function Submission() {
                     key={j.id}
                     onClick={() => setSelectedJournal(j)}
                     style={{
-                      borderRadius: 16,
+                      borderRadius: 14,
                       background: '#ffffff',
                       border: j.tracked ? '1.5px solid var(--brand)' : '1px solid #e2e8f0',
                       boxShadow: j.tracked
-                        ? '0 6px 20px -4px rgba(27, 122, 94, 0.16)'
-                        : '0 2px 10px rgba(15, 23, 42, 0.04)',
-                      padding: '20px 22px',
+                        ? '0 4px 16px -4px rgba(27, 122, 94, 0.16)'
+                        : '0 1px 6px rgba(15, 23, 42, 0.03)',
+                      padding: '13px 16px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 12,
+                      gap: 7,
                       cursor: 'pointer',
                       position: 'relative',
-                      transition: 'all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                      transition: 'all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-3px)';
-                      e.currentTarget.style.boxShadow = '0 10px 24px -4px rgba(15, 23, 42, 0.09)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 18px -4px rgba(15, 23, 42, 0.08)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'none';
                       e.currentTarget.style.boxShadow = j.tracked
-                        ? '0 6px 20px -4px rgba(27, 122, 94, 0.16)'
-                        : '0 2px 10px rgba(15, 23, 42, 0.04)';
+                        ? '0 4px 16px -4px rgba(27, 122, 94, 0.16)'
+                        : '0 1px 6px rgba(15, 23, 42, 0.03)';
                     }}
                     role="button"
                     tabIndex={0}
@@ -359,12 +359,12 @@ export default function Submission() {
                   >
                     {/* 第一行：CCF 标签 + 期刊/会议名称 + 收藏星星按钮 */}
                     <div className="row-between" style={{ alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
                         <span
                           style={{
-                            padding: '2px 7px',
-                            borderRadius: 6,
-                            fontSize: 11,
+                            padding: '1px 6px',
+                            borderRadius: 5,
+                            fontSize: 10.5,
                             fontWeight: 800,
                             background: ccfStyle.bg,
                             color: ccfStyle.color,
@@ -377,8 +377,8 @@ export default function Submission() {
                         <div
                           className="ellipsis"
                           style={{
-                            fontSize: 16,
-                            fontWeight: 800,
+                            fontSize: 15,
+                            fontWeight: 700,
                             color: '#0f172a',
                             letterSpacing: '-0.2px',
                           }}
@@ -395,7 +395,7 @@ export default function Submission() {
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          padding: 4,
+                          padding: 2,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -403,11 +403,11 @@ export default function Submission() {
                           transition: 'transform 0.15s ease, color 0.15s ease',
                           flexShrink: 0,
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.15)')}
                         onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
                         title={j.tracked ? '已关注，点击取消' : '点击关注追踪'}
                       >
-                        <Icon name="star" size={18} />
+                        <Icon name="star" size={16} />
                       </button>
                     </div>
 
@@ -415,9 +415,9 @@ export default function Submission() {
                     <div
                       className="ellipsis"
                       style={{
-                        fontSize: 12.5,
+                        fontSize: 11.5,
                         color: '#64748b',
-                        lineHeight: 1.4,
+                        lineHeight: 1.3,
                       }}
                       title={j.full_name || j.field}
                     >
@@ -427,12 +427,12 @@ export default function Submission() {
                     {/* 第三行：截稿状态（重点醒目展示） */}
                     <div
                       style={{
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: 700,
                         color: isUrgent ? '#dc2626' : typeof j.days_left === 'number' ? '#b45309' : '#047857',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 6,
+                        gap: 5,
                       }}
                     >
                       <span>
@@ -445,7 +445,7 @@ export default function Submission() {
                     {/* 第四行：举办日期与地点 / 周期 */}
                     <div
                       style={{
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: '#64748b',
                         display: 'flex',
                         alignItems: 'center',
@@ -461,8 +461,8 @@ export default function Submission() {
                     {/* 第五行：官方网址点击链接 + 详情提示 */}
                     <div
                       style={{
-                        marginTop: 4,
-                        paddingTop: 8,
+                        marginTop: 2,
+                        paddingTop: 6,
                         borderTop: '1px solid #f1f5f9',
                         display: 'flex',
                         alignItems: 'center',
@@ -476,7 +476,7 @@ export default function Submission() {
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
                           style={{
-                            fontSize: 12,
+                            fontSize: 11.5,
                             color: '#0284c7',
                             textDecoration: 'none',
                             fontWeight: 500,
@@ -489,17 +489,17 @@ export default function Submission() {
                           title={`访问 ${j.name} 官网`}
                         >
                           <Icon name="link" size={11} />
-                          <span className="ellipsis" style={{ maxWidth: 220 }}>
+                          <span className="ellipsis" style={{ maxWidth: 200 }}>
                             {getDomainFromUrl(j.website)}
                           </span>
                         </a>
                       ) : (
-                        <span style={{ fontSize: 11.5, color: '#94a3b8' }}>暂无官网</span>
+                        <span style={{ fontSize: 11, color: '#94a3b8' }}>暂无官网</span>
                       )}
 
                       <span
                         style={{
-                          fontSize: 11.5,
+                          fontSize: 11,
                           color: 'var(--muted)',
                           display: 'flex',
                           alignItems: 'center',

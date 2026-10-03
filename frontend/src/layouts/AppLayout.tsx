@@ -94,15 +94,77 @@ export default function AppLayout() {
         ))}
       </nav>
 
-      {/* 课题空间入口：固定在左下角用户信息上方 */}
-      <div style={{ padding: '0 10px' }}>
+      {/* 课题空间入口：设计全新轻奢质感卡片按钮 */}
+      <div style={{ padding: '0 10px', marginBottom: 8 }}>
         <NavLink
           to="/projects"
-          className={({ isActive }) => `sb-item ${isActive ? 'active' : ''}`}
+          style={({ isActive }) => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: collapsed ? '9px 0' : '9px 12px',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            borderRadius: 11,
+            textDecoration: 'none',
+            background: isActive
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(5, 150, 105, 0.22) 100%)'
+              : 'linear-gradient(135deg, rgba(241, 245, 249, 0.75) 0%, rgba(248, 250, 252, 0.95) 100%)',
+            border: isActive ? '1.5px solid rgba(16, 185, 129, 0.45)' : '1px solid rgba(226, 232, 240, 0.9)',
+            boxShadow: isActive
+              ? '0 3px 12px -2px rgba(16, 185, 129, 0.22)'
+              : '0 1px 3px rgba(0, 0, 0, 0.02)',
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            cursor: 'pointer',
+          })}
           title={collapsed ? '课题空间' : undefined}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'none';
+          }}
         >
-          <span className="sb-ic"><Icon name="layers" size={17} /></span>
-          {!collapsed && <span>课题空间</span>}
+          <span
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="layers" size={15} />
+          </span>
+          {!collapsed && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.2px' }}>
+                  课题空间
+                </span>
+                <span style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: -1 }}>
+                  进度与全链资产
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: 'var(--brand-strong)',
+                  background: 'var(--brand-soft)',
+                  padding: '1px 6px',
+                  borderRadius: 6,
+                }}
+              >
+                Space
+              </span>
+            </div>
+          )}
         </NavLink>
       </div>
 
@@ -129,16 +191,18 @@ export default function AppLayout() {
       {sidebar}
       {open && <div className="scrim mobile-only" onClick={() => setOpen(false)} />}
       <div className="main-area">
-        <header className="topbar">
-          <button className="btn btn-ghost btn-icon hamburger" onClick={() => setOpen(true)}><Icon name="menu" size={19} /></button>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-            <div style={{ minWidth: 0 }}>
-              <div className="topbar-title">{title}</div>
-              <div className="topbar-sub">{sub}</div>
+        {loc.pathname !== '/chat' && (
+          <header className="topbar">
+            <button className="btn btn-ghost btn-icon hamburger" onClick={() => setOpen(true)}><Icon name="menu" size={19} /></button>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="topbar-title">{title}</div>
+                <div className="topbar-sub">{sub}</div>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         <main className="page-scroll" id="page-scroll">
           <Outlet />
