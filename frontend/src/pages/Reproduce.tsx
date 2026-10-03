@@ -1,7 +1,7 @@
-/* 论文复现 —— 特色功能：选定开源论文 → 五阶段复现流水线 → 指标比对报告 */
+/* 论文复现 —— 特色功能：新增复现（选择论文 / 上传文档）→ 五阶段复现流水线 → 指标比对报告 */
 import { useEffect, useRef, useState } from 'react';
 import Icon from '../components/Icon';
-import { Empty, Progress, Tag, useToast } from '../components/ui';
+import { Empty, Modal, Progress, Tag, useToast } from '../components/ui';
 
 /* ---------- 数据定义 ---------- */
 interface Candidate {
@@ -107,10 +107,42 @@ const CANDIDATES: Candidate[] = [
 
 type PhaseStatus = 'done' | 'running' | 'pending';
 
+/* 从上传文档生成复现目标（演示：按文档名生成通用五阶段方案与占位指标） */
+function makeDocCandidate(name: string): Candidate {
+  return {
+    id: `doc-${Date.now()}`,
+    title: name,
+    authors: '本地文档导入',
+    venue: '文档', year: new Date().getFullYear(),
+    codeUrl: 'local://upload', stars: '—',
+    framework: '自动推断', gpu: '按需分配', dataset: '文档描述',
+    difficulty: '中', estHours: 6,
+    tags: ['文档导入', '自动解析'],
+    abstract: `从上传文档「${name}」解析方法与实验配置，自动生成五阶段复现方案。`,
+    phases: [
+      { name: '代码解析', desc: '解析文档方法与实验配置', logs: [`解析文档 ${name}`, '抽取方法模块与训练流程描述', '识别数据集、评价指标与超参配置'] },
+      { name: '环境构建', desc: '依赖推断 · 隔离环境 · 冒烟测试', logs: ['按文档推断依赖清单并构建隔离环境', '冒烟测试通过，环境就绪'] },
+      { name: '数据准备', desc: '数据集对齐 · 预处理复刻', logs: ['按文档协议对齐数据预处理', 'train/val/test 划分与原文一致'] },
+      { name: '基线对齐', desc: '超参对齐 · 随机种子固定', logs: ['固定随机种子，按文档超参启动训练', '训练收敛，检查点已归档'] },
+      { name: '结果比对', desc: '指标复算 · 文档数值对照', logs: ['复算主指标并与文档报告值对照', '偏差处于容差范围内 → 判定复现成功'] },
+    ],
+    metrics: [
+      { metric: '主指标', paper: 0.742, repro: 0.739, tol: 0.006 },
+      { metric: '次指标', paper: 0.715, repro: 0.712, tol: 0.008 },
+    ],
+  };
+}
+
 export default function Reproduce() {
   const toast = useToast();
   const [pickedId, setPickedId] = useState(CANDIDATES[0].id);
-  const picked = CANDIDATES.find((c) => c.id === pickedId)!;
+  const [extras, setExtras] = useState<Candidate[]>([]);
+  const picked = [...CANDIDATES, ...extras].find((c) => c.id === pickedId)!;
+
+  /* 新增复现弹窗 */
+  const [addOpen, setAddOpen] = useState(false);
+  const [pickId, setPickId] = useState(CANDIDATES[0].id);
+  const [docName, setDocName] = useState('');
 
   const [running, setRunning] = useState(false);
   const [phaseIdx, setPhaseIdx] = useState(-1);      // 当前执行阶段
@@ -185,69 +217,34 @@ export default function Reproduce() {
         </div>
       </div>
 
-      {/* ===== 候选论文 ===== */}
-      <div style={{ flex: 'none' }}>
-        <div className="row-between" style={{ marginBottom: 8 }}>
-          <span className="card-title"><Icon name="doc" size={15} /> 选择复现目标</span>
-          <span className="text-xs text-muted">共 {CANDIDATES.length} 篇可复现论文（均含官方开源代码）</span>
-        </div>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 10 }}>
-          {CANDIDATES.map((c, i) => {
-            const active = c.id === pickedId;
-            return (
-              <div
-                key={c.id}
-                className={`card card-hover anim-in ${active ? '' : ''}`}
-                onClick={() => { if (!running) { reset(); setPickedId(c.id); } }}
-                style={{
-                  cursor: running ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 5,
-                  animationDelay: `${i * 60}ms`, padding: '11px 14px',
-                  borderColor: active ? 'var(--brand)' : undefined,
-                  background: active ? 'var(--brand-softer)' : undefined,
-                  boxShadow: active ? '0 0 0 3px rgba(27,122,94,.12)' : undefined,
-                }}
-              >
-                <div className="row-between" style={{ alignItems: 'flex-start' }}>
-                  <span className="tag tag-outline" style={{ flex: 'none' }}><Icon name="book" size={11} /> {c.venue} {c.year}</span>
-                  <span className="row g-1" style={{ flex: 'none', color: active ? 'var(--brand)' : 'var(--muted)' }}>
-                    <Icon name="star" size={12} /> <span className="mono text-xs">{c.stars}</span>
-                  </span>
-                </div>
-                <div className="fw-bold text-small clamp2" style={{ lineHeight: 1.45 }}>{c.title}</div>
-                <div className="text-xs text-muted">{c.authors}</div>
-                <p className="text-xs clamp2" style={{ color: 'var(--ink-2)', margin: 0 }}>{c.abstract}</p>
-                <div className="row g-1 wrap" style={{ marginTop: 'auto' }}>
-                  <span className="tag tag-gray"><Icon name="cpu" size={11} /> {c.framework}</span>
-                  <span className="tag tag-gray">{c.gpu}</span>
-                  <span className="tag tag-gray"><Icon name="clock" size={11} /> 约 {c.estHours}h</span>
-                  <Tag color={c.difficulty === '低' ? 'green' : c.difficulty === '中' ? 'amber' : 'red'} style={{ marginLeft: 'auto' }}>难度 {c.difficulty}</Tag>
-                </div>
-                {active && (
-                  <div className="text-xs" style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Icon name="check" size={12} /> 已选定 · <span className="mono ellipsis">{c.codeUrl}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* ===== 流水线 + 实时日志 ===== */}
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 4fr)', alignItems: 'start', flex: 'none' }}>
         {/* 左：五阶段步骤条 */}
         <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="row-between wrap g-2">
             <span className="card-title"><Icon name="zap" size={15} /> 复现流水线</span>
-            {running ? (
-              <button className="btn btn-danger btn-sm" onClick={() => { clearTimers(); setRunning(false); setLogs((x) => [...x, '⚠ 用户手动终止，已完成阶段产物已保留（支持断点续跑）']); toast('已终止，产物保留', 'info'); }}>
-                <Icon name="x" size={12} /> 终止执行
+            <div className="row g-1" style={{ flex: 'none' }}>
+              <button
+                className="btn btn-soft"
+                onClick={() => { setPickId(pickedId); setDocName(''); setAddOpen(true); }}
+                disabled={running}
+              >
+                <Icon name="plus" size={14} /> 新增复现
               </button>
-            ) : (
-              <button className="btn btn-primary" onClick={launch}>
-                <Icon name={finished ? 'refresh' : 'play'} size={14} /> {finished ? '重新复现' : '启动复现'}
-              </button>
-            )}
+              {running ? (
+                <button className="btn btn-danger" onClick={() => { clearTimers(); setRunning(false); setLogs((x) => [...x, '⚠ 用户手动终止，已完成阶段产物已保留（支持断点续跑）']); toast('已终止，产物保留', 'info'); }}>
+                  <Icon name="x" size={13} /> 终止执行
+                </button>
+              ) : (
+                <button className="btn btn-primary" onClick={launch}>
+                  <Icon name={finished ? 'refresh' : 'play'} size={14} /> {finished ? '重新复现' : '启动复现'}
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="row g-1 text-xs text-muted" style={{ alignItems: 'center', marginTop: -6, minWidth: 0 }}>
+            <Icon name="doc" size={12} />
+            <span className="ellipsis">当前目标：{picked.title}（{picked.venue} {picked.year}）</span>
           </div>
 
           <div className="row-between text-xs text-muted">
@@ -377,6 +374,87 @@ export default function Reproduce() {
           </div>
         ))}
       </div>
+
+      {/* ===== 新增复现弹窗：选择论文 或 上传文档 ===== */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={<><Icon name="plus" size={15} /> 新增复现</>}>
+        <div className="fw-bold text-small mb-2">选择复现的论文</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[...extras, ...CANDIDATES].map((c) => {
+            const on = !docName && pickId === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setPickId(c.id); setDocName(''); }}
+                style={{
+                  textAlign: 'left', cursor: 'pointer', padding: '10px 12px', borderRadius: 10,
+                  border: on ? '1px solid var(--brand)' : '1px solid var(--line)',
+                  background: on ? 'var(--brand-softer)' : '#ffffff',
+                  boxShadow: on ? '0 0 0 3px rgba(27,122,94,.10)' : 'none',
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}
+              >
+                <span className="row g-1" style={{ alignItems: 'center' }}>
+                  <span className="tag tag-outline" style={{ flex: 'none' }}><Icon name="book" size={11} /> {c.venue} {c.year}</span>
+                  <span className="text-xs text-muted mono ellipsis">{c.codeUrl}</span>
+                  {on && <span className="tag tag-green" style={{ marginLeft: 'auto', flex: 'none' }}><Icon name="check" size={11} /> 已选择</span>}
+                </span>
+                <span className="text-small fw-bold clamp2">{c.title}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="row g-2" style={{ alignItems: 'center', margin: '14px 0 8px' }}>
+          <span className="text-xs text-muted" style={{ flex: 'none' }}>或上传论文 / 文档</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+        </div>
+        <label
+          style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '18px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+            border: docName ? '1px solid var(--brand)' : '1px dashed var(--line)',
+            background: docName ? 'var(--brand-softer)' : 'var(--bg-deep)',
+          }}
+        >
+          <Icon name="upload" size={18} style={{ color: docName ? 'var(--brand-strong)' : 'var(--muted)' }} />
+          <span className="text-small" style={{ color: docName ? 'var(--brand-strong)' : 'var(--ink-2)' }}>
+            {docName || '点击上传 PDF / Word / Markdown 文档'}
+          </span>
+          {docName && <span className="text-xs text-muted">将按文档内容自动生成五阶段复现方案</span>}
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx,.md,.txt"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) { setDocName(f.name); setPickId(''); }
+              e.target.value = '';
+            }}
+          />
+        </label>
+
+        <button
+          className="btn btn-primary btn-block mt-3"
+          disabled={!pickId && !docName}
+          onClick={() => {
+            if (docName) {
+              const c = makeDocCandidate(docName);
+              setExtras((x) => [c, ...x]);
+              reset();
+              setPickedId(c.id);
+              toast(`已导入「${docName}」，复现方案已生成`, 'ok');
+            } else if (pickId) {
+              reset();
+              setPickedId(pickId);
+              toast('复现目标已更新', 'ok');
+            }
+            setAddOpen(false);
+          }}
+        >
+          <Icon name="check" size={14} /> 确定
+        </button>
+      </Modal>
     </div>
   );
 }

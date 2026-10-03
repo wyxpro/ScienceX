@@ -121,6 +121,7 @@
   color: var(--fx-text-3);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .fx-foot-side {
   display: flex;
@@ -261,7 +262,7 @@
   display: grid;
   align-content: start;
   gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: var(--fx-pad);
 }
 .fx-tile {

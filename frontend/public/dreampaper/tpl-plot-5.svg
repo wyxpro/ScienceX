@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" font-family="Arial, sans-serif">
+  <rect width="200" height="120" fill="#ffffff"/>
+  <rect x="0.5" y="0.5" width="199" height="119" fill="none" stroke="#e5e7eb"/>
+  <line x1="24" y1="48" x2="184" y2="48" stroke="#eef1f4"/>
+  <line x1="24" y1="74" x2="184" y2="74" stroke="#eef1f4"/>
+  <line x1="60" y1="24" x2="60" y2="100" stroke="#eef1f4"/>
+  <line x1="110" y1="24" x2="110" y2="100" stroke="#eef1f4"/>
+  <line x1="160" y1="24" x2="160" y2="100" stroke="#eef1f4"/>
+  <line x1="24" y1="24" x2="24" y2="100" stroke="#cbd5e1"/>
+  <line x1="24" y1="100" x2="184" y2="100" stroke="#cbd5e1"/>
+  <circle cx="34" cy="84" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="46" cy="76" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="52" cy="86" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="63" cy="66" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="72" cy="70" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="80" cy="56" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="88" cy="62" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="97" cy="46" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="106" cy="52" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="116" cy="40" r="2.6" fill="#159a77"/>
+  <circle cx="126" cy="44" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="134" cy="34" r="2.6" fill="#159a77"/>
+  <circle cx="146" cy="38" r="2.6" fill="#b45df2" opacity="0.65"/>
+  <circle cx="155" cy="30" r="2.6" fill="#159a77"/>
+  <circle cx="168" cy="32" r="2.6" fill="#159a77"/>
+  <line x1="24" y1="94" x2="184" y2="24" stroke="#e5a13b" stroke-width="1.8" stroke-dasharray="1 0"/>
+  <text x="128" y="66" font-size="8" fill="#e5a13b" font-weight="700">R² = 0.87</text>
+  <text x="104" y="112" font-size="7" fill="#9ca3af" text-anchor="middle">预测值</text>
+  <text x="14" y="64" font-size="7" fill="#9ca3af" text-anchor="middle" transform="rotate(-90 14 64)">真实值</text>
+</svg>
