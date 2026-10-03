@@ -575,9 +575,9 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="至少 6 位安全字符"
+                  placeholder="至少 8 位安全字符"
                   required
-                  minLength={6}
+                  minLength={8}
                   style={{
                     paddingLeft: 44,
                     paddingRight: 46,

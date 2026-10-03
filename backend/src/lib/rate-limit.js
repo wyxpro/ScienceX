@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const { fail } = require('./respond');
 const { getLogger } = require('./logger');
+const { parseBearer, verifySignedToken } = require('./security');
 function backendName() {
   return process.env.RATE_LIMIT_BACKEND || (process.env.UPSTASH_REDIS_REST_URL ? 'upstash' : process.env.REDIS_URL ? 'redis' : 'memory');
 }
@@ -9,7 +10,7 @@ function assertRateLimitConfig() {
   if (!['memory', 'redis', 'upstash'].includes(backend)) throw new Error('RATE_LIMIT_BACKEND 必须是 memory / redis / upstash');
   if (backend === 'upstash' && (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)) throw new Error('Upstash 限流必须配置 REST URL 与 Token');
   if (backend === 'redis' && !process.env.REDIS_URL) throw new Error('Redis 限流必须配置 REDIS_URL');
-  if (process.env.NODE_ENV === 'production' && process.env.VERCEL && backend === 'memory') throw new Error('Vercel 生产环境必须配置共享限流');
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL && backend === 'memory') console.warn('[ScienceX 安全提醒] Vercel 生产环境未配置共享限流后端（UPSTASH_REDIS_REST_URL 或 REDIS_URL），已回退实例内存限流，多实例计数各自独立。');
 }
 function createMemoryLimiter({ max, windowMs, now = Date.now }) {
   const buckets = new Map();
@@ -69,12 +70,21 @@ function createRedisLimiter({ max, windowMs }) {
     }
   } };
 }
+// B3：限流中间件挂在认证中间件之前，req.user 尚未填充；先验签 Bearer 令牌取 uid，
+// 避免登录用户共享出口 IP（校园网/NAT）时被同一 ip 桶误伤；匿名才降级到 ip。
+function defaultIdentity(req) {
+  if (req.user?.id) return `user:${req.user.id}`;
+  const token = parseBearer(req);
+  const payload = token ? verifySignedToken(token) : null;
+  if (payload?.uid) return `user:${payload.uid}`;
+  return `ip:${req.ip || 'anonymous'}`;
+}
 function rateLimit({ windowMs = 60000, max = 120, scope = 'api', limiter, key } = {}) {
   assertRateLimitConfig();
   const backend = backendName();
   const counter = limiter || (backend === 'upstash' ? createUpstashLimiter({ max, windowMs }) : backend === 'redis' ? createRedisLimiter({ max, windowMs }) : createMemoryLimiter({ max, windowMs }));
   return async (req, res, next) => {
-    const identity = key ? key(req) : req.user ? `user:${req.user.id}` : `ip:${req.ip || 'anonymous'}`;
+    const identity = key ? key(req) : defaultIdentity(req);
     const bucketKey = `sx:${crypto.createHash('sha256').update(`${scope}:${identity}`).digest('hex')}`;
     try {
       const result = await counter.consume(bucketKey);

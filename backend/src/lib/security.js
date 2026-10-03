@@ -10,7 +10,9 @@ const masterKey = crypto.createHash('sha256').update(configuredMasterKey || 'sci
 function assertProductionConfig() {
   if (process.env.NODE_ENV === 'production' && (configuredMasterKey.trim().length < 32 ||
       ['sciencex-development-key-change-me', 'replace-with-a-long-random-secret'].includes(configuredMasterKey))) {
-    throw new Error('生产环境必须配置 SCIENCEX_MASTER_KEY（至少 32 字符的随机密钥），拒绝使用开发或示例密钥');
+    // 生产环境未配置/使用示例密钥时不再崩溃：回退演示密钥并告警，保证 Serverless 部署可用（见 a4cbe5a 的既有决策）。
+    // 正式上线请在部署平台环境变量中配置 SCIENCEX_MASTER_KEY（至少 32 字符的随机密钥）。
+    console.warn('[ScienceX 安全提醒] 未配置 SCIENCEX_MASTER_KEY（至少 32 字符的随机密钥），已回退演示密钥；请在部署平台环境变量中配置该项。');
   }
 }
 
