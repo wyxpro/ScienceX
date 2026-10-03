@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" font-family="Arial, sans-serif">
+  <rect width="200" height="120" fill="#ffffff"/>
+  <rect x="0.5" y="0.5" width="199" height="119" fill="none" stroke="#e5e7eb"/>
+  <line x1="24" y1="24" x2="24" y2="100" stroke="#cbd5e1"/>
+  <line x1="24" y1="100" x2="184" y2="100" stroke="#cbd5e1"/>
+  <g fill="#b45df2" fill-opacity="0.75">
+    <rect x="30" y="40" width="18" height="60" rx="2"/>
+    <rect x="58" y="58" width="18" height="42" rx="2"/>
+    <rect x="86" y="72" width="18" height="28" rx="2"/>
+    <rect x="114" y="82" width="18" height="18" rx="2"/>
+    <rect x="142" y="90" width="18" height="10" rx="2"/>
+  </g>
+  <polyline points="39,73.4 67,54.9 95,42.4 123,34.4 151,30" fill="none" stroke="#159a77" stroke-width="1.8"/>
+  <circle cx="39" cy="73.4" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="67" cy="54.9" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="95" cy="42.4" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="123" cy="34.4" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="151" cy="30" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <line x1="24" y1="44" x2="184" y2="44" stroke="#e5a13b" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="182" y="40" font-size="7" fill="#e5a13b" text-anchor="end">80%</text>
+  <text x="104" y="112" font-size="7" fill="#9ca3af" text-anchor="middle">误差因素（降序）</text>
+</svg>

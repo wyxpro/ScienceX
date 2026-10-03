@@ -1,0 +1,667 @@
+/* ============================================================
+   ScienceX AI 对话工作台全新美学重构样式表
+   特色：轻盈高透、明亮学术科技风（非暗黑模式）、悬浮中枢指令卡片、
+   LobsterAI 风格底盘与智能体能力胶囊、全视窗丝滑流动交互
+   ============================================================ */
+
+/* 工作台外层容器：清爽明亮画布（/chat 隐藏全局顶栏，故按整屏高度留对称呼吸边距，消除底部空白） */
+.chat-workbench {
+  display: flex;
+  height: calc(100vh - 28px);
+  max-width: 1560px;
+  margin: 14px auto;
+  gap: 18px;
+  position: relative;
+  color: #0f172a;
+}
+
+/* 左侧会话侧边栏 */
+.chat-sidebar-card {
+  width: 260px;
+  flex: none;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px -6px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.chat-sidebar-card.collapsed {
+  width: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 侧边栏新对话按钮 */
+.chat-new-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -3px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s ease;
+}
+
+.chat-new-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -4px rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.chat-new-btn:active {
+  transform: scale(0.98);
+}
+
+/* 侧边栏搜索框 */
+.chat-search-wrap {
+  position: relative;
+  margin: 12px 0 10px;
+}
+
+.chat-search-wrap input {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  font-size: 12.5px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #1e293b;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.chat-search-wrap input:focus {
+  background: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+/* 会话列表项 */
+.chat-conv-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-radius: 11px;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+  margin-bottom: 3px;
+  transition: all 0.16s ease;
+  border: 1px solid transparent;
+}
+
+.chat-conv-item:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.chat-conv-item.active {
+  background: #ecfdf5;
+  color: #065f46;
+  font-weight: 600;
+  border-color: #a7f3d0;
+  box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.15);
+}
+
+.chat-conv-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.chat-conv-item:hover .chat-conv-actions,
+.chat-conv-item.active .chat-conv-actions {
+  opacity: 1;
+}
+
+.chat-conv-action-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.chat-conv-action-btn:hover {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.chat-conv-action-btn.delete:hover {
+  color: #ef4444;
+}
+
+/* 主对话视窗 */
+.chat-main-stage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px -8px rgba(15, 23, 42, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 顶部轻量状态栏 */
+.chat-stage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  z-index: 10;
+  flex: none;
+}
+
+.chat-header-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+}
+
+/* 空状态中央 Hero 区域（类似 LobsterAI 经典美学） */
+.chat-hero-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px 40px;
+  overflow-y: auto;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.chat-hero-badge {
+  width: 86px;
+  height: 86px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 16px;
+  animation: heroBadgeFloat 3s ease-in-out infinite alternate;
+}
+.chat-hero-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+@keyframes heroBadgeFloat {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-4px); }
+}
+
+.chat-hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  font-family: var(--font-sans);
+}
+
+.chat-hero-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 28px;
+  text-align: center;
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+/* 核心悬浮输入中枢卡片 (The Signature Command Dock) */
+.chat-command-dock {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 20px 25px -10px rgba(16, 185, 129, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: visible;
+  z-index: 40;
+}
+
+.chat-command-dock:focus-within {
+  border-color: #10b981;
+  box-shadow: 0 14px 38px -8px rgba(16, 185, 129, 0.16), 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.chat-dock-main {
+  padding: 16px 18px 10px;
+}
+
+.chat-dock-textarea {
+  width: 100%;
+  min-height: 72px;
+  max-height: 200px;
+  border: none;
+  background: transparent;
+  outline: none;
+  resize: none;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.chat-dock-textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* 输入框内部工具操作栏 */
+.chat-dock-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.chat-dock-left-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chat-tool-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-tool-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+
+/* 图标动作药丸（文件上传 / 提示词增强，仅图标 + title 提示，紧靠模型列表右侧） */
+.chat-action-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.chat-action-pill:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+/* 附件展示条（选中文件后显示于输入框与动作栏之间） */
+.chat-attach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  max-width: 100%;
+  margin: 2px 0 4px;
+  padding: 5px 8px 5px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1fae5;
+  background: #f0fdf4;
+  color: #065f46;
+  font-size: 12px;
+}
+.chat-attach-name {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.chat-attach-size {
+  color: #059669;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.chat-attach-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #059669;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.chat-attach-remove:hover {
+  background: #d1fae5;
+}
+
+.chat-dock-right-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 模型选择器药丸按钮 */
+.chat-model-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-model-pill:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* 录音按钮 */
+.chat-mic-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-mic-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.chat-mic-btn.recording {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+  animation: pulse 1.5s infinite;
+}
+
+/* 圆形向上箭头发送按钮 */
+.chat-send-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chat-send-circle.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.45);
+}
+
+.chat-send-circle.active:hover {
+  transform: scale(1.06);
+  box-shadow: 0 6px 18px -2px rgba(16, 185, 129, 0.55);
+}
+
+/* 底部附着托盘 (Bottom Tray) */
+.chat-dock-tray {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  border-radius: 0 0 20px 20px;
+}
+
+.chat-tray-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chat-tray-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-tray-pill:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.chat-tray-pill.highlight {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: #ecfdf5;
+  color: #065f46;
+  font-weight: 600;
+}
+
+/* 快捷推荐指令胶囊栏 */
+.chat-quick-tags {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.chat-quick-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chat-quick-tag:hover {
+  background: #f0fdf4;
+  border-color: #a7f3d0;
+  color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -4px rgba(16, 185, 129, 0.15);
+}
+
+/* 对话流区域 */
+.chat-conversation-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-conversation-inner {
+  max-width: 1320px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 用户发言气泡行：靠右侧布局，显示用户头像 */
+.chat-user-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding-left: 14%; /* 靠右展开，左侧留出空间，拉开与AI回复横向距离 */
+}
+
+.chat-user-bubble {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 20px 4px 20px 20px;
+  box-shadow: 0 4px 14px -3px rgba(16, 185, 129, 0.35);
+  font-size: 14.5px;
+  line-height: 1.6;
+  max-width: min(720px, 86%);
+  word-break: break-word;
+  white-space: pre-wrap;
+  animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chat-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+  margin-top: 2px;
+  user-select: none;
+}
+
+/* AI 助手机构卡片：靠左侧布局，显示 AI 头像 */
+.chat-ai-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding-right: 10%; /* 靠左展开，右侧留出空间 */
+}
+
+.chat-ai-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
+  margin-top: 2px;
+}
+
+.chat-ai-body {
+  flex: 1;
+  min-width: 0;
+  max-width: 960px; /* 控制 AI 宽度舒适易读，紧贴左侧 */
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.04);
+  animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 处于对话流底部的悬浮固定输入栏 */
+.chat-dock-sticky-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 24px 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.92) 30%, #ffffff 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 20;
+}
+
+.chat-dock-sticky-container .chat-command-dock {
+  max-width: 1080px;
+  margin: 0 auto;
+}

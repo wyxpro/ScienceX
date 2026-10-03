@@ -174,6 +174,13 @@ router.get('/projects/:id', auth, (req, res) => {
   ok(res, { ...project, documents: docs, experiments: exps, charts, manuscripts: ms });
 });
 
+router.delete('/projects/:id', auth, (req, res) => {
+  const idx = store.projects.findIndex((p) => p.id === req.params.id && canAccess(p, req.user.id));
+  if (idx < 0) return errors.notFound(res, '项目不存在或无权删除');
+  const removed = store.projects.splice(idx, 1)[0];
+  ok(res, { id: removed.id, name: removed.name }, '项目已删除');
+});
+
 /* ---------- 课题组 REQ-PRJ-01 ---------- */
 router.get('/teams', auth, (req, res) => {
   const items = store.teams

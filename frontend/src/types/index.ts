@@ -38,6 +38,66 @@ export interface AuthResponse {
 }
 
 /* ---------- 对话与智能体 ---------- */
+export type AgentMode =
+  | 'general'
+  | 'react'
+  | 'plan_execute'
+  | 'codeact'
+  | 'mcp'
+  | 'skill'
+  | 'text2sql'
+  | 'structured';
+
+export interface PlanStep {
+  id: string;
+  title: string;
+  tool?: string;
+  status: 'waiting' | 'running' | 'success' | 'failed';
+  desc?: string;
+  output?: string;
+}
+
+export interface PlanFlowData {
+  task_id: string;
+  title: string;
+  percent: number;
+  status: 'planning' | 'running' | 'completed' | 'failed';
+  steps: PlanStep[];
+}
+
+export interface ThoughtStep {
+  round: number;
+  text: string;
+  action?: string;
+  observation?: string;
+  latency_ms?: number;
+}
+
+export interface ResearchPaperItem {
+  id: string;
+  title: string;
+  authors: string[];
+  venue?: string;
+  year?: string;
+  arxiv_id?: string;
+  abstract: string;
+  pdf_url?: string;
+  citations?: number;
+  code_url?: string;
+}
+
+export interface ResearchMemoryFact {
+  id: string;
+  user_id?: string;
+  project_id?: string;
+  category: string;
+  key: string;
+  content: string;
+  tags?: string[];
+  active?: boolean;
+  created_at: string;
+}
+
 export interface ChatMessage {
   id?: string;
   role: 'user' | 'assistant' | 'system';
@@ -49,6 +109,17 @@ export interface ChatMessage {
   model?: string;
   tokens?: number;
   streaming?: boolean;
+  agent_mode?: AgentMode;
+  plan?: PlanFlowData;
+  thoughts?: ThoughtStep[];
+  chart_data?: any;
+  code?: string;
+  papers?: ResearchPaperItem[];
+  memory_injected?: {
+    count: number;
+    facts: string[];
+    summary?: string;
+  };
 }
 
 export interface CitationReference {

@@ -27,13 +27,15 @@
   --blue-safe: #3e7ca6;     /* 仅用于信息提示 */
   --blue-safe-soft: #e9f1f7;
 
-  /* 侧边栏（深墨绿） */
-  --sb-bg: #182822;
-  --sb-bg-2: #122019;
-  --sb-text: #a9bcB2;
-  --sb-text-dim: #71857b;
-  --sb-active-bg: #26443a;
-  --sb-hover: rgba(255, 255, 255, 0.05);
+  /* 侧边栏（学术典雅系设计 —— 柔和雅致的学术素简风格） */
+  --sb-bg: #f8faf9;
+  --sb-bg-2: #f0f4f2;
+  --sb-border: #e2eae5;
+  --sb-text: #2f4037;
+  --sb-text-dim: #73877d;
+  --sb-active-bg: #e6f4ed;
+  --sb-active-text: #065f46;
+  --sb-hover: #edf4f0;
 
   /* 字体 */
   --font-serif: Georgia, "Times New Roman", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;

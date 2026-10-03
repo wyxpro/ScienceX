@@ -8,33 +8,52 @@ const { canAccess } = require('../lib/access');
 
 const router = express.Router();
 
-/* ---------- 对话补全（SSE 流式） REQ-CHAT-01/02/03 ---------- */
+const lingxiEngine = require('../lib/agents/lingxiEngine');
+
+/* ---------- 对话补全（SSE 流式） REQ-CHAT-01/02/03 + LingXiAgent 8大模式 ---------- */
 router.post('/chat/completions', auth, express.json({ limit: '2mb' }), asyncHandler(async (req, res) => {
-  const { messages, model, stream = true, skills = [] } = req.body || {};
+  const { messages, model = 'GPT-4o', stream = true, skills = [], agent_mode = 'general', project_id = 'p1', conversation_id } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) return errors.param(res, 'messages 不能为空');
+  
   if (!stream) {
     const result = await ai.generateResponse(messages, { model, userId: req.user.id });
     return ok(res, { content: result.text, model: result.model || model, usage: result.usage || {} });
   }
-  // SSE：start → (tool) → delta* → done  —— 遵循 TSD §5.4
-  const result = await ai.generateResponse(messages, { model, userId: req.user.id });
-  const text = result.text;
-  const usedSkill = skills[0] ? store.skills.find((s) => s.id === skills[0]) : null;
-  const delivered = await ai.streamText(res, text, {
-    model: result.model || model || 'sim-model',
-    beforeStream: (send) => {
-      if (usedSkill) send('tool', { name: usedSkill.name, args: { prompt: messages.at(-1).content?.slice(0, 20) }, status: 'done' });
-    },
-  });
-  if (!delivered) return;
 
-  // 仅在响应完整送达后写回会话，避免保存半截回答。
-  const convId = req.body.conversation_id;
-  const conv = store.conversations.find((c) => c.id === convId && canAccess(c, req.user.id));
+  // 调度 LingXiAgent 多智能体引擎 (支持 8 大模式、灵寻规划流、三层记忆与 MCP 工具)
+  await lingxiEngine.executeAgentStream(res, {
+    messages,
+    model,
+    agentMode: agent_mode,
+    skills,
+    userId: req.user.id,
+    projectId: project_id,
+    convId: conversation_id,
+  });
+
+  // 记录会话历史
+  const conv = store.conversations.find((c) => c.id === conversation_id && canAccess(c, req.user.id));
   if (conv) {
-    conv.messages.push({ id: store.id('msg'), role: 'user', content: messages.at(-1).content, tokens: 64, created_at: store.now() });
-    conv.messages.push({ id: store.id('msg'), role: 'assistant', model: result.model || model || 'sim-model', content: text, tokens: Math.round(text.length * 0.7), created_at: store.now() });
-    conv.updated_at = store.now();
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+    if (lastUser) {
+      conv.messages.push({
+        id: store.id('msg'),
+        role: 'user',
+        content: lastUser.content,
+        tokens: 64,
+        created_at: store.now(),
+      });
+      conv.messages.push({
+        id: store.id('msg'),
+        role: 'assistant',
+        model,
+        agent_mode,
+        content: `（已完成 ${agent_mode} 模式智能体推演与处理）`,
+        tokens: 280,
+        created_at: store.now(),
+      });
+      conv.updated_at = store.now();
+    }
   }
 }));
 
@@ -130,6 +149,72 @@ router.post('/prompt/enhance', auth, (req, res) => {
     enhanced: `请以资深科研顾问的角色回答以下问题，要求：\n1. 结论先行，分点展开；\n2. 引用近三年代表性工作并标注出处；\n3. 给出可直接执行的行动建议。\n\n我的问题：${raw}\n\n我的背景：研究方向为微表情识别与情感计算，当前正在迭代基于 AU 先验的 Transformer 模型。`,
     version: 'v2',
   }, '提示词已增强');
+});
+
+/* ---------- 课题组三层记忆引擎 (Three-Tier Memory) REQ-LINGXI-MEM ---------- */
+router.get('/chat/memories', auth, (req, res) => {
+  const { project_id = 'p1', conversation_id } = req.query;
+  const ctx = lingxiEngine.getMemoryContext(req.user.id, project_id, conversation_id);
+  ok(res, {
+    facts: ctx.facts,
+    rolling_summary: ctx.rollingSummary,
+    total: ctx.facts.length,
+  });
+});
+
+router.post('/chat/memories', auth, (req, res) => {
+  const { category = 'research', key, content, tags = [], project_id = 'p1' } = req.body || {};
+  if (!key || !content) return errors.param(res, 'key 和 content 不能为空');
+  const fact = {
+    id: store.id('mem'),
+    user_id: req.user.id,
+    project_id,
+    category,
+    key,
+    content,
+    tags: Array.isArray(tags) ? tags : [tags].filter(Boolean),
+    active: true,
+    created_at: store.now(),
+  };
+  store.researchMemories.unshift(fact);
+  ok(res, fact, '科研记忆事实已沉淀');
+});
+
+router.patch('/chat/memories/:id', auth, (req, res) => {
+  const fact = (store.researchMemories || []).find((m) => m.id === req.params.id && (!m.user_id || m.user_id === req.user.id));
+  if (!fact) return errors.notFound(res, '记忆事实不存在');
+  if (req.body.active !== undefined) fact.active = !!req.body.active;
+  if (req.body.content) fact.content = req.body.content;
+  if (req.body.key) fact.key = req.body.key;
+  ok(res, fact, '记忆事实已更新');
+});
+
+router.delete('/chat/memories/:id', auth, (req, res) => {
+  const idx = (store.researchMemories || []).findIndex((m) => m.id === req.params.id && (!m.user_id || m.user_id === req.user.id));
+  if (idx < 0) return errors.notFound(res, '记忆事实不存在');
+  store.researchMemories.splice(idx, 1);
+  ok(res, {}, '记忆事实已删除');
+});
+
+router.post('/chat/memories/extract', auth, (req, res) => {
+  const { conversation_id, project_id = 'p1' } = req.body || {};
+  const conv = store.conversations.find((c) => c.id === conversation_id && canAccess(c, req.user.id));
+  const messages = conv ? conv.messages : (req.body?.messages || []);
+  const result = lingxiEngine.extractMemoriesFromConversation(messages, req.user.id, project_id);
+  ok(res, result, `已智能提取并沉淀 ${result.added.length} 条科研事实`);
+});
+
+/* ---------- 学术 MCP 与沙箱工具交互 ---------- */
+router.get('/chat/arxiv/search', auth, asyncHandler(async (req, res) => {
+  const q = String(req.query.q || 'Micro-expression Transformer');
+  const papers = await lingxiEngine.searchArxiv(q, 5);
+  ok(res, { items: papers, total: papers.length });
+}));
+
+router.post('/chat/codeact/run', auth, (req, res) => {
+  const { query = '消融指标' } = req.body || {};
+  const result = lingxiEngine.runCodeActSandbox(query);
+  ok(res, result);
 });
 
 function daysText(n) {

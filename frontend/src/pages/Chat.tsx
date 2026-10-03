@@ -1,27 +1,36 @@
-/* AI 对话工作台 —— REQ-CHAT-01~04：流式对话 / 多模型 / 历史会话 / Skills / 看板置底 */
+/* ============================================================
+   ScienceX AI 对话工作台 —— 全新美学重构版
+   非暗黑模式 / 明亮清爽 / 悬浮指令中枢 / 8大科研智能体范式
+   ============================================================ */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api, chatStream } from '../api/client';
-import Icon from '../components/Icon';
-import { Dropdown, DropdownItem, useToast } from '../components/ui';
+import Icon, { type IconName } from '../components/Icon';
+import { useToast } from '../components/ui';
 import { useAuth } from '../stores/auth';
-import type { ChatMessage, Conversation, SkillItem } from '../types';
-import { ChatDashboard } from './chat/ChatDashboard';
-import { ChatInputArea } from './chat/ChatInputArea';
+import type { AgentMode, ChatMessage, Conversation, SkillItem } from '../types';
+import { ChatCommandDock } from './chat/ChatCommandDock';
 import { ChatMessages } from './chat/ChatMessages';
 import { ChatSidebar } from './chat/ChatSidebar';
+import { MemoryDrawer } from './chat/MemoryDrawer';
 
-const SUGGESTIONS: [string, string][] = [
-  ['bulb', '帮我分析微表情识别领域 2026 年值得做的选题方向'],
-  ['book', '为「AU 先验 + Transformer」这个主题生成一份文献综述大纲'],
-  ['flask', '我的 up9 模型要做消融实验，帮我设计实验方案'],
-  ['pen', '把这段论文摘要润色成更地道的学术英语'],
+interface QuickPrompt {
+  id: string;
+  icon: IconName;
+  label: string;
+  prompt: string;
+}
+
+const QUICK_PROMPTS: QuickPrompt[] = [
+  { id: 'topic', icon: 'bulb', label: '选题方向推演', prompt: '帮我分析微表情识别领域 2026 年值得做的选题方向' },
+  { id: 'review', icon: 'book', label: '综述大纲生成', prompt: '为「AU 先验 + Transformer」这个主题生成一份文献综述大纲' },
+  { id: 'exp', icon: 'flask', label: '消融实验方案', prompt: '我的 up9 模型要做消融实验，帮我设计实验方案' },
+  { id: 'polish', icon: 'pen', label: '论文学术润色', prompt: '把这段论文摘要润色成更地道的学术英语' },
+  { id: 'chart', icon: 'chart', label: '科研图表生成', prompt: '帮我用 Python 生成一份多指标消融对比的学术柱状图' },
 ];
 
 export default function Chat() {
   const { user } = useAuth();
   const toast = useToast();
-  const nav = useNavigate();
   const [convs, setConvs] = useState<Conversation[] | null>(null);
   const [activeConv, setActiveConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -30,44 +39,33 @@ export default function Chat() {
   const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>({ builtin: [], custom: [] });
   const [model, setModel] = useState('GPT-4o');
   const [skills, setSkills] = useState<SkillItem[]>([]);
-  const [showDash, setShowDash] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [recording, setRecording] = useState(false);
+  const [agentMode, setAgentMode] = useState<AgentMode>('plan_execute');
+  const [showMemoryDrawer, setShowMemoryDrawer] = useState(false);
+  const [memoryCount, setMemoryCount] = useState<number>(4);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // 默认不显示，点击按钮才展开
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 初始化带有精确演示数据的看板状态
   const [dashboard, setDashboard] = useState<any>({
-    project: {
-      name: '微表情识别（MER）研究',
-      progress: { topic: 100, literature: 78, experiment: 55, analysis: 40 },
-    },
-    recent_outputs: [
-      { id: 'ro1', type: 'chart', title: '消融实验 UF1 对比', meta: 'ch1 · 3天前', ref: '/tools/analysis' },
-      { id: 'ro2', type: 'doc', title: '七段式总结 · AUFormer (MM 24)', meta: 'd2 · 5天前', ref: '/tools/reader' },
-      { id: 'ro3', type: 'deck', title: '组会汇报 · up9 实验进展', meta: '12页 pptx · 5天前', ref: '/features/meeting' },
-      { id: 'ro4', type: 'report', title: '模拟审稿报告 #rv1', meta: '大修 · 2天前', ref: '/features/review' },
-    ],
-    papers_daily: {
-      items: [
-        { id: 'pd4', title: 'METrack: Real-time Micro-expression Spotting in Long Videos', venue: 'arXiv', reason: '匹配「微表情识别」方向', hot: 4 },
-        { id: 'pd5', title: 'Rethinking Evaluation Protocols in MER: A Reproducibility Study', venue: 'arXiv', reason: '与你阅读的综述相关', hot: 5 },
-      ],
-    },
     today_usage: { tokens: 38400, calls: 26, cost: 1.24 },
   });
 
   const loadData = useCallback(async () => {
     try {
-      const [c, m, d, s] = await Promise.all([
+      const [c, m, d, s, mem] = await Promise.all([
         api<{ items: Conversation[] } | Conversation[]>('/conversations'),
         api<{ builtin: any[]; custom: any[] }>('/models'),
         api<any>('/dashboard/summary'),
         api<{ items: SkillItem[] } | SkillItem[]>('/skills'),
+        api<{ total: number }>('/chat/memories').catch(() => ({ total: 4 })),
       ]);
       setConvs((c as any)?.items || (Array.isArray(c) ? c : []));
       setModels(m || { builtin: [], custom: [] });
       if (d) setDashboard(d);
       setSkills(Array.isArray(s) ? s : ((s as any)?.items || []));
+      if (mem && typeof mem.total === 'number') setMemoryCount(mem.total);
     } catch (err: any) {
       toast(err.message || '加载工作台数据失败', 'err');
     }
@@ -88,7 +86,7 @@ export default function Chat() {
   };
 
   const newConv = async () => {
-    const c = await api<Conversation>('/conversations', { method: 'POST', body: { title: '新的对话' } });
+    const c = await api<Conversation>('/conversations', { method: 'POST', body: { title: '新的科研对话' } });
     setConvs((x) => [c, ...(x || [])]);
     setActiveConv(c.id);
     setMessages([]);
@@ -131,13 +129,26 @@ export default function Chat() {
     toast('正在聆听…再次点击结束（演示模拟 Web Speech API）', 'info');
   };
 
+  const handleUpload = (file?: File) => {
+    if (!file) return toast('附件上传：演示环境已就绪', 'info');
+    const sizeKb = (file.size / 1024).toFixed(0);
+    toast(`已添加附件「${file.name}」（${sizeKb} KB），发送后随消息一并提交`, 'ok');
+  };
+
   const send = async (text?: string, skillId?: string) => {
     const content = (text ?? input).trim();
     if (!content || streaming) return;
     setInput('');
     setStreaming(true);
     const userMsg: ChatMessage = { id: `u${Date.now()}`, role: 'user', content };
-    const aiMsg: ChatMessage = { id: `a${Date.now()}`, role: 'assistant', content: '', model, streaming: true };
+    const aiMsg: ChatMessage = {
+      id: `a${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      model,
+      agent_mode: agentMode,
+      streaming: true,
+    };
     setMessages((m) => [...m, userMsg, aiMsg]);
 
     let convId = activeConv;
@@ -155,14 +166,75 @@ export default function Chat() {
           content: m.content,
         })),
         model,
+        agent_mode: agentMode,
         conversation_id: convId,
         skills: skillId ? [skillId] : [],
       },
       {
         onDelta: (t) => setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, content: x.content + t } : x))),
+        onPlan: (plan) => setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, plan } : x))),
+        onStepStart: (step) =>
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id && x.plan
+                ? {
+                    ...x,
+                    plan: {
+                      ...x.plan,
+                      steps: x.plan.steps.map((s, idx) => (idx === step.step_index ? { ...s, status: 'running' } : s)),
+                    },
+                  }
+                : x
+            )
+          ),
+        onStepUpdate: (up) =>
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id && x.plan
+                ? {
+                    ...x,
+                    plan: {
+                      ...x.plan,
+                      steps: x.plan.steps.map((s, idx) =>
+                        idx === up.step_index ? { ...s, status: up.status, output: up.output } : s
+                      ),
+                    },
+                  }
+                : x
+            )
+          ),
+        onThought: (th) =>
+          setMessages((m) =>
+            m.map((x) => (x.id === aiMsg.id ? { ...x, thoughts: [...(x.thoughts || []), th] } : x))
+          ),
+        onToolResult: (tr) =>
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id
+                ? {
+                    ...x,
+                    chart_data: tr.chart_data || x.chart_data,
+                    code: tr.code || x.code,
+                    papers: tr.papers || x.papers,
+                  }
+                : x
+            )
+          ),
+        onMemoryInjected: (mem) =>
+          setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, memory_injected: mem } : x))),
         onTool: (d) => toast(`技能「${d.name}」已调用`, 'info'),
         onDone: () => {
-          setMessages((m) => m.map((x) => (x.id === aiMsg.id ? { ...x, streaming: false } : x)));
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === aiMsg.id
+                ? {
+                    ...x,
+                    streaming: false,
+                    plan: x.plan ? { ...x.plan, percent: 100, status: 'completed' } : undefined,
+                  }
+                : x
+            )
+          );
           setStreaming(false);
           api<any>('/conversations').then((r: any) => setConvs(r?.items || (Array.isArray(r) ? r : [])));
         },
@@ -171,7 +243,7 @@ export default function Chat() {
           setStreaming(false);
           setMessages((m) => m.filter((x) => x.id !== aiMsg.id));
         },
-      },
+      }
     );
   };
 
@@ -182,106 +254,234 @@ export default function Chat() {
   const filteredConvs = convs?.filter((c) => c.title.includes(keyword)) || [];
 
   return (
-    <div className="page" style={{ maxWidth: 1500 }}>
-      {/* ===== 顶部简明状态栏 ===== */}
-      <div className="row-between mb-3" style={{ alignItems: 'center' }}>
-        <div className="row g-2 items-center">
-          <div className="sb-logo-mark" style={{ width: 28, height: 28, borderRadius: 8, fontSize: 13 }}>
-            <Icon name="flask" size={15} />
-          </div>
-          <span className="fw-bold" style={{ fontSize: 15 }}>对话中枢</span>
-          <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)', fontSize: 11.5 }}>
-            {model} 在线
-          </span>
-        </div>
-        <div className="row g-3 items-center">
-          <div className="text-small text-muted">
-            今日已用 <span className="mono fw-bold" style={{ color: 'var(--ink)' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</span> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
-          </div>
-        </div>
-      </div>
-
-      {/* ===== 主体：会话列表 + 对话区 ===== */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 250px) 1fr', gap: 18, marginBottom: 22 }}>
-        {/* 会话列表 */}
-        <ChatSidebar
-          convs={convs}
-          filteredConvs={filteredConvs}
-          activeConv={activeConv}
-          keyword={keyword}
-          onKeywordChange={setKeyword}
-          onNewConv={newConv}
-          onOpenConv={openConv}
-          onRenameConv={renameConv}
-          onRemoveConv={removeConv}
-        />
-
-        {/* 对话区 */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'clamp(500px, 58vh, 620px)' }}>
-          {/* 工具条 */}
-          <div className="row-between" style={{ padding: '10px 16px', borderBottom: '1px solid var(--line)' }}>
-            <div className="row g-2 wrap">
-              <Dropdown trigger={<button className="btn btn-ghost btn-sm" aria-label="选择模型"><Icon name="cpu" size={14} />{model}<Icon name="chevronDown" size={13} /></button>}>
-                {models.builtin?.map((m: any) => (
-                  <DropdownItem key={m.id} icon="cpu" onClick={() => setModel(m.name)}>{m.name} · {m.tag}</DropdownItem>
-                ))}
-                {models.custom?.map((m: any) => (
-                  <DropdownItem key={m.id} icon="key" onClick={() => setModel(m.name)}>{m.name}（自定义）</DropdownItem>
-                ))}
-              </Dropdown>
-              <Dropdown trigger={<button className="btn btn-ghost btn-sm" aria-label="选择智能体技能"><Icon name="zap" size={14} />技能</button>}>
-                {(skills || []).map((s) => (
-                  <DropdownItem key={s.id} icon="spark" onClick={() => invokeSkill(s)}>{s.name} · {s.uses} 次使用</DropdownItem>
-                ))}
-              </Dropdown>
+    <div className="chat-workbench">
+      {/* ===== 主工作区视窗 ===== */}
+      <div className="chat-main-stage">
+        {/* 顶部轻量状态栏 */}
+        <div className="chat-stage-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 7,
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                }}
+              >
+                <Icon name="flask" size={13} />
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                {activeConv ? convs?.find((c) => c.id === activeConv)?.title || '科研对话' : 'AI 对话中枢'}
+              </span>
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={enhancePrompt} title="优化我的输入提示词" aria-label="提示词增强">
-              <Icon name="spark" size={14} />提示词增强
+
+            <div className="chat-header-pill" style={{ color: '#059669', background: '#ecfdf5', borderColor: '#a7f3d0' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+              <span>{model} 在线</span>
+            </div>
+
+            <div className="chat-header-pill" style={{ color: '#4f46e5', background: '#e0e7ff', borderColor: '#c7d2fe' }}>
+              <span>灵犀 Agent 引擎</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 12, color: '#64748b' }}>
+              今日已用 <strong style={{ color: '#0f172a' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</strong> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
+            </div>
+
+            {/* 课题记忆入口：置于历史对话按钮左侧 */}
+            <button
+              type="button"
+              onClick={() => setShowMemoryDrawer(true)}
+              title="管理课题组三层长短期记忆引擎"
+              aria-label="管理课题记忆"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: '1px solid #8b5cf6',
+                background: '#f5f3ff',
+                color: '#6d28d9',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#ede9fe'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#f5f3ff'; }}
+            >
+              <Icon name="spark" size={14} style={{ color: '#7c3aed' }} />
+              <span>课题记忆</span>
+              <span
+                style={{
+                  background: '#8b5cf6',
+                  color: '#ffffff',
+                  fontSize: 10.5,
+                  padding: '1px 6px',
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                }}
+              >
+                {memoryCount}
+              </span>
+            </button>
+
+            {/* 右侧会话记录栏开关按钮：换个专属高亮颜色显示，点击才展开 */}
+            <button
+              type="button"
+              className="chat-history-pill-btn"
+              onClick={() => setSidebarOpen((v) => !v)}
+              title={sidebarOpen ? '收起右侧历史会话' : '展开右侧历史会话'}
+              aria-label="切换历史会话侧边栏"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: '1px solid #10b981',
+                background: sidebarOpen ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#ecfdf5',
+                color: sidebarOpen ? '#ffffff' : '#047857',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: sidebarOpen ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none',
+              }}
+            >
+              <Icon name="chat" size={14} style={{ color: sidebarOpen ? '#ffffff' : '#059669' }} />
+              <span>历史对话</span>
+              {convs && convs.length > 0 && (
+                <span
+                  style={{
+                    background: sidebarOpen ? 'rgba(255, 255, 255, 0.3)' : '#10b981',
+                    color: '#ffffff',
+                    fontSize: 10.5,
+                    padding: '1px 6px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {convs.length}
+                </span>
+              )}
             </button>
           </div>
-
-          {/* 消息流 */}
-          <ChatMessages
-            messages={messages}
-            user={user}
-            suggestions={SUGGESTIONS}
-            onSelectSuggestion={(text) => send(text)}
-            bottomRef={bottomRef}
-          />
-
-          {/* 输入区 */}
-          <ChatInputArea
-            input={input}
-            streaming={streaming}
-            recording={recording}
-            onInputChange={setInput}
-            onSend={() => send()}
-            onVoiceInput={voiceInput}
-            onUploadClick={() => toast('附件上传：演示环境未开放', 'info')}
-          />
         </div>
-      </div>
 
-      {/* ===== 对话框下方：项目进度看板、最近产出、今日文献速递 ===== */}
-      <ChatDashboard
-        showDash={showDash}
-        onToggleDash={() => setShowDash((s) => !s)}
-        dashboard={dashboard}
-      />
+        {/* 内容区域：空状态（LobsterAI 风格居中 Hero + 输入卡片） 或 消息流 */}
+        {messages.length === 0 ? (
+          <div className="chat-hero-container">
+            {/* 居中标志性 App Badge */}
+            <div className="chat-hero-badge">
+              <img src="/logo.png" alt="ScienceX Logo" />
+            </div>
 
-      {/* 移动端会话入口 */}
-      <div className="mobile-only mt-2">
-        {convs && convs.length > 0 && (
-          <div className="card card-pad">
-            <div className="card-title mb-2"><Icon name="history" size={15} />历史会话</div>
-            {convs.slice(0, 5).map((c) => (
-              <div key={c.id} className="kv" style={{ cursor: 'pointer' }} onClick={() => openConv(c.id)}>
-                <span className="kv-v ellipsis">{c.title}</span>
-              </div>
-            ))}
+            {/* 标题与副标题 */}
+            <h1 className="chat-hero-title">Science X</h1>
+            <p className="chat-hero-subtitle">
+              全周期 AI 科研智能体中枢 · 覆盖选题、文献、实验、写作与评审
+            </p>
+
+            {/* 核心悬浮输入中枢卡片 */}
+            <ChatCommandDock
+              input={input}
+              onInputChange={setInput}
+              onSend={() => send()}
+              streaming={streaming}
+              recording={recording}
+              onVoiceInput={voiceInput}
+              onUploadClick={handleUpload}
+              onEnhancePrompt={enhancePrompt}
+              model={model}
+              onSelectModel={setModel}
+              models={models}
+              skills={skills}
+              onInvokeSkill={invokeSkill}
+              agentMode={agentMode}
+              onSelectAgentMode={setAgentMode}
+            />
+
+            {/* 下方快捷推荐指令胶囊栏 */}
+            <div className="chat-quick-tags">
+              {QUICK_PROMPTS.map((qp) => (
+                <button
+                  key={qp.id}
+                  type="button"
+                  className="chat-quick-tag"
+                  onClick={() => send(qp.prompt)}
+                  title={qp.prompt}
+                >
+                  <Icon name={qp.icon} size={14} style={{ color: '#059669' }} />
+                  <span>{qp.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
+        ) : (
+          <>
+            {/* 消息滚动流 */}
+            <ChatMessages
+              messages={messages}
+              user={user}
+              bottomRef={bottomRef}
+            />
+
+            {/* 底部悬浮吸附输入中枢卡片 */}
+            <div className="chat-dock-sticky-container">
+              <ChatCommandDock
+                input={input}
+                onInputChange={setInput}
+                onSend={() => send()}
+                streaming={streaming}
+                recording={recording}
+                onVoiceInput={voiceInput}
+                onUploadClick={handleUpload}
+                onEnhancePrompt={enhancePrompt}
+                model={model}
+                onSelectModel={setModel}
+                models={models}
+                skills={skills}
+                onInvokeSkill={invokeSkill}
+                agentMode={agentMode}
+                onSelectAgentMode={setAgentMode}
+              />
+            </div>
+          </>
         )}
       </div>
+
+      {/* ===== 右侧会话侧边栏（可折叠） ===== */}
+      <ChatSidebar
+        convs={convs}
+        filteredConvs={filteredConvs}
+        activeConv={activeConv}
+        keyword={keyword}
+        onKeywordChange={setKeyword}
+        onNewConv={newConv}
+        onOpenConv={openConv}
+        onRenameConv={renameConv}
+        onRemoveConv={removeConv}
+        collapsed={!sidebarOpen}
+      />
+
+      {/* 课题组三层记忆抽屉 */}
+      <MemoryDrawer
+        open={showMemoryDrawer}
+        onClose={() => setShowMemoryDrawer(false)}
+        convId={activeConv}
+        onMemoryChanged={() => api<{ total: number }>('/chat/memories').then((r) => setMemoryCount(r?.total || 4))}
+      />
     </div>
   );
 }

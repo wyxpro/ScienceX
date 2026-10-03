@@ -11,10 +11,10 @@ export const LandingRadar: React.FC = () => {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 36, alignItems: 'center' }}>
         {/* 左侧：矢量 SVG 雷达图 */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-deep)', padding: 24, borderRadius: 20, border: '1px solid var(--line-strong)' }}>
-          <svg width="340" height="340" viewBox="0 0 340 340" style={{ overflow: 'visible' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-deep)', padding: '24px 16px', borderRadius: 20, border: '1px solid var(--line-strong)', overflow: 'hidden' }}>
+          <svg viewBox="0 0 340 340" style={{ width: '100%', maxWidth: 340, height: 'auto', overflow: 'visible' }}>
             {/* 背景五边形网格 */}
             {[0.2, 0.4, 0.6, 0.8, 1].map((scale, i) => {
               const r = 110 * scale;

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" font-family="Arial, sans-serif">
+  <rect width="200" height="120" fill="#ffffff"/>
+  <rect x="0.5" y="0.5" width="199" height="119" fill="none" stroke="#e5e7eb"/>
+  <circle cx="26" cy="12" r="3" fill="#b45df2"/><text x="33" y="15" font-size="7" fill="#6b7280">baseline</text>
+  <circle cx="82" cy="12" r="3" fill="#159a77"/><text x="89" y="15" font-size="7" fill="#6b7280">ours</text>
+  <line x1="24" y1="48" x2="184" y2="48" stroke="#eef1f4"/>
+  <line x1="24" y1="74" x2="184" y2="74" stroke="#eef1f4"/>
+  <line x1="24" y1="24" x2="24" y2="100" stroke="#cbd5e1"/>
+  <line x1="24" y1="100" x2="184" y2="100" stroke="#cbd5e1"/>
+  <polyline points="24,86 64,74 104,66 144,60 184,56" fill="none" stroke="#b45df2" stroke-width="2"/>
+  <polyline points="24,88 64,60 104,44 144,34 184,28" fill="none" stroke="#159a77" stroke-width="2"/>
+  <circle cx="24" cy="86" r="2.2" fill="#fff" stroke="#b45df2" stroke-width="1.4"/>
+  <circle cx="64" cy="74" r="2.2" fill="#fff" stroke="#b45df2" stroke-width="1.4"/>
+  <circle cx="104" cy="66" r="2.2" fill="#fff" stroke="#b45df2" stroke-width="1.4"/>
+  <circle cx="144" cy="60" r="2.2" fill="#fff" stroke="#b45df2" stroke-width="1.4"/>
+  <circle cx="184" cy="56" r="2.2" fill="#fff" stroke="#b45df2" stroke-width="1.4"/>
+  <circle cx="24" cy="88" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="64" cy="60" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="104" cy="44" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="144" cy="34" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <circle cx="184" cy="28" r="2.2" fill="#fff" stroke="#159a77" stroke-width="1.4"/>
+  <text x="104" y="112" font-size="7" fill="#9ca3af" text-anchor="middle">Epoch</text>
+</svg>

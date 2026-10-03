@@ -1,23 +1,36 @@
 /* 论文写作 —— REQ-WRT-01：左侧阅读器对照 + 翻译/润色/查重/降重 */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import Icon from '../components/Icon';
-import { Modal, Progress, Tag, Tabs, useToast } from '../components/ui';
+import { Modal, Progress, Tag, useToast } from '../components/ui';
 
 type Tool = 'translate' | 'polish' | 'plagiarism' | 'paraphrase';
+
+/* 各工具默认加载的示例文本（与后端演示案例对齐，进入页面即可见效果） */
+const EXAMPLES: Record<Tool, string> = {
+  translate:
+    'Micro-expression recognition (MER) is hindered by subtle facial motions and scarce training data. We propose CLAU-Former, which injects structural information through cross-layer interaction between Action Unit (AU) priors and visual tokens, and evaluate it under the Leave-One-Subject-Out (LOSO) protocol on CASME II.',
+  polish:
+    'In this paper we propose a very good attention framework for micro-expression recognition. Extensive experiments show that our method can improve the state of the art, improving our baseline by 4.3 points on CASME II.',
+  plagiarism:
+    'Micro-expressions are involuntary facial movements lasting between 1/25 and 1/2 second. In this work, we propose CLAU-Former to capture the subtle muscle motions with AU topology alignment.',
+  paraphrase:
+    'Micro-expressions are involuntary facial movements that lasting between 1/25 and 1/2 second, which are hard to hide and useful for deception detection and clinical assessment.',
+};
 
 export default function Writing() {
   const toast = useToast();
   const [ms, setMs] = useState<any>(null);
   const [content, setContent] = useState('');
   const [saved, setSaved] = useState(true);
-  const [tool, setTool] = useState<Tool>('polish');
+  const [tool, setTool] = useState<Tool>('translate');
   const [input, setInput] = useState('');
   const [result, setResult] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [refDoc, setRefDoc] = useState<any>(null);
   const [refOpen, setRefOpen] = useState(false);
   const [style, setStyle] = useState('academic');
+  const booted = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -44,15 +57,38 @@ export default function Writing() {
     toast(`已保存至 v${r.version}`);
   };
 
-  const runTool = async () => {
-    if (!input.trim()) return toast('请先在下方粘贴或输入文本', 'info');
+  const runTool = async (overrideText?: string) => {
+    const text = overrideText ?? input;
+    if (!text.trim()) return toast('请先在下方粘贴或输入文本', 'info');
     setBusy(true); setResult(null);
     try {
       const path = { translate: '/writing/translate', polish: '/writing/polish', plagiarism: '/writing/plagiarism', paraphrase: '/writing/paraphrase' }[tool];
-      const body = { translate: { text: input, direction: 'en2zh' }, polish: { text: input, style, target: 'ACM MM' }, plagiarism: { text: input }, paraphrase: { text: input, ratio: 'medium' } }[tool];
+      const body = { translate: { text, direction: 'en2zh' }, polish: { text, style, target: 'ACM MM' }, plagiarism: { text }, paraphrase: { text, ratio: 'medium' } }[tool];
       setResult(await api(path, { method: 'POST', body }));
       toast('处理完成');
     } finally { setBusy(false); }
+  };
+
+  /* 首次进入：默认载入示例文本，并自动演示当前工具（中英互译），开箱即见效果 */
+  useEffect(() => {
+    if (booted.current) return;
+    booted.current = true;
+    setInput(EXAMPLES.translate);
+    (async () => {
+      setBusy(true);
+      try {
+        setResult(await api('/writing/translate', { method: 'POST', body: { text: EXAMPLES.translate, direction: 'en2zh' } }));
+      } catch { /* 演示环境异常时静默，保留示例文本 */ } finally { setBusy(false); }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* 切换工具：输入为空或仍是上一个工具的示例时，自动替换为新工具的示例 */
+  const switchTool = (t: Tool) => {
+    if (t === tool) return;
+    setTool(t);
+    setResult(null);
+    setInput((prev) => (prev.trim() === '' || prev === EXAMPLES[tool] ? EXAMPLES[t] : prev));
   };
 
   const TOOLS: { key: Tool; icon: any; label: string; desc: string }[] = [
@@ -103,17 +139,74 @@ export default function Writing() {
       {/* ===== 右：写作工具 ===== */}
       <section style={{ flex: '1 1 330px', minWidth: 300, display: 'flex', flexDirection: 'column', maxHeight: '100%', overflow: 'hidden' }}>
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {TOOLS.map((t) => (
-              <button key={t.key} className={`tag ${tool === t.key ? 'tag-green' : 'tag-gray'}`} style={{ cursor: 'pointer', border: 'none' }}
-                onClick={() => { setTool(t.key); setResult(null); }}>
-                <Icon name={t.icon} size={11} />{t.label}
-              </button>
-            ))}
+          {/* 工具箱标题栏 */}
+          <div
+            style={{
+              padding: '12px 14px',
+              borderBottom: '1px solid var(--line)',
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.07), rgba(13,148,136,0.02))',
+            }}
+          >
+            <div className="row-between items-center">
+              <div className="row g-2 items-center">
+                <div
+                  style={{
+                    width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                    background: 'linear-gradient(135deg, #059669 0%, #0d9488 100%)', color: '#ffffff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(5,150,105,0.25)',
+                  }}
+                >
+                  <Icon name="pen" size={15} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>写作工具箱</div>
+                  <div className="text-xs text-muted">翻译 · 润色 · 查重 · 降重，一站式学术语言辅助</div>
+                </div>
+              </div>
+              <span className="tag tag-green"><Icon name="zap" size={10} />AI 驱动</span>
+            </div>
+          </div>
+
+          {/* 工具选择：一行四卡 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, padding: '10px 12px', borderBottom: '1px solid var(--line)' }}>
+            {TOOLS.map((t) => {
+              const active = tool === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => switchTool(t.key)}
+                  title={`${t.label} · ${t.desc}`}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '10px 4px',
+                    borderRadius: 10, cursor: 'pointer',
+                    border: active ? '1px solid var(--brand)' : '1px solid var(--line)',
+                    background: active ? 'var(--brand-softer)' : '#ffffff',
+                    boxShadow: active ? '0 2px 10px rgba(5,150,105,0.14)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Icon name={t.icon} size={16} style={{ color: active ? 'var(--brand-strong)' : 'var(--muted)' }} />
+                  <div style={{ fontSize: 12, fontWeight: 700, color: active ? 'var(--brand-strong)' : 'var(--ink)', whiteSpace: 'nowrap' }}>{t.label}</div>
+                </button>
+              );
+            })}
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            <div className="text-xs text-muted mb-2">{TOOLS.find((t) => t.key === tool)!.desc}</div>
+            <div className="row-between items-center mb-2">
+              <span className="text-xs text-muted">{TOOLS.find((t) => t.key === tool)!.desc}</span>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, padding: '2px 9px' }}
+                onClick={() => runTool(EXAMPLES[tool])}
+                title="一键填入示例文本并演示"
+                disabled={busy}
+              >
+                <Icon name="spark" size={11} />载入示例
+              </button>
+            </div>
 
             {tool === 'polish' && (
               <div className="row g-1 mb-2">
@@ -127,12 +220,22 @@ export default function Writing() {
 
             <textarea className="textarea" rows={5} value={input}
               onChange={(e) => setInput(e.target.value)}
+              style={{ fontSize: 13, lineHeight: 1.8 }}
               placeholder={tool === 'translate' ? '粘贴英文段落，输出术语对齐的中文…'
                 : tool === 'plagiarism' ? '粘贴待查重的全文片段…'
                   : '粘贴需要润色 / 降重的段落…（也可从左侧稿件复制）'} />
-            <button className="btn btn-primary btn-block mt-2" onClick={runTool} disabled={busy}>
+            <div className="row-between text-xs text-muted" style={{ marginTop: 4 }}>
+              <span>已预载示例文本，可直接替换为你的内容</span>
+              <span className="mono">{input.length} 字符</span>
+            </div>
+            <button
+              className="btn btn-primary btn-block mt-2"
+              onClick={() => runTool()}
+              disabled={busy}
+              style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 100%)', border: 'none', boxShadow: '0 4px 14px rgba(5,150,105,0.28)' }}
+            >
               {busy ? <span className="spinner" /> : <Icon name="zap" size={14} />}
-              {TOOLS.find((t) => t.key === tool)!.label}
+              {busy ? '正在处理…' : TOOLS.find((t) => t.key === tool)!.label}
             </button>
 
             {result && (

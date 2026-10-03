@@ -8,6 +8,7 @@ import { BillingSection } from './account/BillingSection';
 import { ModelsSection } from './account/ModelsSection';
 import { ProfileSection } from './account/ProfileSection';
 import { SecuritySection } from './account/SecuritySection';
+import { TeamSection } from './account/TeamSection';
 import { UsageSection } from './account/UsageSection';
 
 export default function Account() {
@@ -34,7 +35,6 @@ export default function Account() {
   /* 订阅 */
   const [plans, setPlans] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
-  const [orders, setOrders] = useState<any[]>([]);
   const [order, setOrder] = useState<any>(null);
 
   /* 安全 */
@@ -75,11 +75,9 @@ export default function Account() {
       Promise.all([
         api<any[]>('/billing/plans'),
         api<any>('/billing/subscription'),
-        api<any>('/billing/orders'),
-      ]).then(([p, s, o]) => {
+      ]).then(([p, s]) => {
         setPlans(p || []);
         setSubscription(s);
-        setOrders(o?.items || (Array.isArray(o) ? o : []));
       }).catch(() => {});
     }
   }, [tab]);
@@ -188,17 +186,20 @@ export default function Account() {
         ]}
       />
 
-      {/* ===== 资料偏好 ===== */}
+      {/* ===== 资料偏好（课题组显示在昵称上方） ===== */}
       {tab === 'profile' && (
-        <ProfileSection
-          form={form}
-          setForm={setForm}
-          tagInput={tagInput}
-          setTagInput={setTagInput}
-          saving={saving}
-          onSave={saveProfile}
-          onAddTag={addTag}
-        />
+        <>
+          <TeamSection />
+          <ProfileSection
+            form={form}
+            setForm={setForm}
+            tagInput={tagInput}
+            setTagInput={setTagInput}
+            saving={saving}
+            onSave={saveProfile}
+            onAddTag={addTag}
+          />
+        </>
       )}
 
       {/* ===== 模型管理 ===== */}
@@ -226,7 +227,6 @@ export default function Account() {
         <BillingSection
           subscription={subscription}
           plans={plans}
-          orders={orders}
           onBuy={buy}
         />
       )}

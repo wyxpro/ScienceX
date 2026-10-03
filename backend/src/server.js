@@ -16,6 +16,7 @@ const literatureRoutes = require('./routes/literature');
 const documentsRoutes = require('./routes/documents');
 const researchRoutes = require('./routes/research');
 const publishRoutes = require('./routes/publish');
+const dreampaperRoutes = require('./routes/dreampaper');
 
 const app = express();
 assertProductionConfig();
@@ -51,6 +52,7 @@ app.use('/api/v1', literatureRoutes.router);
 app.use('/api/v1', documentsRoutes.router);
 app.use('/api/v1', researchRoutes.router);
 app.use('/api/v1', publishRoutes.router);
+app.use('/api/v1', dreampaperRoutes.router);
 
 // 404
 app.use((req, res) => {
