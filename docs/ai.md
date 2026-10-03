@@ -2,7 +2,7 @@
 
 > 本文档基于对 ScienceX 科研 AI 工作台代码库（`backend/src/lib`、`backend/src/routes`、`frontend/src/pages`）与设计文档（`PRD.md`、`TSD.md`、`docs/对接.md`、`docs/DREAMPAPER_INTEGRATION.md`）的全面分析生成，用于指导后续真实 AI 能力的对接落地。
 >
-> **重要说明**：当前项目为**全栈离线演示（Demo）**，绝大多数 AI 能力由本地模板 / 确定性回退模拟（见 `backend/src/lib/ai.js`、`backend/src/lib/agents/lingxiEngine.js`）。仅当配置了 OpenAI 兼容网关密钥时，才会真实调用大模型（见 `backend/src/lib/model-gateway.js`）。本文档的「推荐模型」与「调用价格」为**生产对接规划参考**，价格为 2025 年公开牌价示意，**接入前务必以各厂商官方定价页为准**。
+> **重要说明**：当前项目为**全栈离线演示（Demo）+ 部分真实网关对接**。文本对话 / 翻译 / 结构化输出由本地模板或确定性回退模拟（见 `backend/src/lib/ai.js`、`backend/src/lib/agents/lingxiEngine.js`）；**已真实对接**的能力包括：① DeepSeek V4.1 Flash 文本网关（Sophnet）；② OpenAI Next 统一文本网关（GPT-6.1 Sol / Claude Sonnet 5 / Gemini 3.8 Flash 等，`OPENAINEXT_*` 配置）；③ **gpt-image-2 生图网关**（`backend/src/ai/image.js`，`IMAGE_*` 配置，科研图位图渲染，见 `backend/src/routes/dreampaper.js`）。模型路由统一走 `backend/src/lib/model-gateway.js`。本文档的「推荐模型」与「调用价格」为**生产对接规划参考**，价格为 2025 年公开牌价示意，**接入前务必以各厂商官方定价页为准**。
 
 ---
 
@@ -12,11 +12,11 @@ ScienceX 是覆盖 **选题 → 文献 → 实验 → 分析 → 写作 → 投�
 
 | 业务环节 | 承载模块（前端 / 后端路由） | 核心 AI 能力 | 当前实现状态 |
 | :--- | :--- | :--- | :--- |
-| 对话中枢 | `Chat.tsx` / `routes/chat.js` + `agents/lingxiEngine.js` | 8 类 Agent 编排、多轮记忆、工具调用、流式输出 | 演示模拟 + 可选网关 |
+| 对话中枢 | `Chat.tsx` / `routes/chat.js` + `agents/lingxiEngine.js` | 8 类 Agent 编排、多轮记忆、工具调用、流式输出 | 演示模拟 + 可选网关（默认模型 GPT-6.1 Sol） |
 | 选题灵感 | `Topic.tsx` / `routes/literature.js` | 多源检索、综述生成、选题推荐、可行性评估 | 演示模拟 |
 | 文献阅读 | `Reader.tsx` / `routes/documents.js` | 版面解析、翻译、思维导图、七段总结、引用图谱、RAG 问答 | 演示 + 网关翻译/问答 |
 | 实验设计 | `Experiment.tsx` / `routes/research.js` | 方案生成、SOTA 对标、参数看板 | 演示模拟 |
-| 数据分析 / 科研图 | `Analysis.tsx` / `routes/dreampaper.js` | 两阶段 Design→Implement 配图、图表 spec 渲染 | 网关 + 矢量回退 |
+| 数据分析 / 科研图 | `Analysis.tsx` / `routes/dreampaper.js` | 两阶段 Design→Implement 配图、图表 spec 渲染 | **生图网关（gpt-image-2 真实位图）+ 矢量回退** |
 | 论文写作 | `Writing.tsx` / `routes/documents.js` | 中英互译、学术润色、AI 查重、AI 降重 | 演示 + 网关 |
 | 投稿助手 | `Submission.tsx` / `routes/publish.js` | 期刊匹配推荐、CCF 查询、倒计时 | 规则 + 演示 |
 | 组会汇报 | `Meeting.tsx` / `routes/publish.js` | PPT 大纲生成、导师建议结构化（ASR+LLM） | 演示模拟 |
@@ -57,13 +57,14 @@ flowchart TB
         Resolve["resolveModel / gatewayConfig<br/>内置模型 + 用户自定义模型"]
         Guard["SSRF 防护<br/>HTTPS 强制·内网地址拦截"]
         OpenAI["OpenAI 兼容 /chat/completions"]
+        ImageGW["生图网关 ai/image.js<br/>OpenAI 兼容 /images/generations"]
         Fallback{{"ai.js 本地模板回退<br/>(无密钥时)"}}
     end
 
-    subgraph MODELS["外部 AI 能力（待对接）"]
-        LLM["文本/推理 LLM<br/>GPT-4o · Claude · Gemini · DeepSeek · Qwen"]
+    subgraph MODELS["外部 AI 能力（已对接 / 待对接）"]
+        LLM["文本/推理 LLM<br/>DeepSeek-Flash [已接] · GPT-6.1 Sol [已接]<br/>Claude / Gemini / Kimi [已接]"]
         VIS["视觉理解 Vision"]
-        IMG["图像生成 image2"]
+        IMG["图像生成 gpt-image-2 [已接]"]
         EMB["Embedding + 向量库"]
         ASR["语音识别 Whisper"]
     end
@@ -83,11 +84,12 @@ flowchart TB
     OpenAI -.-> VIS
     Resolve -->|无 baseUrl/key| Fallback
     MemR --> Mem
-    OpenAI -.->|图像端点待补| IMG
+    ImageGW -->|paper_figure / plot_chart Implement 阶段| IMG
+    DpR --> ImageGW
     OpenAI -.->|检索/语音待补| EMB
     OpenAI -.-> ASR
     LX -->|结构化事件| ChatUI
-    DpR -->|矢量 spec| Viz
+    DpR -->|矢量 spec（生图失败降级）| Viz
 ```
 
 ### 2.2 分层架构（目标生产态）
@@ -107,7 +109,8 @@ flowchart TB
 2. **SSE 结构化事件协议**（`lingxiEngine.executeAgentStream`）：事件类型 `start / memory_injected / plan / step_start / step_update / thought / tool_call / tool_result / delta / done / error`，前端按事件类型分别驱动规划看板、思维链、工具卡片与打字机正文。
 3. **8 大 Agent 编排模式**：`general / react / plan_execute / codeact / mcp / skill / text2sql / structured`，每种模式对应独立推理管线与输出形态。
 4. **课题组三层记忆**：第一层会话内存、第二层滚动摘要、第三层长期事实库（按 `user_id`/`project_id` 隔离），注入到提示词上下文。
-5. **DreamPaper 两阶段流水线**：阶段一抽取模板结构 / 母版风格（structure/analyzer），阶段二按用户内容填充产出可渲染 JSON spec（design/implement），配合 **stage-weight 进度映射** 与 **Design Log** 流式推送；无图像端点时降级为前端 **矢量 SVG spec 渲染**。
+5. **DreamPaper 两阶段流水线**：阶段一抽取模板结构 / 母版风格（structure/analyzer），阶段二按用户内容填充产出可渲染 JSON spec（design/implement），配合 **stage-weight 进度映射** 与 **Design Log** 流式推送；Implement 阶段**优先调用生图网关**产出真实位图，未配置或失败时降级为前端 **矢量 SVG spec 渲染**。
+6. **生图网关**（`backend/src/ai/image.js`，**已对接生效**）：OpenAI 兼容 `POST /v1/images/generations`，默认模型 **gpt-image-2**（`IMAGE_BASE_URL / IMAGE_API_KEY / IMAGE_MODEL / IMAGE_TIMEOUT_MS` 配置，超时 180s，单图耗时约 60–70s）。支持 `size` 映射（16:9/3:2/4:3 → 1536x1024，1:1 → 1024x1024），返回 CDN 直链 `url` 与 `b64_json` 双通道（直链优先展示，base64 兜底转 data URL，任务列表接口剥离大体积 base64）。生图失败不中断任务——写入 `render_warning` 并降级矢量渲染。
 
 ---
 
@@ -138,7 +141,7 @@ flowchart TB
 | 能力点（ScienceX 场景） | 当前实现 | 推荐对接模型（主 / 备） | 参考调用价格 | 优先级 |
 | :--- | :--- | :--- | :--- | :--- |
 | **视觉理解**：图表解读、上传图像分析、公式/版面识别辅助 | 无（预留） | GPT-4o Vision / Gemini 2.0 Flash / Claude 3.7 Vision | 图像折算 token，约 \$2.5–\$3/百万 input；单图 ≈ \$0.003–0.01 | P1 |
-| **图像生成（image2）**：科研配图栅格渲染、封面/示意图 | 矢量 SVG spec 降级 | gpt-image-1 / DALL·E 3 / Stable Diffusion XL（自建）/ Ideogram | gpt-image-1 ≈ \$0.02–0.19/图；DALL·E 3 ≈ \$0.04/图（HD \$0.08）；自建仅算力 | P1 |
+| **图像生成（image2）**：科研配图栅格渲染、封面/示意图 | **已对接生效（gpt-image-2 · OpenAI Next 生图网关 `ai/image.js`，DreamPaper Implement 阶段真实位图 + 前端 PNG 导出；失败降级矢量 SVG）** | **gpt-image-2 [已实装]** / gpt-image-1 / DALL·E 3 / Stable Diffusion XL（自建）/ Ideogram | gpt-image-2 实测约 60–70s/图；gpt-image-1 ≈ \$0.02–0.19/图；DALL·E 3 ≈ \$0.04/图（HD \$0.08）；自建仅算力 | P1 |
 | **文档版面解析**：PDF 两栏解析、公式/图表抽取、结构化正文 | 模拟任务流 | MinerU / GROBID / Nougat（自建）+ 商用 PDF 解析 API | 自建：算力；商用 ≈ \$0.01–0.05/页 | P0 |
 | **OCR 文字识别**：扫描件 / 图片中文字与公式提取 | 无（预留） | PaddleOCR（自建）/ Azure Read / GPT-4o Vision | 自建免费；云 OCR ≈ \$1/千页 | P2 |
 
@@ -162,15 +165,17 @@ flowchart TB
 
 ### 3.2 内置可选模型清单（`store.builtinModels`）
 
-| 模型 ID | 名称 | 厂商 | 定位标签 | 上下文 |
-| :--- | :--- | :--- | :--- | :--- |
-| m-deepseek-flash | DeepSeek V4.1 Flash | DeepSeek (Sophnet) | 极速推理 · 默认推荐 | 64K |
-| m-gpt4o | GPT-4o | OpenAI | 通用最强 | 128K |
-| m-claude | Claude 3.7 Sonnet | Anthropic | 长文写作 | 200K |
-| m-gemini | Gemini 2.0 Flash | Google | 高速低价 | 1M |
-| m-deepseek | DeepSeek-V3 | DeepSeek | 代码 / 推理 | 64K |
-| m-qwen | Qwen-Max | 阿里云 | 中文优化 | 128K |
+| 模型 ID | 名称 | 网关 / 厂商 | 定位标签 | 上下文 | 状态 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| m-deepseek-flash | DeepSeek V4.1 Flash | Sophnet (`DEEPSEEK_*`) | 极速推理 · 默认推荐 | 64K | 已实测连通 |
+| m-gpt-sol | GPT-6.1 Sol | OpenAI Next (`OPENAINEXT_*`) | 通用旗舰 · 深度推理 · **工作台默认选中** | 128K | 已实测连通 |
+| m-claude | Claude Sonnet 5 | OpenAI Next (`OPENAINEXT_*`) | 长文写作 · 学术润色 | 200K | 已实测连通 |
+| m-gemini | Gemini 3.8 Flash | OpenAI Next (`OPENAINEXT_*`) | 高速低价 · 超长上下文 | 1M | 已实测连通 |
+| m-deepseek | DeepSeek V4 Pro | OpenAI Next (`OPENAINEXT_*`) | 代码 / 数学推理 | 128K | 已实测连通 |
+| m-kimi | Kimi K2.5 | OpenAI Next (`OPENAINEXT_*`) | 中文长文档精读 | 256K | 已实测连通 |
 
+> OpenAI Next 网关（`https://api.openai-next.com/v1`）为 OpenAI 兼容协议，同一套 SDK 路由多厂商模型，便于按成本/质量切换；文本超时 60–90s。**生图**独立走 `ai/image.js` 网关（同站 `/v1/images/generations`，模型 `gpt-image-2`，`IMAGE_*` 配置）。
+>
 > 另支持用户自定义 OpenAI 兼容模型（`store.customModels`，如 `lab-local-qwen2.5-72b`），配置 `base_url + model_name + api_key`（密钥加密存储，HTTPS + 内网拦截）。
 
 ### 3.3 成本估算示例（单次典型请求）
@@ -223,6 +228,7 @@ flowchart TB
 | `/dreampaper` 阶段二（diagram design） | 「内容保真优先，content_inventory 12-25 项，反塌缩，忠实/简洁/复杂度约束」+ 输出契约 | Diagram spec |
 | `/dreampaper`（plot design） | 「评测红线转硬约束，不虚构坐标/显著性/p 值，colorblind 配色，图例外置」 | Plot spec |
 | `/dreampaper`（ppt design） | 「母版风格优先，每页绑定同一母版，具象视觉描绘优于文字方框，每页 2-5 关键词」 | Deck spec |
+| `/dreampaper` 生图渲染（`figurePrompt`，Implement 阶段） | 「publication-ready 学术图 + Design spec 阶段结构/数据序列精确保真（label=value 逐项传入）+ colorblind 配色/图例外置；**中文内容强制译为学术英文渲染**（gpt-image-2 直接渲染中文会输出问号）」 | 真实位图 PNG（CDN 直链 + base64 兜底） |
 | `/review/council` | 5 角色（theory/method/experiment/writing/ethics）独立评审 + 主席 Agent 汇总冲突 | 多视角审稿报告 |
 | `/deck/generate` | 「解析研究内容 → PPT 大纲 → 逐页填充 → 套模板渲染」 | .pptx |
 | `/journals/match` | 摘要向量匹配 + LLM 给出期刊排序与理由 | 推荐期刊列表 |
@@ -252,8 +258,8 @@ flowchart TB
 
 | 阶段 | 目标 | 关键对接 | 依赖模态 |
 | :--- | :--- | :--- | :--- |
-| **P0 打通主干** | 真实 LLM + Embedding + 版面解析上线 | 配置模型网关（GPT-4o/DeepSeek）、text-embedding-3 + pgvector、MinerU 解析、翻译/问答切真 | 文本 / Embedding / 文档解析 |
-| **P1 多模态增强** | Vision 图表解读 + 图像生成 + ASR | GPT-4o Vision、gpt-image-1/SDXL、Whisper、Cohere/bge Rerank | 视觉 / 图像生成 / 语音 / Rerank |
+| **P0 打通主干** | 真实 LLM + Embedding + 版面解析上线 | ✅ 文本网关已通（DeepSeek-Flash + OpenAI Next 多模型）；待接：text-embedding-3 + pgvector、MinerU 解析 | 文本 / Embedding / 文档解析 |
+| **P1 多模态增强** | Vision 图表解读 + 图像生成 + ASR | ✅ **图像生成已通**（gpt-image-2 生图网关，DreamPaper 真实位图渲染）；待接：GPT-4o Vision、Whisper、Cohere/bge Rerank | 视觉 / 图像生成 / 语音 / Rerank |
 | **P1 智能体实装** | 8 模式接真实编排 + CodeAct 真沙箱 | LangGraph 编排、Docker/Firecracker Python 沙箱、真实 arXiv MCP | 代码执行 / Function Calling |
 | **P2 协作与生态** | 多人协同、MCP 市场、私有化 | WebSocket/CRDT、MCP Client、SSO + KMS、自建模型 | 全模态 |
 
