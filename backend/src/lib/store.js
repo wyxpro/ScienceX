@@ -58,14 +58,14 @@ const conversations = [
     title: '微表情识别选题方向讨论',
     project_id: 'p1',
     scene: 'workbench',
-    model: 'm-gpt4o',
+    model: 'm-deepseek-flash',
     updated_at: daysAgo(0),
     messages: [
       { id: 'msg1', role: 'user', content: '帮我分析一下 2025-2026 年微表情识别领域有哪些值得做的选题方向？', tokens: 128, created_at: daysAgo(1) },
       {
         id: 'msg2',
         role: 'assistant',
-        model: 'GPT-4o',
+        model: 'DeepSeek V4.1 Flash',
         content:
           '结合近两年顶会论文趋势，微表情识别（MER）目前有四个高价值方向：\n\n1. **AU 先验与 Transformer 融合**：将面部动作单元（AU）作为结构化先验注入注意力机制，代表作如 AU-aware Transformer 系列；\n2. **长时序时序建模**：利用光流 / RAFT 特征捕捉微表情的瞬态动态；\n3. **跨数据集泛化**：SMIC / CASME II / SAMM 间的 domain gap 是公认痛点，域适应与数据增广仍有空间；\n4. **多模态融合**：结合生理信号（rPPG、EEG）提升识别鲁棒性。\n\n若你的前期工作已在 AU 特征上积累了 baseline（如 up 系列模型），建议优先沿方向 1 深耕。',
         tokens: 486,

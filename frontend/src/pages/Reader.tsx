@@ -156,7 +156,7 @@ export default function Reader() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   /* 模型选择状态 */
-  const [selectedModel, setSelectedModel] = useState('GPT-4o 顶刊精读');
+  const [selectedModel, setSelectedModel] = useState('DeepSeek V4.1 Flash');
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
 

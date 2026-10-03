@@ -12,7 +12,7 @@ const lingxiEngine = require('../lib/agents/lingxiEngine');
 
 /* ---------- 对话补全（SSE 流式） REQ-CHAT-01/02/03 + LingXiAgent 8大模式 ---------- */
 router.post('/chat/completions', auth, express.json({ limit: '2mb' }), asyncHandler(async (req, res) => {
-  const { messages, model = 'GPT-4o', stream = true, skills = [], agent_mode = 'general', project_id = 'p1', conversation_id } = req.body || {};
+  const { messages, model = 'DeepSeek V4.1 Flash', stream = true, skills = [], agent_mode = 'general', project_id = 'p1', conversation_id } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) return errors.param(res, 'messages 不能为空');
   
   if (!stream) {
@@ -68,7 +68,7 @@ router.get('/conversations', auth, (req, res) => {
 });
 
 router.post('/conversations', auth, (req, res) => {
-  const conv = { id: store.id('c'), owner_id: req.user.id, title: req.body?.title || '新的对话', project_id: req.body?.project_id || null, scene: 'workbench', model: req.body?.model || 'm-gpt4o', updated_at: store.now(), messages: [] };
+  const conv = { id: store.id('c'), owner_id: req.user.id, title: req.body?.title || '新的对话', project_id: req.body?.project_id || null, scene: 'workbench', model: req.body?.model || 'm-deepseek-flash', updated_at: store.now(), messages: [] };
   store.conversations.unshift(conv);
   ok(res, { id: conv.id, title: conv.title, project_id: conv.project_id, scene: conv.scene, model: conv.model, updated_at: conv.updated_at, message_count: 0 });
 });

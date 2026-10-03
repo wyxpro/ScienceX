@@ -39,7 +39,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [models, setModels] = useState<{ builtin: any[]; custom: any[] }>({ builtin: [], custom: [] });
-  const [model, setModel] = useState('GPT-4o');
+  const [model, setModel] = useState('DeepSeek V4.1 Flash');
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [keyword, setKeyword] = useState('');
   const [recording, setRecording] = useState(false);
@@ -64,7 +64,12 @@ export default function Chat() {
         api<{ total: number }>('/chat/memories').catch(() => ({ total: 4 })),
       ]);
       setConvs((c as any)?.items || (Array.isArray(c) ? c : []));
-      setModels(m || { builtin: [], custom: [] });
+      const loadedModels = m || { builtin: [], custom: [] };
+      setModels(loadedModels);
+      const flashModel = loadedModels.builtin?.find((item: any) => item.name?.includes('DeepSeek'))?.name;
+      if (flashModel) {
+        setModel(flashModel);
+      }
       if (d) setDashboard(d);
       setSkills(Array.isArray(s) ? s : ((s as any)?.items || []));
       if (mem && typeof mem.total === 'number') setMemoryCount(mem.total);
@@ -89,7 +94,7 @@ export default function Chat() {
   };
 
   const newConv = async () => {
-    const c = await api<Conversation>('/conversations', { method: 'POST', body: { title: '新的科研对话' } });
+    const c = await api<Conversation>('/conversations', { method: 'POST', body: { title: '新的科研对话', model } });
     setConvs((x) => [c, ...(x || [])]);
     setActiveConv(c.id);
     setMessages([]);

@@ -319,7 +319,7 @@ High-res academic SVG chart generated.`,
  */
 async function executeAgentStream(res, {
   messages,
-  model = 'GPT-4o',
+  model = 'DeepSeek V4.1 Flash',
   agentMode = 'general',
   skills = [],
   userId = 'u1',
