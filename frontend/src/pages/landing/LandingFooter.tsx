@@ -1,5 +1,4 @@
 import React from 'react';
-import Icon from '../../components/Icon';
 
 export const LandingFooter: React.FC = () => {
   return (
@@ -7,7 +6,7 @@ export const LandingFooter: React.FC = () => {
       <div className="landing-footer-inner">
         <div className="row g-2 items-center">
           <div className="landing-logo-badge" style={{ width: 30, height: 30 }}>
-            <Icon name="flask" size={16} />
+            <img src="/logo.png" alt="ScienceX Logo" />
           </div>
           <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 800, color: 'var(--ink)' }}>ScienceX</span>
           <span className="text-xs text-muted">· 让科研更专注，让创新更纯粹</span>

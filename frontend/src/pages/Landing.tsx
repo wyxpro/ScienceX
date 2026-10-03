@@ -38,7 +38,7 @@ export default function Landing() {
             aria-label="返回页面顶部"
           >
             <div className="landing-logo-badge">
-              <Icon name="flask" size={20} />
+              <img src="/logo.png" alt="ScienceX Logo" />
             </div>
             <div>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, fontWeight: 800, color: 'var(--ink)' }}>

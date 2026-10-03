@@ -66,7 +66,7 @@ export default function AppLayout() {
     <aside className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
       {/* 经典的 ScienceX AI 科研全流程 Logo 常驻左上角 */}
       <div className="sb-logo" style={{ cursor: 'pointer' }} onClick={() => nav('/landing')} title="前往官网宣传页">
-        <div className="sb-logo-mark"><Icon name="flask" size={19} /></div>
+        <div className="sb-logo-mark"><img src="/logo.png" alt="ScienceX Logo" /></div>
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
             <div className="sb-logo-name">ScienceX</div>

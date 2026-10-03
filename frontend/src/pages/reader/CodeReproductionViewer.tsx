@@ -240,7 +240,7 @@ export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ 
   };
 
   return (
-    <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
       {/* 顶部操作栏 */}
       <div
         style={{
@@ -307,6 +307,8 @@ export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ 
           boxShadow: '0 8px 30px rgba(0, 0, 0, 0.22)',
           display: 'flex',
           flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
         }}
       >
         {/* 编辑器顶部文件标签页 (Tabs) */}
@@ -383,7 +385,8 @@ export const CodeReproductionViewer: React.FC<CodeReproductionViewerProps> = ({ 
         {/* 编辑器主编辑视窗：行号 + 语法高亮文本 */}
         <div
           style={{
-            maxHeight: 520,
+            flex: 1,
+            minHeight: 0,
             overflowY: 'auto',
             padding: '14px 0',
             background: '#1e1e2e',

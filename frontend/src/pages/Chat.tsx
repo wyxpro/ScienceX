@@ -378,7 +378,7 @@ export default function Chat() {
           <div className="chat-hero-container">
             {/* 居中标志性 App Badge */}
             <div className="chat-hero-badge">
-              <Icon name="flask" size={28} />
+              <img src="/logo.png" alt="ScienceX Logo" />
             </div>
 
             {/* 标题与副标题 */}

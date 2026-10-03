@@ -149,18 +149,16 @@ export default function Login() {
           >
             <div
               style={{
-                width: 46,
-                height: 46,
+                width: 50,
+                height: 50,
                 borderRadius: 14,
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%)',
-                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 6px 18px rgba(5, 150, 105, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                overflow: 'hidden',
               }}
             >
-              <Icon name="flask" size={24} />
+              <img src="/logo.png" alt="ScienceX Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
             </div>
             <div>
               <div
