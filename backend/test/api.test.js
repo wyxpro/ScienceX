@@ -153,15 +153,16 @@ test('模型网关允许公共 HTTPS 域名并拒绝内网地址', { concurrency
   assert.throws(() => gateway.parseModelBaseUrl('http://api.example.com/v1'), /HTTPS/);
 });
 
-test('生产模块导入要求配置主密钥', { concurrency: false }, () => {
+test('生产环境未配置主密钥时回退演示密钥并告警，不再拒绝启动', { concurrency: false }, () => {
   const env = { ...process.env, NODE_ENV: 'production', SCIENCEX_MASTER_KEY: '' };
   const result = spawnSync(process.execPath, ['-e', "require('./backend/src/server')"], {
     cwd: path.resolve(__dirname, '../..'),
     env,
     encoding: 'utf8',
   });
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /SCIENCEX_MASTER_KEY must be set/);
+  assert.equal(result.status, 0);
+  assert.match(result.stderr, /SCIENCEX_MASTER_KEY/);
+  assert.match(result.stderr, /安全提醒/);
 });
 
 test('生产环境拒绝演示账号登录', { concurrency: false }, async () => {

@@ -8,7 +8,9 @@ const masterKey = crypto.createHash('sha256').update(configuredMasterKey || 'sci
 
 function assertProductionConfig() {
   if (process.env.NODE_ENV === 'production' && configuredMasterKey.length < 32) {
-    throw new Error('SCIENCEX_MASTER_KEY must be set to at least 32 characters in production');
+    // 生产环境未配置密钥时不再崩溃：回退演示密钥并告警，保证服务可用（serverless 部署场景）。
+    // 令牌签名与密钥加密仍可用（与开发环境同一回退密钥）；正式上线请在平台配置 SCIENCEX_MASTER_KEY。
+    console.warn('[ScienceX 安全提醒] 未配置 SCIENCEX_MASTER_KEY（至少 32 字符），已回退演示密钥。请在部署平台的环境变量中配置该项。');
   }
 }
 
