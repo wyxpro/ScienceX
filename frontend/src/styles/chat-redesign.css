@@ -261,8 +261,38 @@
 }
 
 .chat-command-dock:focus-within {
-  border-color: #10b981;
-  box-shadow: 0 14px 38px -8px rgba(16, 185, 129, 0.16), 0 0 0 3px rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 14px 38px -8px rgba(16, 185, 129, 0.16), 0 0 0 3px rgba(16, 185, 129, 0.12), 0 0 28px rgba(16, 185, 129, 0.25);
+}
+
+/* 聚焦光效：输入时边框呈现流转渐变光环 */
+.chat-command-dock::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 21px;
+  padding: 1.5px;
+  background: linear-gradient(120deg, #10b981, #6ee7b7, #38bdf8, #a78bfa, #10b981);
+  background-size: 280% 280%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chat-command-dock:focus-within::before {
+  opacity: 1;
+  animation: dockGlowFlow 4.5s linear infinite;
+}
+
+@keyframes dockGlowFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .chat-dock-main {
@@ -281,6 +311,7 @@
   line-height: 1.6;
   color: #0f172a;
   font-family: inherit;
+  caret-color: #10b981;
 }
 
 .chat-dock-textarea::placeholder {
@@ -298,7 +329,8 @@
 .chat-dock-left-tools {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .chat-tool-btn {
@@ -394,6 +426,30 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 输入坞下拉浮层（Agent 模式 / 模型选择）：自内联样式收归统一类 */
+.chat-dock-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1500;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.chat-dock-mode-menu {
+  min-width: 260px;
+}
+
+.chat-dock-model-menu {
+  min-width: 230px;
 }
 
 /* 模型选择器药丸按钮 */
@@ -685,16 +741,19 @@
     max-width: 100%;
   }
 
-  /* 顶部状态栏：允许换行，标题 ellipsis 截断，次要信息配合 .desktop-only 隐藏 */
+  /* 顶部状态栏：强制单行不换行，隐藏冗余在线状态药丸，标题 ellipsis 截断 */
   .chat-stage-header {
-    flex-wrap: wrap;
-    gap: 6px 10px;
+    flex-wrap: nowrap;
+    gap: 8px;
     padding: 10px 12px;
   }
   .chat-stage-header > div:first-child {
     flex: 1;
     min-width: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+  }
+  .chat-stage-header .chat-header-pill {
+    display: none;
   }
   .chat-stage-title-group {
     flex: 1;
@@ -708,8 +767,9 @@
     white-space: nowrap;
   }
   .chat-stage-header-actions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
+    flex-shrink: 0;
   }
 
   /* 空状态 Hero 与快捷推荐指令 */
@@ -732,7 +792,7 @@
     font-size: 12.5px;
   }
 
-  /* 悬浮指令中枢：宽度自适应 100%，按钮组可换行 */
+  /* 悬浮指令中枢：工具栏强制单行不换行，左侧工具窄屏时横向滑动（隐藏滚动条） */
   .chat-command-dock {
     max-width: 100%;
   }
@@ -744,12 +804,47 @@
     font-size: 14px;
   }
   .chat-dock-actions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
   }
   .chat-dock-left-tools {
     flex: 1 1 auto;
     min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chat-dock-left-tools::-webkit-scrollbar {
+    display: none;
+  }
+  .chat-dock-left-tools > * {
+    flex-shrink: 0;
+  }
+  /* 菜单展开时解除滚动容器裁剪，避免下拉浮层被截断 */
+  .chat-dock-left-tools.menu-open {
+    overflow: visible;
+  }
+  .chat-dock-right-tools {
+    flex-shrink: 0;
+  }
+  /* 紧凑药丸：模型名过长时 ellipsis 截断，保障单行能容纳全部工具 */
+  .chat-tray-pill,
+  .chat-model-pill {
+    padding: 5px 9px;
+    font-size: 11.5px;
+  }
+  .chat-pill-label {
+    max-width: 112px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 底部空间有限：下拉菜单改为向上展开 */
+  .chat-dock-menu {
+    top: auto;
+    bottom: calc(100% + 8px);
+    max-height: min(320px, 52vh);
   }
   .chat-dock-sticky-container {
     padding: 10px 8px 14px;

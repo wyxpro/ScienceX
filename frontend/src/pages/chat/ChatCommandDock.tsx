@@ -118,7 +118,8 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
 
         {/* 输入框内置动作栏（左侧模式/模型 + 上传/增强，右侧语音与发送） */}
         <div className="chat-dock-actions" style={{ position: 'relative' }}>
-          <div className="chat-dock-left-tools" style={{ gap: 6, flexWrap: 'wrap' }}>
+          {/* 移动端为单行横向滑动容器；菜单展开时加 menu-open 解除裁剪 */}
+          <div className={`chat-dock-left-tools${activeMenu ? ' menu-open' : ''}`}>
             {/* Agent 模式切换胶囊（向上展开改为向下展开顶层菜单） */}
             <div style={{ position: 'relative' }}>
               <button
@@ -131,28 +132,13 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                 }}
               >
                 <Icon name={currentModeMeta.icon} size={12} />
-                <span>{currentModeMeta.label}</span>
+                <span className="chat-pill-label">{currentModeMeta.label}</span>
                 <Icon name="chevronDown" size={10} style={{ opacity: 0.6 }} />
               </button>
 
               {activeMenu === 'mode' && (
                 <div
-                  className="anim-pop"
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    left: 0,
-                    zIndex: 1500,
-                    minWidth: 260,
-                    maxWidth: 'calc(100vw - 32px)',
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 14,
-                    boxShadow: '0 16px 40px -8px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08)',
-                    padding: 6,
-                    maxHeight: 320,
-                    overflowY: 'auto',
-                  }}
+                  className="anim-pop chat-dock-menu chat-dock-mode-menu"
                   onClick={() => setActiveMenu(null)}
                 >
                   <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>
@@ -201,28 +187,13 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                 }}
               >
                 <Icon name="cpu" size={13} style={{ color: '#059669' }} />
-                <span>{model}</span>
+                <span className="chat-pill-label">{model}</span>
                 <Icon name="chevronDown" size={11} style={{ opacity: 0.6 }} />
               </button>
 
               {activeMenu === 'model' && (
                 <div
-                  className="anim-pop"
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    left: 0,
-                    zIndex: 1500,
-                    minWidth: 230,
-                    maxWidth: 'calc(100vw - 32px)',
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 14,
-                    boxShadow: '0 16px 40px -8px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08)',
-                    padding: 6,
-                    maxHeight: 320,
-                    overflowY: 'auto',
-                  }}
+                  className="anim-pop chat-dock-menu chat-dock-model-menu"
                   onClick={() => setActiveMenu(null)}
                 >
                   <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>
