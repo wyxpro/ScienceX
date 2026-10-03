@@ -169,33 +169,99 @@ export async function api<T = any>(path: string, opts: RequestOptions = {}): Pro
     ...headers,
   };
 
-  const res = await fetch(url, {
-    method,
-    headers: requestHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    signal,
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: requestHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal,
+    });
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw err;
+    }
+    throw new ApiError(50003, `网络请求失败: ${err?.message || '无法连接至服务器'}`);
+  }
 
-  const json = await res.json().catch(() => ({ code: 50001, message: '响应体解析失败' }));
+  // 先读取原始文本，避免非 JSON 响应（500/502/空响应体）直接触发 JSON 语法异常
+  let rawText = '';
+  try {
+    rawText = await res.text();
+  } catch (err: any) {
+    throw new ApiError(50001, `读取服务响应失败: ${err?.message || '连接异常中断'}`);
+  }
 
-  // 401 拦截处理
-  if (json.code === 40101 || res.status === 401) {
+  let json: any = null;
+  if (rawText) {
+    try {
+      json = JSON.parse(rawText);
+    } catch (_) {
+      // 非 JSON 格式，保留 rawText 进行下文针对性报错
+    }
+  }
+
+  // 1. 若成功解析为业务标准 JSON 封装
+  if (json && typeof json === 'object') {
+    // 401 拦截处理与静默续期
+    if (json.code === 40101 || res.status === 401) {
+      if (!isRetry && getRefreshToken()) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          return api<T>(path, { ...opts, isRetry: true });
+        }
+      }
+
+      handleAuthExpired();
+      throw new ApiError(json.code || 40101, json.message || '登录凭据无效，请重新登录', json.trace_id);
+    }
+
+    if (json.code !== undefined && json.code !== 0) {
+      throw new ApiError(json.code, json.message || '请求失败', json.trace_id);
+    }
+
+    return (json.data !== undefined ? json.data : json) as T;
+  }
+
+  // 2. 非有效 JSON 响应：结合 HTTP 状态码提供清晰可读的错误提示
+  if (res.status === 401) {
     if (!isRetry && getRefreshToken()) {
       const newToken = await refreshAccessToken();
       if (newToken) {
         return api<T>(path, { ...opts, isRetry: true });
       }
     }
-
     handleAuthExpired();
-    throw new ApiError(json.code || 40101, json.message || '登录凭据无效，请重新登录', json.trace_id);
+    throw new ApiError(40101, '登录凭据已过期，请重新登录');
   }
 
-  if (json.code !== 0) {
-    throw new ApiError(json.code, json.message || '请求失败', json.trace_id);
+  if (!res.ok) {
+    let snippet = rawText.trim();
+    if (snippet.length > 200 || snippet.startsWith('<') || snippet.includes('<!DOCTYPE')) {
+      snippet = '';
+    }
+
+    if (res.status === 502 || res.status === 503) {
+      throw new ApiError(50002, snippet || `后端服务未启动或连接异常 (HTTP ${res.status})`);
+    }
+    if (res.status === 504) {
+      throw new ApiError(50004, snippet || '后端网关响应超时 (HTTP 504)');
+    }
+    if (res.status === 500) {
+      throw new ApiError(50001, snippet || '后端服务内部错误 (HTTP 500)');
+    }
+    if (res.status === 404) {
+      throw new ApiError(40003, snippet || `请求的接口不存在: ${path} (HTTP 404)`);
+    }
+    throw new ApiError(res.status * 100, snippet || `请求异常 (HTTP ${res.status}: ${res.statusText || 'Error'})`);
   }
 
-  return json.data as T;
+  // 200 OK 且返回空内容
+  if (!rawText.trim()) {
+    return {} as T;
+  }
+
+  throw new ApiError(50001, '响应内容格式错误，非有效 JSON 格式');
 }
 
 /* ---------- SSE 流式事件定义 (TSD §5.4 标准协议) ---------- */
