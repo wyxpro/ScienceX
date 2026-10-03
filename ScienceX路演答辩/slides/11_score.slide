@@ -1,0 +1,78 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', padding: '18px 60px 6px', gap: 14 }}>
+    <Box style={{ width: 4, height: 40, background: '#1B7A5E', borderRadius: 2 }} />
+    <Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Box style={{ background: '#C2762B', borderRadius: 4, padding: '3px 10px' }}><Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 600 }}>PART 02 · 评分亮点</Text></Box>
+        <Text style={{ fontSize: 13, color: '#8A948D' }}>关键指标 + 内部质量评审 + 学者口碑</Text>
+      </Box>
+      <Text style={{ fontSize: 27, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 4 }}>可验证的质量与口碑</Text>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', padding: '4px 60px 0', height: 478, gap: 26 }}>
+    {/* 左半区：关键指标 2×4 */}
+    <Box style={{ flex: 1.15, flexDirection: 'column', gap: 12 }}>
+      <Box style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
+        {[{ n: '13', u: '功能模块', s: '全流程覆盖' }, { n: '40+', u: 'REST/SSE', s: '接口契约' }].map((k, i) => (
+          <Box key={i} style={{ flex: 1, background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
+            <Text style={{ fontSize: 58, fontWeight: 'bold', color: '#C2762B', fontFamily: 'Noto Serif SC, Georgia, serif', lineHeight: 1 }}>{k.n}</Text>
+            <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1F2A26' }}>{k.u}</Text>
+            <Text style={{ fontSize: 11.5, color: '#8A948D' }}>{k.s}</Text>
+          </Box>
+        ))}
+      </Box>
+      <Box style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
+        {[{ n: '8', u: '类 Agent', s: '编排模式' }, { n: '10', u: '类学术图表', s: '模板库' }].map((k, i) => (
+          <Box key={i} style={{ flex: 1, background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
+            <Text style={{ fontSize: 58, fontWeight: 'bold', color: '#C2762B', fontFamily: 'Noto Serif SC, Georgia, serif', lineHeight: 1 }}>{k.n}</Text>
+            <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1F2A26' }}>{k.u}</Text>
+            <Text style={{ fontSize: 11.5, color: '#8A948D' }}>{k.s}</Text>
+          </Box>
+        ))}
+      </Box>
+      <Box style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
+        {[{ n: '5★', u: '用户口碑均分', s: '8 位学者实测' }, { n: '↓60%', u: '选题调研耗时', s: '缩短' }].map((k, i) => (
+          <Box key={i} style={{ flex: 1, background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
+            <Text style={{ fontSize: 50, fontWeight: 'bold', color: '#1B7A5E', fontFamily: 'Noto Serif SC, Georgia, serif', lineHeight: 1 }}>{k.n}</Text>
+            <Text style={{ fontSize: 14.5, fontWeight: 'bold', color: '#1F2A26' }}>{k.u}</Text>
+            <Text style={{ fontSize: 11.5, color: '#8A948D' }}>{k.s}</Text>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+    {/* 右半区：质量评审 + 口碑 */}
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 12 }}>
+      <Box style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', padding: '16px 18px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+        <Text style={{ fontSize: 14.5, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginBottom: 4 }}>综合质量评审 <span style={{ fontSize: 11.5, color: '#8A948D', fontWeight: 'normal' }}>（全量源码通读分析报告 fx.md · 10 分制）</span></Text>
+        {[{ t: '产品设计与功能覆盖', v: 9.0, p: 90 }, { t: '后端接口契约规范', v: 8.0, p: 80 }, { t: '前端实现质量', v: 7.0, p: 70 }].map((r, i) => (
+          <Box key={i} style={{ marginTop: 10 }}>
+            <Box style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ fontSize: 13, color: '#4A554F' }}>{r.t}</Text>
+              <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#1B7A5E', fontFamily: 'Consolas, monospace' }}>{r.v.toFixed(1)}</Text>
+            </Box>
+            <Box style={{ height: 12, background: '#EFECE2', borderRadius: 6, overflow: 'hidden' }}>
+              <Box style={{ width: `${r.p}%`, height: '100%', background: 'linear-gradient(90deg, #1B7A5E, #2FA37E)', borderRadius: 6 }} />
+            </Box>
+          </Box>
+        ))}
+      </Box>
+      <Box style={{ flex: 1, background: '#FAF0E1', borderRadius: 12, border: '1px solid #EFDDC0', padding: '14px 18px', flexDirection: 'column', gap: 8 }}>
+        <Text style={{ fontSize: 13.5, fontWeight: 'bold', color: '#7A4E14' }}>学者口碑（全五星）</Text>
+        {[
+          '「生成的消融实验对比方案结构严谨，节省了整整两周摸索时间！」 —— 清华 · CVPR 作者',
+          '「导师在组会上特别表扬了实验逻辑闭环！」 —— 浙大 · 组会汇报特优',
+          '「正式投稿前补齐了 LOSO 验证，成功避免大修拒稿风险！」 —— 北大 · 情感计算团队',
+        ].map((q, i) => (
+          <Box key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 13, color: '#C2762B' }}>★★★★★</Text>
+            <Text style={{ fontSize: 12.5, color: '#4A3A22', lineHeight: 1.5, flex: 1 }}>{q}</Text>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', height: 40, marginTop: 4 }}>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>ScienceX · AI 科研工作台</Text>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>11 / 22</Text>
+  </Box>
+</Slide>

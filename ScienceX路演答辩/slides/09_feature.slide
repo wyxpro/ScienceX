@@ -1,0 +1,80 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', padding: '18px 60px 6px', gap: 14 }}>
+    <Box style={{ width: 4, height: 40, background: '#1B7A5E', borderRadius: 2 }} />
+    <Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Box style={{ background: '#1B7A5E', borderRadius: 4, padding: '3px 10px' }}><Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 600 }}>PART 02 · 功能矩阵</Text></Box>
+        <Text style={{ fontSize: 13, color: '#8A948D' }}>6 大核心工具 + 2 大特色机制 + 1 个中枢</Text>
+      </Box>
+      <Text style={{ fontSize: 27, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 4 }}>工具全部智能体化，一句话驱动全流程</Text>
+    </Box>
+  </Box>
+  <Box style={{ padding: '4px 60px 0', height: 480, gap: 14 }}>
+    {/* 六大核心工具 */}
+    <Box style={{ flexDirection: 'row', gap: 14 }}>
+      {[
+        { t: '选题灵感', d: '多源检索 · 可行性雷达', ic: 'lightbulb' },
+        { t: '文献阅读', d: '三栏精读 · 3D 引用图谱', ic: 'book-open' },
+        { t: '实验设计', d: '消融矩阵 · GPU 监控', ic: 'flask' },
+        { t: '数据图表', d: '10 类学术模板 · AI 解读', ic: 'chart-line' },
+        { t: '论文写作', d: 'Diff 润色 · 查重降重', ic: 'pen' },
+        { t: '投稿助手', d: 'CCF 期刊 · 截稿倒计时', ic: 'paper-plane' },
+      ].map((f, i) => (
+        <Box key={i} style={{ flex: 1, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E6E2D6', padding: '12px 10px', alignItems: 'center', gap: 6 }}>
+          <Box style={{ width: 36, height: 36, borderRadius: 9, background: '#E3F1EA', justifyContent: 'center', alignItems: 'center' }}>
+            <FAIcon name={f.ic} style={{ fill: '#1B7A5E', width: 17, height: 17 }} />
+          </Box>
+          <Text style={{ fontSize: 13.5, fontWeight: 'bold', color: '#1F2A26', textAlign: 'center' }}>{f.t}</Text>
+          <Text style={{ fontSize: 10.5, color: '#8A948D', textAlign: 'center', lineHeight: 1.4 }}>{f.d}</Text>
+        </Box>
+      ))}
+    </Box>
+    {/* 两大特色机制 */}
+    <Box style={{ flexDirection: 'row', gap: 20 }}>
+      <Box style={{ flex: 1, background: '#E3F1EA', borderRadius: 14, padding: '16px 20px', border: '1px solid #CDE4D8', position: 'relative' }}>
+        <Box style={{ position: 'absolute', top: 12, right: 14, background: '#C2762B', borderRadius: 10, padding: '2px 8px' }}><Text style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>✨特色</Text></Box>
+        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <FAIcon name="microphone" style={{ fill: '#1B7A5E', width: 24, height: 24 }} />
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif' }}>组会汇报</Text>
+        </Box>
+        <Box style={{ gap: 6, flexDirection: 'column' }}>
+          {['实验进展一键生成 PPTX', '导师语音建议 → 结构化待办', '组会准备耗时 ↓70%'].map((t, i) => (
+            <Box key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <FAIcon name="check" style={{ fill: '#1B7A5E', width: 14, height: 14 }} />
+              <Text style={{ fontSize: 14, color: '#234038' }}>{t}</Text>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+      <Box style={{ flex: 1, background: '#FAF0E1', borderRadius: 14, padding: '16px 20px', border: '1px solid #EFDDC0', position: 'relative' }}>
+        <Box style={{ position: 'absolute', top: 12, right: 14, background: '#C2762B', borderRadius: 10, padding: '2px 8px' }}><Text style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>✨特色</Text></Box>
+        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <FAIcon name="gavel" style={{ fill: '#C2762B', width: 24, height: 24 }} />
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif' }}>多智能体专家评审团<span style={{ fontSize: 13, color: '#C2762B' }}>（首创）</span></Text>
+        </Box>
+        <Box style={{ gap: 6, flexDirection: 'column' }}>
+          {['理论/方法/实验/写作/伦理 五大审稿 Agent 并行盲审', '主审 Agent 汇总分歧与裁决', '投稿前先「过一遍审」'].map((t, i) => (
+            <Box key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <FAIcon name="check" style={{ fill: '#C2762B', width: 14, height: 14 }} />
+              <Text style={{ fontSize: 14, color: '#4A3A22' }}>{t}</Text>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    </Box>
+    {/* 中枢条 */}
+    <Box style={{ background: '#0E4A37', borderRadius: 12, padding: '14px 20px', flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+      <Box style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.14)', justifyContent: 'center', alignItems: 'center' }}>
+        <FAIcon name="comments" style={{ fill: '#FFFFFF', width: 19, height: 19 }} />
+      </Box>
+      <Box>
+        <Text style={{ fontSize: 15.5, fontWeight: 'bold', color: '#FFFFFF', fontFamily: 'Noto Serif SC, Georgia, serif' }}>AI 对话工作台（中枢）—— 8 类智能体模式切换 / ReAct 推演 / 规划流 / 记忆抽屉</Text>
+        <Text style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.72)', marginTop: 3 }}>所有工具均可在对话中被智能体调用，一句话驱动全流程</Text>
+      </Box>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', height: 40, marginTop: 4 }}>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>ScienceX · AI 科研工作台</Text>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>09 / 22</Text>
+  </Box>
+</Slide>

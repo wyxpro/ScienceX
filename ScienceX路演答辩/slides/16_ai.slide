@@ -1,0 +1,100 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', padding: '18px 60px 6px', gap: 14 }}>
+    <Box style={{ width: 4, height: 40, background: '#1B7A5E', borderRadius: 2 }} />
+    <Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Box style={{ background: '#C2762B', borderRadius: 4, padding: '3px 10px' }}><Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 600 }}>PART 03 · AI 能力</Text></Box>
+        <Text style={{ fontSize: 13, color: '#8A948D' }}>模型 / RAG 检索 / Agent 工作流程</Text>
+      </Box>
+      <Text style={{ fontSize: 27, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 4 }}>灵犀引擎：模型中立 · 检索增强 · 多智能体编排</Text>
+    </Box>
+  </Box>
+  <Box style={{ padding: '2px 60px 0', height: 470, flexDirection: 'column', gap: 10 }}>
+    {/* 顶段：模型矩阵 */}
+    <Box style={{ flexDirection: 'row', gap: 10 }}>
+      {[
+        { n: 'DeepSeek V4.1 Flash', s: '内置默认 · 极速', c: '#1B7A5E', f: true },
+        { n: 'GPT-4o', s: '通用最强', c: '#4A5568', f: false },
+        { n: 'Claude 3.7', s: '长文写作', c: '#4A5568', f: false },
+        { n: 'Gemini 2.0 Flash', s: '1M 上下文', c: '#4A5568', f: false },
+        { n: 'Qwen-Max', s: '中文优化', c: '#4A5568', f: false },
+        { n: '自定义模型', s: 'OpenAI 兼容', c: '#C2762B', f: false },
+      ].map((m, i) => (
+        <Box key={i} style={{ flex: 1, background: m.f ? '#1B7A5E' : '#FFFFFF', border: `1px solid ${m.f ? '#1B7A5E' : '#DCD8CC'}`, borderRadius: 10, padding: '7px 6px', alignItems: 'center' }}>
+          <Text style={{ fontSize: 11.5, fontWeight: 'bold', color: m.f ? '#FFFFFF' : '#1F2A26', textAlign: 'center' }}>{m.n}</Text>
+          <Text style={{ fontSize: 10, color: m.f ? 'rgba(255,255,255,0.8)' : '#8A948D', marginTop: 1, textAlign: 'center' }}>{m.s}</Text>
+        </Box>
+      ))}
+    </Box>
+    {/* 中段：RAG 检索增强管线（横向五节点） */}
+      <Box style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', padding: '10px 18px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+      <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginBottom: 8 }}>RAG 检索增强管线</Text>
+      <Box style={{ flexDirection: 'row', alignItems: 'stretch', justifyContent: 'space-between' }}>
+        {[
+          { ic: 'file-alt', t: '文档解析', d: 'PDF/Word/CAJ/MD 零依赖' },
+          { ic: 'cut', t: '文本切片', d: '版面感知结构切分' },
+          { ic: 'square-root-alt', t: '向量化', d: 'Embedding（pgvector）' },
+          { ic: 'bullseye', t: '精排召回', d: 'Rerank + 确定性兜底' },
+          { ic: 'comment-dots', t: '溯源生成', d: '标注 [p.4 §3.2] 定位' },
+        ].map((s, i) => (
+          <Box key={i} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <Box style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+              <Box style={{ width: 36, height: 36, borderRadius: '50%', background: '#E3F1EA', justifyContent: 'center', alignItems: 'center', border: '2px solid #CDE4D8' }}>
+                <FAIcon name={s.ic} style={{ fill: '#1B7A5E', width: 16, height: 16 }} />
+              </Box>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#1F2A26', textAlign: 'center' }}>{s.t}</Text>
+              <Text style={{ fontSize: 9.5, color: '#8A948D', textAlign: 'center', lineHeight: 1.3, padding: '0 4px' }}>{s.d}</Text>
+            </Box>
+            {i < 4 && <Box style={{ width: 20, height: 2, background: '#1B7A5E', opacity: 0.5, flexShrink: 0 }} />}
+          </Box>
+        ))}
+      </Box>
+    </Box>
+    {/* 底段：Agent 工作流 */}
+    <Box style={{ flexDirection: 'row', gap: 16, flex: 1 }}>
+      <Box style={{ flex: 1, background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', padding: '12px 16px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+        <Text style={{ fontSize: 13.5, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginBottom: 6 }}>8 类编排模式</Text>
+        <Box style={{ flexDirection: 'column', gap: 3 }}>
+          {[
+            ['🧠', 'General 通用对话'], ['🔍', 'ReAct 链式推演'], ['📋', 'Plan-Execute 规划流'], ['💻', 'CodeAct 代码沙箱'],
+            ['🌐', 'MCP 学术工具检索'], ['🎯', 'Skill 技能调用'], ['🔢', 'Text2SQL 数据查询'], ['📦', 'Structured 结构化输出'],
+          ].map((m, i) => (
+            <Text key={i} style={{ fontSize: 11.5, color: '#4A554F', lineHeight: 1.4 }}>{m[0]} {m[1]}</Text>
+          ))}
+        </Box>
+      </Box>
+      {/* 终端窗：SSE 事件时序 */}
+      <Box style={{ flex: 1.1, background: '#122019', borderRadius: 12, padding: '12px 16px', flexDirection: 'column' }}>
+        <Box style={{ flexDirection: 'row', gap: 6, marginBottom: 8, alignItems: 'center' }}>
+          <Box style={{ width: 9, height: 9, borderRadius: '50%', background: '#D9534F' }} />
+          <Box style={{ width: 9, height: 9, borderRadius: '50%', background: '#F0C419' }} />
+          <Box style={{ width: 9, height: 9, borderRadius: '50%', background: '#2FA37E' }} />
+          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginLeft: 6, fontFamily: 'Consolas, monospace' }}>一次 Plan-Execute 对话的真实 SSE 事件流</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', gap: 3 }}>
+          {[
+            ['plan', '输出 4 步规划看板', '#F0C419'],
+            ['tool_call', '调用 arxiv_search', '#B7E4C7'],
+            ['delta', '正文逐字打字机输出', '#FFFFFF'],
+            ['memory_injected', '注入课题组三层记忆', '#C5A3FF'],
+            ['done', '交付汇总报告', '#2FA37E'],
+          ].map((e, i) => (
+            <Box key={i} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <Text style={{ fontSize: 11, color: e[2], fontFamily: 'Consolas, monospace', fontWeight: 600, width: 102, flexShrink: 0 }}>event: {e[0]}</Text>
+              <Text style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.78)', fontFamily: 'Consolas, monospace' }}>→ {e[1]}</Text>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    </Box>
+    {/* 记忆引擎条 */}
+    <Box style={{ background: '#FAF0E1', borderRadius: 10, border: '1px solid #EFDDC0', padding: '8px 16px', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <FAIcon name="brain" style={{ fill: '#C2762B', width: 18, height: 18 }} />
+      <Text style={{ fontSize: 12, color: '#4A3A22', lineHeight: 1.5 }}><span style={{ fontWeight: 'bold', color: '#7A4E14' }}>三层记忆引擎：</span>短期会话 RAM → 滚动摘要 → 长期事实库（基线/协议/目标期刊），跨会话延续科研上下文。</Text>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', height: 34, marginTop: 0 }}>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>ScienceX · AI 科研工作台</Text>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>16 / 22</Text>
+  </Box>
+</Slide>

@@ -1,0 +1,53 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', padding: '20px 60px 8px', gap: 14 }}>
+    <Box style={{ width: 4, height: 40, background: '#1B7A5E', borderRadius: 2 }} />
+    <Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Box style={{ background: '#1B7A5E', borderRadius: 4, padding: '3px 10px' }}><Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 600 }}>PART 02 · 用户画像</Text></Box>
+        <Text style={{ fontSize: 13, color: '#8A948D' }}>学术启蒙 → 教研并进 → 前沿攻关</Text>
+      </Box>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 6 }}>覆盖「完整科研人生周期」的三类用户</Text>
+    </Box>
+  </Box>
+  <Box style={{ padding: '6px 60px 0', height: 470 }}>
+    <Box style={{ flexDirection: 'row', gap: 22, height: 402 }}>
+      {[
+        { ch: '01', ic: 'user-graduate', t: '大学生 / 研究生', age: '20–28', tag: '本科毕设 · 硕博研究生', bar: '#1B7A5E', ask: '快速入门选题、读懂英文文献、跑通实验、写出第一篇论文', scenes: ['开题前选题调研', '组会前狂读 5 篇论文', '深夜改稿润色'] },
+        { ch: '02', ic: 'chalkboard-teacher', t: '高校教师', age: '30–50', tag: '青年骨干 · 硕博导师 · 课题负责人', bar: '#4A5568', ask: '提高产出效率、管理课题组、追踪学科前沿', scenes: ['写基金 · 审稿', '指导学生组会汇报', '课题组知识沉淀'] },
+        { ch: '03', ic: 'flask', t: '专职科研人员', age: '28–55', tag: '实验室 PI · 产业研发 · 研究院科学家', bar: '#C2762B', ask: '快速技术调研、复现 SOTA、产出技术报告', scenes: ['技术选型调研', '复现开源代码', '产出白皮书 / 专利'] },
+      ].map((u, i) => (
+        <Box key={i} style={{ flex: 1, background: '#FFFFFF', borderRadius: 14, border: '1px solid #E6E2D6', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', flexDirection: 'column' }}>
+          {/* 顶部图区 */}
+          <Box style={{ height: 96, background: `${u.bar}14`, position: 'relative', justifyContent: 'center', alignItems: 'center', borderBottom: `4px solid ${u.bar}` }}>
+            <Text style={{ position: 'absolute', top: 8, left: 14, fontSize: 12, color: u.bar, fontWeight: 700, letterSpacing: 2, opacity: 0.6, fontFamily: 'Consolas, monospace' }}>CHAPTER {u.ch}</Text>
+            <FAIcon name={u.ic} style={{ fill: u.bar, width: 44, height: 44 }} />
+          </Box>
+          <Box style={{ padding: '14px 16px', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif' }}>{u.t} <span style={{ fontSize: 15, color: u.bar, fontFamily: 'Consolas, monospace', fontWeight: 'bold' }}>{u.age} 岁</span></Text>
+            <Text style={{ fontSize: 12, color: '#8A948D' }}>{u.tag}</Text>
+            <Box style={{ background: '#F0EFE8', borderRadius: 8, padding: '8px 10px' }}>
+              <Text style={{ fontSize: 12, color: '#1B7A5E', fontWeight: 700, marginBottom: 3 }}>核心诉求</Text>
+              <Text style={{ fontSize: 12, color: '#4A554F', lineHeight: 1.55 }}>{u.ask}</Text>
+            </Box>
+            <Box style={{ gap: 4, flexDirection: 'column' }}>
+              {u.scenes.map((s, j) => (
+                <Box key={j} style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                  <Box style={{ width: 5, height: 5, borderRadius: '50%', background: u.bar }} />
+                  <Text style={{ fontSize: 12.5, color: '#4A554F' }}>{s}</Text>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+      ))}
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14, padding: '10px 18px', background: '#FAF0E1', borderLeft: '4px solid #C2762B', borderRadius: 6, gap: 12 }}>
+      <FAIcon name="heart" style={{ fill: '#C2762B', width: 16, height: 16 }} />
+      <Text style={{ fontSize: 13.5, color: '#4A3A22', lineHeight: 1.6 }}>每一段科研旅程，都值得一个懂你的搭档。</Text>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', height: 40, marginTop: 4 }}>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>ScienceX · AI 科研工作台</Text>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>08 / 22</Text>
+  </Box>
+</Slide>

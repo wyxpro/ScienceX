@@ -1,0 +1,86 @@
+<Slide style={{ padding: 0, background: '#F6F4EE' }}>
+  <Box style={{ flexDirection: 'row', alignItems: 'center', padding: '18px 60px 6px', gap: 14 }}>
+    <Box style={{ width: 4, height: 40, background: '#1B7A5E', borderRadius: 2 }} />
+    <Box>
+      <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Box style={{ background: '#1B7A5E', borderRadius: 4, padding: '3px 10px' }}><Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 600 }}>PART 03 · 后端服务</Text></Box>
+        <Text style={{ fontSize: 13, color: '#8A948D' }}>API · 数据库 · 安全治理</Text>
+      </Box>
+      <Text style={{ fontSize: 27, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif', marginTop: 4 }}>40+ RESTful API · 七大业务域 · 契约即文档</Text>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', padding: '4px 60px 0', height: 478, gap: 24 }}>
+    {/* 左：API 域 */}
+    <Box style={{ flex: 1.25, flexDirection: 'column', gap: 10 }}>
+      <Box style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', padding: '14px 18px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', flexDirection: 'column', gap: 7 }}>
+        {[
+          { ic: 'lock', t: '认证与用户', r: 'login / register / refresh / logout / profile' },
+          { ic: 'robot', t: '模型管理', r: '内置模型列表 · 自定义模型接入 · 连通性测试' },
+          { ic: 'comments', t: '对话工作台', r: 'chat/completions（SSE 流式）· 会话历史 · Skills/MCP' },
+          { ic: 'book-open', t: '文献研读', r: '多源检索 · 文档解析 · 思维导图 · RAG 问答 · 引用图谱' },
+          { ic: 'flask', t: '科研实验', r: '实验方案 · GPU 节点 · SOTA 榜单 · 图表生成与解读' },
+          { ic: 'redo', t: '论文复现', r: 'DreamPaper 模板库 · 复现任务编排 · 质量评分' },
+          { ic: 'paper-plane', t: '投稿与评审', r: 'CCF 期刊 · 倒计时 · 期刊匹配 · PPT 生成 · 评审团' },
+        ].map((d, i) => (
+          <Box key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '6px 8px', background: i % 2 ? '#FAF8F2' : '#FFFFFF', borderRadius: 7 }}>
+            <FAIcon name={d.ic} style={{ fill: '#1B7A5E', width: 15, height: 15 }} />
+            <Text style={{ fontSize: 13.5, fontWeight: 'bold', color: '#1F2A26', width: 92, flexShrink: 0 }}>{d.t}</Text>
+            <Text style={{ fontSize: 11.5, color: '#4A554F', fontFamily: 'Consolas, monospace', flex: 1 }}>{d.r}</Text>
+          </Box>
+        ))}
+      </Box>
+      {/* 统一响应协议代码块 */}
+      <Box style={{ background: '#122019', borderRadius: 12, padding: '12px 16px', flexDirection: 'column' }}>
+        <Box style={{ flexDirection: 'row', gap: 6, marginBottom: 6 }}>
+          <Box style={{ width: 9, height: 9, borderRadius: '50%', background: '#D9534F' }} />
+          <Box style={{ width: 9, height: 9, borderRadius: '50%', background: '#F0C419' }} />
+          <Box style={{ width: 9, height: 9, borderRadius: '50%', background: '#2FA37E' }} />
+          <Text style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.5)', marginLeft: 6, fontFamily: 'Consolas, monospace' }}>统一响应协议 · 400xx/401xx/500xx/600xx 错误码分级</Text>
+        </Box>
+        <Text style={{ fontSize: 12.5, color: '#B7E4C7', fontFamily: 'Consolas, monospace', lineHeight: 1.55 }}>
+          {'{ "code": 0, "message": "ok",'}<br />{'  "data": { }, "timestamp": "2026-10-03T12:00:00Z" }'}
+        </Text>
+      </Box>
+    </Box>
+    {/* 右：数据与治理 */}
+    <Box style={{ flex: 1, flexDirection: 'column', gap: 12 }}>
+      <Box style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', padding: '14px 18px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <FAIcon name="database" style={{ fill: '#1B7A5E', width: 17, height: 17 }} />
+          <Text style={{ fontSize: 15.5, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif' }}>数据模型</Text>
+        </Box>
+        <Text style={{ fontSize: 12.5, color: '#4A554F', lineHeight: 1.7 }}>
+          用户 / 项目 / 会话 / 文献 / 实验 / 图表 / 期刊 / 订单 <span style={{ fontWeight: 'bold', color: '#1B7A5E' }}>八大实体</span><br />
+          个人 → 课题组 → 机构 多级隔离 · 预置学术演示数据集<br />
+          演示态 JSON Store → 目标态 PostgreSQL 16 + Redis 7 + 向量库
+        </Text>
+      </Box>
+      <Box style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E6E2D6', padding: '14px 18px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', flex: 1 }}>
+        <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <FAIcon name="shield-alt" style={{ fill: '#C2762B', width: 17, height: 17 }} />
+          <Text style={{ fontSize: 15.5, fontWeight: 'bold', color: '#1F2A26', fontFamily: 'Noto Serif SC, Georgia, serif' }}>安全治理四件套</Text>
+        </Box>
+        <Box style={{ flexDirection: 'column', gap: 7 }}>
+          {[
+            'HMAC-SHA256 无状态签名令牌（Access 7 天 / Refresh 30 天），适配 Serverless 多实例',
+            '进程内滑动窗口限流：对话 30 次/分 · 写作文献 60 次/分',
+            'X-Request-Id 全链路追踪 + 分级错误码体系',
+            '智能端口自愈：EADDRINUSE 自动递增 + Vite 代理热发现',
+          ].map((t, i) => (
+            <Box key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
+              <FAIcon name="check-circle" style={{ fill: '#1B7A5E', width: 13, height: 13 }} />
+              <Text style={{ fontSize: 12, color: '#4A554F', lineHeight: 1.55, flex: 1 }}>{t}</Text>
+            </Box>
+          ))}
+        </Box>
+        <Box style={{ marginTop: 10, padding: '8px 10px', background: '#E3F1EA', borderRadius: 8, borderLeft: '3px solid #1B7A5E' }}>
+          <Text style={{ fontSize: 11.5, color: '#234038', lineHeight: 1.55 }}><span style={{ fontWeight: 'bold' }}>⚡ 工程细节亮点：</span>SSE 7 类标准事件前后端逐字渲染一致；多格式文档解析引擎 PDF / Word / Markdown / CAJ 零依赖解析。</Text>
+        </Box>
+      </Box>
+    </Box>
+  </Box>
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', height: 40, marginTop: 4 }}>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>ScienceX · AI 科研工作台</Text>
+    <Text style={{ fontSize: 12, color: '#8A948D' }}>15 / 22</Text>
+  </Box>
+</Slide>
