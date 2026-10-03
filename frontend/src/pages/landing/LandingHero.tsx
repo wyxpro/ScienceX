@@ -1,222 +1,66 @@
-/* ============================================================
-   Landing Hero —— 首屏重设计
-   极光氛围底光 · 科研全生命周期流程芯片 · 数字滚动统计
-   视差拟真工作台卡片（SVG 头像 + 审稿评分动效）· 悬浮卫星卡
-   ============================================================ */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/Icon';
 
-/* 科研全生命周期流程（可视化芯片替代描述文本中的 emoji 箭头） */
-const PIPELINE = ['选题', '文献', '实验', '分析', '写作', '投稿', '协作'];
+const SCENES = [
+  { id: 'reader', icon: 'book', label: '文献精读', title: '从一篇论文，读懂一个领域。', prompt: '帮我梳理这篇论文的核心贡献与研究脉络。', file: 'Attention Is All You Need', type: '文献研读笔记', heading: '让知识彼此连接', description: '从研究问题到方法创新，提炼关键论点，让每一次阅读都成为可积累的知识。', steps: ['解析论文结构', '提炼核心贡献', '关联引用文献'], metrics: ['研究问题', '方法与创新', '实验与结论'], values: ['01', '02', '03'], note: '结构化笔记 · 引用可溯源', floating: '论文 → 笔记 → 知识图谱' },
+  { id: 'experiment', icon: 'flask', label: '实验设计', title: '把研究假设，变成验证路径。', prompt: '围绕跨层特征交互，为我设计一组消融实验。', file: '跨层特征交互 · 消融实验', type: '实验方案矩阵', heading: '让每个变量都有答案', description: '拆解研究假设，明确控制变量与对比基线，形成有条理、可追踪的实验计划。', steps: ['梳理研究假设', '设置控制变量', '生成消融矩阵'], metrics: ['基线对照', '模块消融', '联合验证'], values: ['A', 'B', 'C'], note: '变量清晰 · 结果可追踪', floating: '研究假设 → 实验矩阵' },
+  { id: 'review', icon: 'award', label: '专家评审', title: '在投稿之前，多一个专业视角。', prompt: '请从创新性、实验设计与写作规范评审我的论文。', file: '论文初稿 · 投稿前检查', type: '多角色模拟评审', heading: '让好研究被更好地表达', description: '从不同学术视角审视论文，将潜在问题整理为可执行的修改建议。', steps: ['多角色独立审阅', '汇总评审意见', '整理返修清单'], metrics: ['理论推导', '方法创新', '实验设计'], values: ['严谨性', '贡献度', '完整性'], note: '5 个评审角色 · 多维度建议', floating: '独立评审 → 修改清单' },
+];
 
-/* 数字滚动动画 */
-function useCountUp(target: number, duration = 1400): number {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const start = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / duration);
-      setVal(Math.round(target * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return val;
-}
-
-const HeroStat: React.FC<{ value: number; suffix: string; label: string }> = ({ value, suffix, label }) => {
-  const num = useCountUp(value);
-  return (
-    <div className="hero-stat">
-      <div className="hero-stat-num">{num}<em>{suffix}</em></div>
-      <div className="hero-stat-label">{label}</div>
-    </div>
-  );
-};
-
-interface LandingHeroProps {
-  onExploreFeatures: () => void;
-}
-
-export const LandingHero: React.FC<LandingHeroProps> = ({ onExploreFeatures }) => {
+export const LandingHero: React.FC<{ onExploreFeatures: () => void }> = ({ onExploreFeatures }) => {
   const nav = useNavigate();
-  const tiltCardRef = useRef<HTMLDivElement>(null);
-  const [tiltStyle, setTiltStyle] = useState({ transform: 'perspective(1200px) rotateX(0deg) rotateY(0deg)' });
-  const [mounted, setMounted] = useState(false);
+  const [active, setActive] = useState(0);
+  const stage = useRef<HTMLDivElement>(null);
+  const scene = SCENES[active];
 
-  /* 评分进度条入场动效 */
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!tiltCardRef.current) return;
-    const rect = tiltCardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -8;
-    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 8;
-    setTiltStyle({
-      transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`,
-    });
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    stage.current?.style.setProperty('--rotate-x', `${-(event.clientY - rect.top - rect.height / 2) / rect.height * 5}deg`);
+    stage.current?.style.setProperty('--rotate-y', `${(event.clientX - rect.left - rect.width / 2) / rect.width * 5}deg`);
   };
-
-  const handleMouseLeave = () => {
-    setTiltStyle({ transform: 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)' });
+  const resetTilt = () => {
+    stage.current?.style.setProperty('--rotate-x', '0deg');
+    stage.current?.style.setProperty('--rotate-y', '0deg');
   };
-
-  const scores = [
-    { label: '理论 · 严密', val: 95, warn: false },
-    { label: '创新 · 突出', val: 92, warn: false },
-    { label: '消融 · 建议补种', val: 88, warn: true },
-  ];
 
   return (
     <section id="hero" className="landing-hero">
-      <div className="hero-aurora" aria-hidden="true" />
-
-      {/* ===== 左侧：主张与行动 ===== */}
       <div className="hero-copy">
-        <div className="hero-pill">
-          <span className="hero-pill-live" />
-          <span className="hero-pill-star">★</span>
-          2026 新一代 AI 原生科研生产力中枢
-        </div>
-
-        <h1 className="hero-title">
-          让
-          <span className="hero-title-gradient">
-            科研更简单
-            <svg className="hero-scribble" viewBox="0 0 220 14" fill="none" aria-hidden="true">
-              <path
-                d="M4 10 C 48 3, 96 12, 138 6 S 200 4, 216 8"
-                stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round" opacity="0.7"
-              />
-            </svg>
-          </span>
-        </h1>
-
-        <div className="hero-pipeline">
-          {PIPELINE.map((step, i) => (
-            <React.Fragment key={step}>
-              {i > 0 && <Icon name="arrowRight" size={11} className="pipe-arrow" />}
-              <span className="pipe-chip">{step}</span>
-            </React.Fragment>
-          ))}
-        </div>
-
-        <p className="hero-desc">
-          对话即工作台，工具即智能体。把繁琐琐碎的机械劳动交给 AI，
-          让学者专注提出好问题与科学创新本身。
-        </p>
-
+        <div className="hero-eyebrow"><span /> YOUR NEXT DISCOVERY STARTS HERE</div>
+        <h1 className="hero-title">让科研更简单，<br /><span>让灵感走得更远。</span></h1>
+        <p className="hero-desc">从第一篇文献，到下一次突破。<br />你的 AI 科研搭档，连接阅读、实验、写作与发现。</p>
         <div className="hero-actions">
-          <button className="btn-hero-primary" onClick={() => nav('/login')}>
-            <Icon name="spark" size={18} />
-            立即使用 · 免费体验
-            <Icon name="arrowRight" size={16} className="btn-hero-arrow" />
-          </button>
-          <button className="btn-hero-secondary" onClick={onExploreFeatures}>
-            <Icon name="eye" size={16} />
-            探索科研场景
-          </button>
+          <button className="btn-hero-primary" onClick={() => nav('/login')}>开启我的科研之旅 <Icon name="arrowRight" size={18} /></button>
+          <button className="btn-hero-secondary" onClick={onExploreFeatures}><span className="hero-play"><Icon name="play" size={13} /></span>探索科研场景</button>
         </div>
-
-        <div className="hero-proof">
-          <span className="hero-proof-item"><Icon name="check" size={14} />免费体验无门槛</span>
-          <span className="hero-proof-item"><Icon name="shield" size={14} />数据私有可控</span>
-          <span className="hero-proof-item"><Icon name="link" size={14} />OpenAI 协议任意接入</span>
-        </div>
-
-        <div className="hero-stats">
-          <HeroStat value={50} suffix="%+" label="论文产出周期缩短" />
-          <HeroStat value={100} suffix="+" label="CCF 顶刊顶会适配" />
-          <HeroStat value={5} suffix=" 角色" label="多智能体专家盲审" />
-          <HeroStat value={100} suffix="%" label="OpenAI协议自由接入" />
-        </div>
+        <div className="hero-proof"><span><Icon name="check" size={14} />免费开始</span><span><Icon name="shield" size={14} />数据私有可控</span><span><Icon name="link" size={14} />自由接入模型</span></div>
+        <div className="hero-bottom-line"><span className="hero-monogram">S<sup>✳</sup></span><div><strong>一个工作台，连接科研全流程</strong><p>选题 / 文献 / 实验 / 分析 / 写作 / 投稿 / 协作</p></div></div>
       </div>
-
-      {/* ===== 右侧：视差工作台卡片 + 悬浮卫星卡 ===== */}
-      <div className="hero-visual-wrap">
-        <div className="float-card float-card-gpu" aria-hidden="true">
-          <div className="row" style={{ gap: 8 }}>
-            <span className="pulse-dot" />
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>GPU-03 · A100</span>
-            <span className="tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand-strong)', fontSize: 10, padding: '1px 8px' }}>
-              运行中
-            </span>
+      <div className="hero-showcase" onPointerMove={handlePointerMove} onPointerLeave={resetTilt}>
+        <div className="hero-orbit hero-orbit-one" aria-hidden="true" /><div className="hero-orbit hero-orbit-two" aria-hidden="true" />
+        <div className="hero-workspace" ref={stage}>
+          <div className="workspace-topbar"><div className="workspace-brand"><img src="/logo.png" alt="" />ScienceX <span>/ 我的科研空间</span></div><span className="workspace-demo">交互演示</span></div>
+          <div className="workspace-tabs" role="tablist" aria-label="科研场景预览">
+            {SCENES.map((item, index) => <button key={item.id} id={`scene-tab-${item.id}`} role="tab" aria-selected={active === index} aria-controls="scene-preview" tabIndex={active === index ? 0 : -1} className={active === index ? 'active' : ''} onClick={() => setActive(index)} onKeyDown={(event) => {
+              const next = event.key === 'ArrowRight' ? (index + 1) % SCENES.length : event.key === 'ArrowLeft' ? (index + SCENES.length - 1) % SCENES.length : event.key === 'Home' ? 0 : event.key === 'End' ? SCENES.length - 1 : null;
+              if (next !== null) { event.preventDefault(); setActive(next); document.getElementById(`scene-tab-${SCENES[next].id}`)?.focus(); }
+            }}><Icon name={item.icon} size={15} />{item.label}</button>)}
           </div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 4 }}>
-            显存 38.2 / 80 GB · 温度 67°C
+          <div id="scene-preview" role="tabpanel" aria-labelledby={`scene-tab-${scene.id}`} tabIndex={0} className="workspace-panel">
+            <div className="scene-content" key={scene.id}>
+              <div className="workspace-greeting"><span>RESEARCH, REIMAGINED.</span><h2>{scene.title}</h2></div>
+              <div className="workspace-prompt"><span className="prompt-avatar"><Icon name="user" size={15} /></span><p>{scene.prompt}</p><Icon name="arrowUp" size={15} /></div>
+              <div className="workspace-response"><span className="response-spark"><Icon name="spark" size={19} /></span><div><strong>好的，我们一起探索。</strong><span>ScienceX 已为你整理研究思路</span></div><span className="response-status"><Icon name="check" size={12} />已生成</span></div>
+              <div className="research-document"><div className="document-label"><Icon name={scene.icon} size={14} /><span>{scene.type}</span><Icon name="file" size={14} /></div><p className="document-filename">{scene.file}</p><h3>{scene.heading}</h3><p className="document-description">{scene.description}</p><div className="document-metrics">{scene.metrics.map((metric, index) => <div key={metric}><strong>{scene.values[index]}</strong><span>{metric}</span></div>)}</div><div className="document-foot"><span><Icon name="check" size={12} />{scene.note}</span><Icon name="arrowRight" size={14} /></div></div>
+              <div className="workspace-steps">{scene.steps.map(step => <span key={step}><Icon name="check" size={11} />{step}</span>)}</div>
+            </div>
           </div>
+          <div className="workspace-bottom"><span><i />让繁琐交给 AI，让专注回归科学</span><Icon name="spark" size={13} /></div>
         </div>
-
-        <div className="float-card float-card-doc" aria-hidden="true">
-          <div className="row" style={{ gap: 9 }}>
-            <span className="float-card-icon"><Icon name="branch" size={14} /></span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>引用图谱 +12 新节点</span>
-          </div>
-        </div>
-
-        <div className="tilt-card-container">
-          <div
-            ref={tiltCardRef}
-            className="tilt-card"
-            style={tiltStyle}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="tilt-header">
-              <div className="tilt-dots">
-                <span className="tilt-dot" style={{ background: '#ff5f56' }} />
-                <span className="tilt-dot" style={{ background: '#ffbd2e' }} />
-                <span className="tilt-dot" style={{ background: '#27c93f' }} />
-              </div>
-              <div className="tilt-title">ScienceX · AI 科研协同工作台</div>
-              <span className="tag tilt-live-tag"><span className="pulse-dot" />Live</span>
-            </div>
-
-            <div className="tilt-msg">
-              <div className="msg-avatar"><Icon name="user" size={15} /></div>
-              <div className="tilt-msg-body">
-                <div className="msg-role">研究者 · 提问</div>
-                <strong>我的 up9 模型在 CASME II 上需要设计消融实验，如何拉开与现有工作差异？</strong>
-              </div>
-            </div>
-
-            <div className="tilt-msg ai">
-              <div className="msg-avatar"><Icon name="spark" size={15} /></div>
-              <div className="tilt-msg-body">
-                <div className="msg-role">ScienceX 科研智能体</div>
-                建议优先验证<strong>跨层 AU 交互</strong>（而非单点融合）。已自动生成 4 组消融方案，
-                并调配 GPU-03 节点完成 baseline 跑通，预计 UF1 由 0.646 提升至 0.689（<span className="score-up">+6.6%</span>）。
-              </div>
-            </div>
-
-            <div className="tilt-score">
-              <div className="row-between">
-                <span className="tilt-score-title"><Icon name="award" size={14} />模拟审稿团盲审评定</span>
-                <span className="tilt-score-total">94.2<span> / 100</span></span>
-              </div>
-              {scores.map((s, i) => (
-                <div className={`score-bar-row${s.warn ? ' warn' : ''}`} key={s.label}>
-                  <span className="score-label">{s.label}</span>
-                  <div className="score-bar">
-                    <div
-                      className="score-bar-fill"
-                      style={{ width: mounted ? `${s.val}%` : '0%', transitionDelay: `${0.3 + i * 0.18}s` }}
-                    />
-                  </div>
-                  <span className="score-num">{s.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <div className="hero-floating-note"><span><Icon name="branch" size={19} /></span><div><small>CONNECTED KNOWLEDGE</small><strong>{scene.floating}</strong></div></div>
+        <div className="hero-showcase-caption"><span />点击上方标签，体验科研的不同可能</div>
       </div>
     </section>
   );

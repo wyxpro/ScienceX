@@ -1,7 +1,7 @@
 /* 文献阅读：三栏式阅读器 —— REQ-READ-01~04：阅读 / 五大核心分析（翻译·导图·七段·图谱·知识库） / 论文 Agent（支持语音输入与文档附件上传） */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, docChatStream } from '../api/client';
-import DocViewer, { detectKind } from '../components/DocViewer';
+import DocViewer, { detectKind, type ParseMeta } from '../components/DocViewer';
 import Icon from '../components/Icon';
 import Markdown from '../components/Markdown';
 import { CitationGraph, Mindmap } from '../components/viz';
@@ -13,6 +13,35 @@ import { CodeReproductionViewer } from './reader/CodeReproductionViewer';
 
 type MidTab = 'translate' | 'mindmap' | 'seven' | 'reproduce' | 'graph';
 type LeftMode = 'read' | 'file';
+
+/** 文献导入支持的格式（含 CAJ 知网格式），与后端 parser.SUPPORTED_EXT 对齐 */
+const IMPORT_ACCEPT = '.pdf,.docx,.doc,.md,.markdown,.caj';
+/** 单文件上限 50MB */
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+
+/** 依据扩展名给出导入格式标签样式 */
+function importKindInfo(fileName: string): { label: string; bg: string; color: string } {
+  const ext = (fileName.split('.').pop() || '').toLowerCase();
+  if (ext === 'pdf') return { label: 'PDF 论文', bg: '#fee2e2', color: '#dc2626' };
+  if (ext === 'docx' || ext === 'doc') return { label: 'Word (.docx)', bg: '#dbeafe', color: '#2563eb' };
+  if (ext === 'md' || ext === 'markdown') return { label: 'Markdown', bg: '#ede9fe', color: '#7c3aed' };
+  if (ext === 'caj') return { label: 'CAJ 知网', bg: '#ffedd5', color: '#ea580c' };
+  return { label: ext ? ext.toUpperCase() : '文件', bg: '#f1f5f9', color: '#475569' };
+}
+
+/** 把本地文件读成 Base64（去掉 data URL 前缀），供后端解析 */
+function readAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = String(reader.result || '');
+      const idx = r.indexOf(',');
+      resolve(idx >= 0 ? r.slice(idx + 1) : r);
+    };
+    reader.onerror = () => reject(reader.error || new Error('文件读取失败'));
+    reader.readAsDataURL(file);
+  });
+}
 
 /* AI模型选项列表 */
 const AI_MODELS = [
@@ -111,6 +140,9 @@ export default function Reader() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadName, setUploadName] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadErr, setUploadErr] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [leftMode, setLeftMode] = useState<LeftMode>('read');
   const [fileMap, setFileMap] = useState<Record<string, { url: string; name: string }>>({});
 
@@ -393,13 +425,26 @@ export default function Reader() {
     }
   };
 
-  /* 段落精翻 */
+  /* 段落精翻（同步到中栏翻译面板） */
   const translatePara = async (text: string, secId: string, i: number) => {
     setParaKey(`${secId}:${i}`);
     const r = await api(`/documents/${docId}/translate`, { method: 'POST', body: { text, direction: 'en2zh' } });
     setTranslation(r);
     setMidTab('translate');
   };
+
+  /* 划词翻译：供 ImmersiveReader 内联展示译文（支持中↔英互译） */
+  const translateText = useCallback(
+    async (text: string, direction: 'en2zh' | 'zh2en') => {
+      if (!docId) throw new Error('当前未选择文献');
+      const r = await api<{ translated: string; glossary?: any[]; mode?: string }>(
+        `/documents/${docId}/translate`,
+        { method: 'POST', body: { text, direction } }
+      );
+      return r;
+    },
+    [docId]
+  );
 
   /* 自定义句段翻译 */
   const handleCustomTranslate = () => {
@@ -459,26 +504,84 @@ export default function Reader() {
     }
   };
 
-  /* 文档上传提交 */
+  /* 选择 / 拖入文件：统一做格式与 50MB 体积校验 */
+  const acceptFile = (f: File | null | undefined) => {
+    if (!f) return;
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (!['pdf', 'docx', 'doc', 'md', 'markdown', 'caj'].includes(ext)) {
+      setUploadErr(`暂不支持 .${ext || '未知'} 格式，请上传 PDF / Word(.docx) / Markdown / CAJ 文件`);
+      setUploadFile(null);
+      return;
+    }
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setUploadErr(`文件大小 ${(f.size / 1024 / 1024).toFixed(1)}MB 超过 50MB 单文件上限`);
+      setUploadFile(null);
+      return;
+    }
+    setUploadErr('');
+    setUploadFile(f);
+    setUploadName(f.name);
+  };
+
+  /* 文档上传提交：多格式文件以 Base64 上传由后端解析；URL / 纯文件名走轻量降级 */
   const upload = async () => {
     const name = uploadFile?.name || uploadName.trim();
     if (!name) return toast('请选择文件，或输入文件名 / URL', 'info');
+    if (uploading) return;
     const isUrl = /^https?:\/\//i.test(name);
     const body: any = { project_id: 'p1' };
     if (isUrl) body.url = name;
-    else body.file_name = /\.(pdf|docx?|xlsx?|pptx?|txt|md|tex)$/i.test(name) ? name : `${name}.pdf`;
-    if (uploadFile && detectKind(uploadFile.name) === 'txt') body.content = await uploadFile.text();
-    const r = await api<{ doc_id: string; task_id: string }>('/documents/upload', { method: 'POST', body });
-    if (uploadFile) setFileMap((m) => ({ ...m, [r.doc_id]: { url: URL.createObjectURL(uploadFile), name: uploadFile.name } }));
-    else if (isUrl) setFileMap((m) => ({ ...m, [r.doc_id]: { url: name, name: name.split('/').pop() || name } }));
-    setUploadOpen(false);
-    setUploadName('');
-    setUploadFile(null);
-    toast('解析任务已提交');
-    setTask({ id: r.task_id, title: '文档解析（版面还原 + 公式识别）' });
-    setTimeout(() => loadDoc(r.doc_id), 1500);
-    const rr = await api<{ items: any[] }>('/documents');
-    setDocs(rr.items);
+    else body.file_name = name;
+
+    setUploading(true);
+    try {
+      if (uploadFile) {
+        // Markdown 可直接以文本提交，其余格式统一 Base64（后端按扩展名分派解析器）
+        if (detectKind(uploadFile.name) === 'markdown' || detectKind(uploadFile.name) === 'txt') {
+          body.content = await uploadFile.text();
+        } else {
+          body.file_content = await readAsBase64(uploadFile);
+        }
+      }
+      const r = await api<{ doc_id: string; task_id: string; parse_meta?: ParseMeta; sections?: number }>(
+        '/documents/upload',
+        { method: 'POST', body }
+      );
+
+      // 记录原始文件 blob URL，供「原文档」模式预览
+      if (uploadFile) {
+        setFileMap((m) => ({ ...m, [r.doc_id]: { url: URL.createObjectURL(uploadFile), name: uploadFile.name } }));
+      } else if (isUrl) {
+        setFileMap((m) => ({ ...m, [r.doc_id]: { url: name, name: name.split('/').pop() || name } }));
+      }
+
+      setUploadOpen(false);
+      setUploadName('');
+      setUploadFile(null);
+      setUploadErr('');
+
+      const degraded = r.parse_meta?.degraded;
+      toast(
+        degraded
+          ? `《${name}》已导入（降级解析：${r.parse_meta?.degradedReason || '文本层受限'}）`
+          : `《${name}》解析完成，已提取 ${r.sections ?? 0} 个章节`,
+        degraded ? 'info' : 'ok'
+      );
+      if (degraded) setTask(null);
+      else setTask({ id: r.task_id, title: '文档解析（版面还原 + 公式识别）' });
+
+      // 解析完成后自动进入沉浸式阅读模式
+      setLeftMode('read');
+      const rr = await api<{ items: any[] }>('/documents');
+      setDocs(rr.items);
+      await loadDoc(r.doc_id);
+    } catch (error: any) {
+      const msg = error?.message || '导入失败，请重试';
+      setUploadErr(msg);
+      toast(msg, 'err');
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (docs === null) {
@@ -586,6 +689,46 @@ export default function Reader() {
 
                 {/* 文献导入与全文检索批注工具栏 */}
                 <div className="row g-1 items-center" style={{ flexShrink: 0 }}>
+                  {/* 阅读 / 原文档 双模式切换 */}
+                  <div
+                    className="row g-0"
+                    style={{ border: '1px solid var(--line)', borderRadius: 6, overflow: 'hidden', background: '#ffffff' }}
+                    title="切换「结构化阅读 / 原始文档预览」"
+                  >
+                    <button
+                      className="tag"
+                      style={{
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderRadius: 0,
+                        padding: '4px 8px',
+                        fontWeight: leftMode === 'read' ? 700 : 500,
+                        background: leftMode === 'read' ? 'var(--brand-soft)' : 'transparent',
+                        color: leftMode === 'read' ? 'var(--brand-deep)' : 'var(--muted)',
+                      }}
+                      onClick={() => setLeftMode('read')}
+                      title="沉浸式结构化阅读"
+                    >
+                      <Icon name="book" size={11} /> 阅读
+                    </button>
+                    <button
+                      className="tag"
+                      style={{
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderRadius: 0,
+                        padding: '4px 8px',
+                        fontWeight: leftMode === 'file' ? 700 : 500,
+                        background: leftMode === 'file' ? 'var(--brand-soft)' : 'transparent',
+                        color: leftMode === 'file' ? 'var(--brand-deep)' : 'var(--muted)',
+                      }}
+                      onClick={() => setLeftMode('file')}
+                      title="查看原始文档（PDF / Word / Markdown / CAJ）"
+                    >
+                      <Icon name="file" size={11} /> 原文档
+                    </button>
+                  </div>
+
                   <button
                     className="tag tag-amber"
                     style={{ cursor: 'pointer', border: 'none', padding: '4px 9px', fontWeight: 600 }}
@@ -668,6 +811,7 @@ export default function Reader() {
                   doc={doc}
                   activeKey={paraKey}
                   onTranslate={translatePara}
+                  translateText={translateText}
                   query={readerQuery}
                   setQuery={setReaderQuery}
                   matchIdx={readerMatchIdx}
@@ -691,6 +835,7 @@ export default function Reader() {
                   <DocViewer
                     url={fileMap[doc.id].url}
                     name={fileMap[doc.id].name}
+                    parseMeta={doc.parse_meta}
                     onBackToRead={() => setLeftMode('read')}
                   />
                 </div>
@@ -702,7 +847,7 @@ export default function Reader() {
                   <div className="text-small">
                     该文献暂无可预览的原始文件
                     <br />
-                    支持 PDF / Word / Excel / PPT / TXT 在线解析预览
+                    支持 PDF / Word(.docx) / Markdown / CAJ 在线预览与解析
                   </div>
                   <button className="btn btn-primary btn-sm mt-2" onClick={() => setUploadOpen(true)}>
                     <Icon name="upload" size={13} /> 文献导入
@@ -1474,7 +1619,7 @@ export default function Reader() {
                     学术文献导入与知识解析
                   </h3>
                   <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                    支持真实 PDF · Word (DOCX) · PPTX · Excel · Markdown · TXT 文献解析
+                    支持 PDF · Word (DOCX) · Markdown · CAJ（知网）四种格式的结构化解析
                   </div>
                 </div>
               </div>
@@ -1492,10 +1637,10 @@ export default function Reader() {
               {/* 文件上传拖拽区 */}
               <div
                 style={{
-                  border: uploadFile ? '2px solid #1b7a5e' : '2px dashed #cbd5e1',
+                  border: uploadFile ? '2px solid #1b7a5e' : dragOver ? '2px dashed #1b7a5e' : '2px dashed #cbd5e1',
                   borderRadius: 14,
                   padding: uploadFile ? '18px' : '28px 20px',
-                  background: uploadFile ? '#f0fdf4' : '#f8fafc',
+                  background: uploadFile ? '#f0fdf4' : dragOver ? '#ecfdf5' : '#f8fafc',
                   textAlign: 'center',
                   cursor: 'pointer',
                   position: 'relative',
@@ -1505,26 +1650,29 @@ export default function Reader() {
                 onDragOver={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  setDragOver(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDragOver(false);
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  const f = e.dataTransfer?.files?.[0];
-                  if (f) {
-                    setUploadFile(f);
-                    setUploadName(f.name);
-                  }
+                  setDragOver(false);
+                  acceptFile(e.dataTransfer?.files?.[0]);
                 }}
               >
                 <input
                   id="academic-file-input"
                   type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.tex"
+                  accept={IMPORT_ACCEPT}
                   style={{ display: 'none' }}
                   onChange={(e) => {
                     const f = e.target.files?.[0] || null;
-                    setUploadFile(f);
-                    if (f) setUploadName(f.name);
+                    acceptFile(f);
+                    e.target.value = '';
                   }}
                 />
 
@@ -1551,7 +1699,7 @@ export default function Reader() {
                       点击选择本地文献，或将文献文件拖拽至此
                     </div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                      单文件最大支持 50MB，自动提取目录结构、段落与图表数据
+                      单文件最大支持 50MB，自动提取标题、作者、摘要、章节段落与图表引用
                     </div>
 
                     {/* 格式标签展示 */}
@@ -1562,14 +1710,11 @@ export default function Reader() {
                       <span className="tag" style={{ background: '#dbeafe', color: '#2563eb', fontWeight: 600, fontSize: 11 }}>
                         Word (.docx)
                       </span>
+                      <span className="tag" style={{ background: '#ede9fe', color: '#7c3aed', fontWeight: 600, fontSize: 11 }}>
+                        Markdown
+                      </span>
                       <span className="tag" style={{ background: '#ffedd5', color: '#ea580c', fontWeight: 600, fontSize: 11 }}>
-                        PPT 演示稿
-                      </span>
-                      <span className="tag" style={{ background: '#dcfce7', color: '#16a34a', fontWeight: 600, fontSize: 11 }}>
-                        Excel 数据表
-                      </span>
-                      <span className="tag" style={{ background: '#f3e8ff', color: '#9333ea', fontWeight: 600, fontSize: 11 }}>
-                        TXT / MD
+                        CAJ 知网
                       </span>
                     </div>
                   </>
@@ -1604,8 +1749,21 @@ export default function Reader() {
                         >
                           {uploadFile.name}
                         </div>
-                        <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>
-                          文件大小：{(uploadFile.size / 1024).toFixed(0)} KB · 格式验证通过 · 点击可更换
+                        <div className="row g-1 items-center" style={{ fontSize: 12, color: '#166534', marginTop: 3 }}>
+                          <span
+                            className="tag"
+                            style={{
+                              background: importKindInfo(uploadFile.name).bg,
+                              color: importKindInfo(uploadFile.name).color,
+                              fontWeight: 600,
+                              fontSize: 10.5,
+                            }}
+                          >
+                            {importKindInfo(uploadFile.name).label}
+                          </span>
+                          <span>
+                            {(uploadFile.size / 1024).toFixed(0)} KB · 格式与体积校验通过 · 点击可更换
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1616,6 +1774,7 @@ export default function Reader() {
                         e.stopPropagation();
                         setUploadFile(null);
                         setUploadName('');
+                        setUploadErr('');
                       }}
                     >
                       移除
@@ -1623,6 +1782,26 @@ export default function Reader() {
                   </div>
                 )}
               </div>
+
+              {/* 校验错误提示 */}
+              {uploadErr && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#b91c1c',
+                    fontSize: 12.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Icon name="alert" size={13} /> {uploadErr}
+                </div>
+              )}
 
               {/* URL 导入输入 */}
               <div style={{ marginTop: 18 }}>
@@ -1749,23 +1928,27 @@ export default function Reader() {
               }}
             >
               <span style={{ fontSize: 11.5, color: '#64748b' }}>
-                ⚡ 提交后系统自动完成目录解析、版面切分与知识图谱对齐
+                ⚡ 提交后系统自动完成正文提取、章节切分与图表引用识别，并进入沉浸式阅读
               </span>
               <div className="row g-2">
-                <button className="btn btn-ghost" onClick={() => setUploadOpen(false)}>
+                <button className="btn btn-ghost" onClick={() => setUploadOpen(false)} disabled={uploading}>
                   取消
                 </button>
                 <button
                   className="btn btn-primary"
                   onClick={upload}
-                  disabled={!uploadFile && !uploadName.trim()}
+                  disabled={(!uploadFile && !uploadName.trim()) || uploading}
                   style={{
                     padding: '8px 20px',
                     fontWeight: 600,
                     boxShadow: '0 4px 12px rgba(27, 122, 94, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
-                  <Icon name="check" size={14} /> 导入并解析
+                  {uploading ? <span className="spinner" /> : <Icon name="check" size={14} />}
+                  {uploading ? '正在解析…' : '导入并解析'}
                 </button>
               </div>
             </div>

@@ -115,31 +115,19 @@ export const PERSONAS: PersonaItem[] = [
 
 export interface MarqueeItem {
   id: string;
-  /** BrandLogos.tsx 矢量标志标识 */
+  /** 本地官方品牌资源标识 */
   logo: string;
-  /** 展示名称（会议类标志自带字标时可置空） */
   name: string;
-  /** 是否在 Logo 旁展示文字名称 */
   showName: boolean;
 }
 
 export const MARQUEE_ITEMS: MarqueeItem[] = [
-  { id: 'thu', logo: 'thu', name: '清华大学', showName: true },
+  { id: 'thu', logo: 'thu', name: '清华大学', showName: false },
   { id: 'pku', logo: 'pku', name: '北京大学', showName: true },
-  { id: 'casia', logo: 'casia', name: '中科院自动化所', showName: true },
   { id: 'zju', logo: 'zju', name: '浙江大学', showName: true },
   { id: 'sjtu', logo: 'sjtu', name: '上海交通大学', showName: true },
-  { id: 'ustc', logo: 'ustc', name: '中国科学技术大学', showName: true },
+  { id: 'ustc', logo: 'ustc', name: '中国科学技术大学', showName: false },
   { id: 'fudan', logo: 'fudan', name: '复旦大学', showName: true },
-  { id: 'msra', logo: 'msra', name: '微软亚洲研究院', showName: true },
-  { id: 'damo', logo: 'damo', name: '阿里达摩院', showName: true },
-  { id: 'tai', logo: 'tencent', name: '腾讯 AI Lab', showName: true },
-  { id: 'cvpr', logo: 'cvpr', name: 'CVPR 2026', showName: false },
   { id: 'neurips', logo: 'neurips', name: 'NeurIPS', showName: false },
   { id: 'icml', logo: 'icml', name: 'ICML', showName: false },
-  { id: 'acl', logo: 'acl', name: 'ACL', showName: false },
-  { id: 'acmmm', logo: 'acmmm', name: 'ACM Multimedia', showName: false },
-  { id: 'tpami', logo: 'tpami', name: 'IEEE TPAMI', showName: false },
-  { id: 'nmi', logo: 'nmi', name: 'Nature Machine Intelligence', showName: false },
-  { id: 'scirobo', logo: 'scirobo', name: 'Science Robotics', showName: false },
 ];

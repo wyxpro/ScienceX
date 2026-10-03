@@ -6,6 +6,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import '../styles/landing.css';
+import '../styles/landing-sections.css';
 
 import { LandingHero } from './landing/LandingHero';
 import { LandingMarquee } from './landing/LandingMarquee';
@@ -22,7 +23,7 @@ export default function Landing() {
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (el) el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   };
 
   return (
@@ -30,11 +31,9 @@ export default function Landing() {
       {/* ===== 顶部导航栏 ===== */}
       <header className="landing-nav" role="banner">
         <div className="landing-nav-inner">
-          <div
+          <button
             className="landing-logo"
             onClick={() => scrollTo('hero')}
-            role="button"
-            tabIndex={0}
             aria-label="返回页面顶部"
           >
             <div className="landing-logo-badge">
@@ -48,14 +47,14 @@ export default function Landing() {
                 AI 科研工作台
               </div>
             </div>
-          </div>
+          </button>
 
           <nav className="landing-nav-links" aria-label="官网快捷导航">
-            <span className="landing-nav-link" onClick={() => scrollTo('personas')}>用户画像与场景</span>
-            <span className="landing-nav-link" onClick={() => scrollTo('compare')}>竞品全景对比</span>
-            <span className="landing-nav-link" onClick={() => scrollTo('radar')}>专家评审雷达</span>
-            <span className="landing-nav-link" onClick={() => scrollTo('reviews')}>学者口碑</span>
-            <span className="landing-nav-link" onClick={() => scrollTo('pricing')}>会员方案</span>
+            <a className="landing-nav-link" href="#personas" onClick={e => { e.preventDefault(); scrollTo('personas'); }}>用户画像与场景</a>
+            <a className="landing-nav-link" href="#compare" onClick={e => { e.preventDefault(); scrollTo('compare'); }}>竞品全景对比</a>
+            <a className="landing-nav-link" href="#radar" onClick={e => { e.preventDefault(); scrollTo('radar'); }}>专家评审雷达</a>
+            <a className="landing-nav-link" href="#reviews" onClick={e => { e.preventDefault(); scrollTo('reviews'); }}>学者口碑</a>
+            <a className="landing-nav-link" href="#pricing" onClick={e => { e.preventDefault(); scrollTo('pricing'); }}>会员方案</a>
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

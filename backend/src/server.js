@@ -35,6 +35,8 @@ app.use((req, res, next) => {
   });
   next();
 });
+// 文献导入需承载 Base64 编码的源文件（单文件 50MB → Base64 约 67MB），故单独放宽上传路由限制
+app.use('/api/v1/documents/upload', express.json({ limit: '72mb' }));
 app.use(express.json({ limit: '2mb' }));
 
 app.use('/api/v1/chat/completions', rateLimit({ windowMs: 60000, max: 30 }));

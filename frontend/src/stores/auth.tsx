@@ -54,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const customEvent = e as CustomEvent<{ redirect?: string }>;
       setUser(null);
       const redirectPath = customEvent.detail?.redirect;
-      if (!window.location.pathname.includes('/login')) {
+      // 公开宣传页和登录页无需认证，后台请求失效时仍允许访问。
+      if (!['/', '/login', '/landing'].includes(window.location.pathname.replace(/\/$/, '') || '/')) {
         const target = redirectPath
           ? `/login?redirect=${encodeURIComponent(redirectPath)}`
           : '/login';

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Icon from '../../components/Icon';
 
 interface ReviewItem {
@@ -12,7 +12,7 @@ interface ReviewItem {
   stars: number;
 }
 
-// 上排：向左滚动（内容聚焦微表情识别、AUFormer、消融实验、组会PPTX）
+// 文献、实验与评审案例
 const ROW_TOP: ReviewItem[] = [
   {
     id: 'r1',
@@ -60,7 +60,7 @@ const ROW_TOP: ReviewItem[] = [
   },
 ];
 
-// 下排：向右滚动（内容聚焦每日文献速递、CCF期刊匹配、学术润色与项目空间）
+// 选刊、写作与团队协作案例
 const ROW_BOTTOM: ReviewItem[] = [
   {
     id: 'r5',
@@ -108,157 +108,20 @@ const ROW_BOTTOM: ReviewItem[] = [
   },
 ];
 
+const REVIEWS = [...ROW_TOP, ...ROW_BOTTOM];
+
 export const LandingReviews: React.FC = () => {
+  const [active, setActive] = useState(0);
+  const item = REVIEWS[active];
+  const move = (direction: number) => setActive(index => (index + direction + REVIEWS.length) % REVIEWS.length);
   return (
-    <section id="reviews" className="landing-section" style={{ maxWidth: 1400, margin: '0 auto', padding: '60px 0' }}>
-      <div className="section-head text-center" style={{ padding: '0 24px', marginBottom: 36 }}>
-        <div className="section-badge">Academic Testimonials</div>
-        <h2 className="section-title" style={{ fontSize: 'clamp(26px, 3.2vw, 36px)', marginTop: 8 }}>
-          真实科研项目落地口碑
-        </h2>
-        <p className="section-sub" style={{ maxWidth: 720, margin: '10px auto 0', color: 'var(--muted)', fontSize: 15.5 }}>
-          来自真实微表情识别（MER）与前沿科研攻关团队的实测反馈，陪伴学者从开题、实验到顶会顶刊接收。
-        </p>
+    <section id="reviews" className="landing-section testimonials-section">
+      <div className="section-head"><div className="section-badge">Academic Testimonials</div><h2 className="section-title">真实科研项目落地口碑</h2><p className="section-sub">好的工具，藏在一次次具体的研究进展里。<br />听听学者们如何把 ScienceX 用进日常科研。</p></div>
+      <div className="testimonial-layout">
+        <div className="testimonial-editorial"><span className="landing-kicker">VOICES FROM RESEARCH</span><Icon name="quote" size={44} strokeWidth={1} /><h3>让每一份专注，<br />都更接近发现。</h3><p>从读懂文献到完成实验，从一场组会到下一篇论文。</p><div className="testimonial-controls"><button aria-label="上一条科研反馈" onClick={() => move(-1)}><Icon name="chevronLeft" size={19} /></button><span aria-live="polite">{String(active + 1).padStart(2, '0')} <i>/ {String(REVIEWS.length).padStart(2, '0')}</i></span><button aria-label="下一条科研反馈" onClick={() => move(1)}><Icon name="chevronRight" size={19} /></button></div></div>
+        <div className="testimonial-featured" id="testimonial-quote" aria-live="polite"><div key={item.id} className="testimonial-story"><div className="testimonial-story-top"><span className="testimonial-topic"><Icon name="book" size={14} />{item.targetBadge}</span><span className="testimonial-stars" aria-label={`${item.stars} 星评价`}>{Array.from({length:item.stars}, (_, i) => <Icon name="star" size={13} key={i} />)}</span></div><blockquote>{item.quote.replace(/^[“”]|[“”]$/g, '')}</blockquote><div className="testimonial-author"><span className="testimonial-avatar">{item.avatarLetter}</span><div><strong>{item.author}</strong><p>{item.affiliation}</p></div><Icon name="quote" size={28} strokeWidth={1} /></div></div></div>
       </div>
-
-      {/* 双层轮播容器 */}
-      <div className="reviews-marquee-container">
-        {/* 上排：向左滚动 */}
-        <div className="reviews-marquee-row reviews-marquee-left">
-          {[...ROW_TOP, ...ROW_TOP].map((item, idx) => (
-            <div key={`${item.id}-${idx}`} className="review-marquee-card">
-              <div className="row-between items-center" style={{ marginBottom: 10 }}>
-                <span style={{ color: 'var(--gold)', letterSpacing: 2, fontSize: 13 }}>
-                  {'★'.repeat(item.stars)}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    background: 'var(--bg-deep)',
-                    color: 'var(--brand-strong)',
-                  }}
-                >
-                  {item.targetBadge}
-                </span>
-              </div>
-
-              <p
-                style={{
-                  fontSize: 13.5,
-                  lineHeight: 1.62,
-                  color: 'var(--ink)',
-                  margin: '0 0 14px',
-                  flex: 1,
-                }}
-              >
-                {item.quote}
-              </p>
-
-              <div
-                className="row g-2 items-center"
-                style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 'auto' }}
-              >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: '50%',
-                    background: item.avatarBg,
-                    color: 'var(--ink)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: 13,
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.avatarLetter}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div className="ellipsis" style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>
-                    {item.author}
-                  </div>
-                  <div className="ellipsis text-xs text-muted" style={{ marginTop: 1 }}>
-                    {item.affiliation}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 下排：向右滚动 */}
-        <div className="reviews-marquee-row reviews-marquee-right">
-          {[...ROW_BOTTOM, ...ROW_BOTTOM].map((item, idx) => (
-            <div key={`${item.id}-${idx}`} className="review-marquee-card">
-              <div className="row-between items-center" style={{ marginBottom: 10 }}>
-                <span style={{ color: 'var(--gold)', letterSpacing: 2, fontSize: 13 }}>
-                  {'★'.repeat(item.stars)}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    background: 'var(--bg-deep)',
-                    color: 'var(--brand-strong)',
-                  }}
-                >
-                  {item.targetBadge}
-                </span>
-              </div>
-
-              <p
-                style={{
-                  fontSize: 13.5,
-                  lineHeight: 1.62,
-                  color: 'var(--ink)',
-                  margin: '0 0 14px',
-                  flex: 1,
-                }}
-              >
-                {item.quote}
-              </p>
-
-              <div
-                className="row g-2 items-center"
-                style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 'auto' }}
-              >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: '50%',
-                    background: item.avatarBg,
-                    color: 'var(--ink)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: 13,
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.avatarLetter}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div className="ellipsis" style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>
-                    {item.author}
-                  </div>
-                  <div className="ellipsis text-xs text-muted" style={{ marginTop: 1 }}>
-                    {item.affiliation}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <div className="testimonial-selector" aria-label="选择学者反馈">{REVIEWS.map((review, index) => <button key={review.id} aria-pressed={active === index} aria-controls="testimonial-quote" aria-label={`查看${review.author}的反馈`} className={active === index ? 'active' : ''} onClick={() => setActive(index)}><span className="testimonial-mini-avatar">{review.avatarLetter}</span><span><strong>{review.author.split(' · ')[0]}</strong><small>{review.targetBadge.split(' · ').slice(-1)[0]}</small></span></button>)}</div>
     </section>
   );
 };
