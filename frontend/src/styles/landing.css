@@ -367,18 +367,18 @@
 .pricing-features ul { display: flex; flex-direction: column; gap: 13px; padding: 0; margin: 0; list-style: none; }
 .pricing-features li { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; line-height: 1.6; color: #6e7a65; }
 .pricing-features li svg { flex: none; margin-top: 2px; color: #829975; }
-.pricing-card.popular { background: #2f3640; border-color: #2f3640; box-shadow: 0 13px 35px -14px #2f364066; color: #eef1f5; }
-.popular .pricing-icon { background: #ffffff12; border-color: #ffffff33; color: #cdd6e0; }
-.popular .pricing-tier { color: #b3bec9; }
-.pricing-popular-tag { position: absolute; right: 12px; top: 14px; display: flex; align-items: center; gap: 4px; padding: 4px 7px; border: 1px solid #ffffff40; border-radius: 4px; font-size: 9px; color: #d7dee6; }
+.pricing-card.popular { background: linear-gradient(155deg, #e23a8d 0%, #a21caf 58%, #77117e 100%); border-color: #a21caf; box-shadow: 0 13px 35px -14px #a21caf80; color: #fdf0f8; }
+.popular .pricing-icon { background: #ffffff1f; border-color: #ffffff40; color: #f7cfe9; }
+.popular .pricing-tier { color: #f3b8df; }
+.pricing-popular-tag { position: absolute; right: 12px; top: 14px; display: flex; align-items: center; gap: 4px; padding: 4px 7px; border: 1px solid #ffffff4d; border-radius: 4px; font-size: 9px; color: #ffd9f0; }
 .popular .pricing-price { color: #ffffff; }
-.popular .pricing-description, .popular .pricing-period, .popular .pricing-audience { color: #b0bac6; }
-.popular .pricing-features { border-color: #ffffff26; }
-.popular .pricing-features > p { color: #cfd7df; }
-.popular .pricing-features li { color: #c7cfd8; }
-.popular .pricing-features li svg { color: #b3bec9; }
-.popular .pricing-action { background: #dfe5ec; border-color: #dfe5ec; color: #2f3640; }
-.popular .pricing-action:hover { background: #eef1f5; }
+.popular .pricing-description, .popular .pricing-period, .popular .pricing-audience { color: #f2c4e4; }
+.popular .pricing-features { border-color: #ffffff30; }
+.popular .pricing-features > p { color: #f6d5ec; }
+.popular .pricing-features li { color: #f3cfe8; }
+.popular .pricing-features li svg { color: #f3b8df; }
+.popular .pricing-action { background: #fbe4f4; border-color: #fbe4f4; color: #a21caf; }
+.popular .pricing-action:hover { background: #ffffff; }
 .pricing-assurance { display: flex; align-items: center; justify-content: center; gap: 28px; margin-top: 28px; }
 .pricing-assurance > span { display: flex; align-items: center; gap: 7px; color: #85917d; font-size: 11px; }
 
