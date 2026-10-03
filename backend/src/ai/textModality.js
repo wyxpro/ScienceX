@@ -248,12 +248,14 @@ ${content ? `【论文部分正文】：\n${content.slice(0, 4000)}` : ''}
 2. 方法 Agent (Method Reviewer): 审视网络架构、先验设计与机制合理性
 3. 实验 Agent (Experiment Reviewer): 审视消融设计、LOSO 协议、统计显著性与种子纪律
 4. 写作与伦理 Agent (Writing & Ethics Reviewer): 审视论文组织、图表严谨性与数据伦理
-5. 主席 Agent (Meta Reviewer / AC): 汇总上述意见，给出最终决策 (Accept / Weak Accept / Borderline / Revision) 与打分 (1-10分)
+5. 主席 Agent (Meta Reviewer / AC): 汇总上述意见，给出最终决策与打分
 
-请以合法的 JSON 格式输出，包含 decision、total_score、scores (维度分) 和 summary。`;
+严格只输出一个 JSON 对象，禁止 Markdown 围栏与任何解释性文字，结构如下：
+{"decision":"Accept|Weak Accept|Borderline|Revision 之一","total_score":6.5,"scores":{"theory":6.5,"method":7.0,"experiment":5.5,"writing":7.5,"ethics":9.0},"summary":"主席总评，150字以内，指出核心贡献与主要风险","roles":[{"role":"理论审稿人","verdict":"accept|weak_accept|borderline|reject_risk 之一","comments":"该角色评审意见，100字内，指出具体问题与可执行的修改建议"},{"role":"方法审稿人","verdict":"...","comments":"..."},{"role":"实验审稿人","verdict":"...","comments":"..."},{"role":"写作审稿人","verdict":"...","comments":"..."},{"role":"伦理审稿人","verdict":"...","comments":"..."}],"priorities":[{"level":"P0","item":"最高优先级修改事项"}]}
+要求：scores 各维度为 1-10 分（可含一位小数）；roles 必须恰好 5 条，依次为理论审稿人/方法审稿人/实验审稿人/写作审稿人/伦理审稿人；priorities 为 2-5 条。`;
 
   const res = await client.chatCompletion([
-    { role: 'system', content: '你是 NeurIPS/CVPR/ICCV 的资深高级领域主席 (Senior Area Chair)。' },
+    { role: 'system', content: '你是 NeurIPS/CVPR/ICCV 的资深高级领域主席 (Senior Area Chair)。输出必须为合法的 JSON 对象。' },
     { role: 'user', content: prompt }
   ], { temperature: 0.3 });
 

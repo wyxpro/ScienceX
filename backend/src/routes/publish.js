@@ -1,8 +1,9 @@
 /** 投稿助手 / 组会汇报 / 专家评审团 / 项目与课题组 —— REQ-SUB-01, REQ-SPC-01/02, REQ-PRJ-01 */
 const express = require('express');
 const store = require('../lib/store');
-const { ok, errors } = require('../lib/respond');
+const { ok, errors, asyncHandler } = require('../lib/respond');
 const ai = require('../lib/ai');
+const aiModule = require('../ai');
 const { auth } = require('./account');
 const { canAccess, canAccessTeam, canManageTeam } = require('../lib/access');
 
@@ -116,7 +117,28 @@ router.patch('/advice/:id', auth, (req, res) => {
   ok(res, a, '已更新');
 });
 
-/* ---------- 多智能体评审团 REQ-SPC-02 ---------- */
+/* ---------- 多智能体评审团 REQ-SPC-02：真实大模型优先（DeepSeek 五角色评审），失败确定性回退演示报告 ---------- */
+
+/** 从模型返回文本中稳健提取首个 JSON 对象（容忍 Markdown 代码块与前后缀说明） */
+function extractJSON(text) {
+  if (!text) return null;
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const raw = fenced ? fenced[1] : text;
+  const start = raw.indexOf('{');
+  if (start < 0) return null;
+  const end = raw.lastIndexOf('}');
+  if (end <= start) return null;
+  try {
+    return JSON.parse(raw.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+const REVIEW_ROLES = ['理论审稿人', '方法审稿人', '实验审稿人', '写作审稿人', '伦理审稿人'];
+const REVIEW_VERDICTS = ['accept', 'weak_accept', 'borderline', 'reject_risk'];
+const REVIEW_DECISIONS = { accept: 'accept', 'weak accept': 'weak_accept', borderline: 'borderline', revision: 'major_revision' };
+
 router.get('/review/reports', auth, (req, res) => {
   const items = store.reviewReports.filter((report) => {
     const manuscript = store.manuscripts.find((item) => item.id === report.manuscript_id);
@@ -125,16 +147,71 @@ router.get('/review/reports', auth, (req, res) => {
   ok(res, { items });
 });
 
-router.post('/review/council', auth, (req, res) => {
+router.post('/review/council', auth, asyncHandler(async (req, res) => {
   const { manuscript_id, roles = ['theory', 'method', 'experiment', 'writing', 'ethics'] } = req.body || {};
   const ms = store.manuscripts.find((m) => m.id === manuscript_id && canAccess(store.projects.find((project) => project.id === m.project_id), req.user.id));
   if (!ms) return errors.notFound(res, '稿件不存在');
-  const task = ai.createTask('review', ['论文全文解析', '理论 Agent 评审', '方法 Agent 评审', '实验 Agent 评审', '写作/伦理 Agent 评审', '主席 Agent 汇总'], () => {
+
+  const fallbackResult = () => {
     const report = store.reviewReports.find((r) => r.manuscript_id === ms.id) || store.reviewReports[0];
-    return { report_id: report.id, decision: report.decision, scores: report.scores };
+    return { report_id: report.id, decision: report.decision, scores: report.scores, mode: 'fallback' };
+  };
+
+  /** 调用真实大模型生成五角色评审报告；结构不完整时返回 null 触发回退 */
+  const buildLiveReport = async () => {
+    const abstractMatch = String(ms.content || '').match(/##\s*Abstract\s*([\s\S]*?)(?=\n##\s|$)/i);
+    const abstract = (abstractMatch ? abstractMatch[1] : String(ms.content || '').slice(0, 600)).trim();
+    const raw = await aiModule.textModality.generateReviewCouncil({ title: ms.title, abstract, content: ms.content });
+    const parsed = extractJSON(raw);
+    if (!parsed || !parsed.scores || !Array.isArray(parsed.roles) || parsed.roles.length < 5) return null;
+    const clamp10 = (value, dflt) => {
+      const num = Number(value);
+      return Number.isFinite(num) ? Math.round(Math.max(0, Math.min(10, num)) * 10) / 10 : dflt;
+    };
+    const dims = ['theory', 'method', 'experiment', 'writing', 'ethics'];
+    const scores = {};
+    for (const dim of dims) scores[dim] = clamp10(parsed.scores[dim], 6);
+    scores.overall = clamp10(parsed.total_score, Math.round((dims.reduce((sum, d) => sum + scores[d], 0) / dims.length) * 10) / 10);
+    const decision = REVIEW_DECISIONS[String(parsed.decision || '').trim().toLowerCase()] || 'borderline';
+    const mapped = parsed.roles.slice(0, 5).map((item, index) => ({
+      role: REVIEW_ROLES.includes(String(item.role)) ? String(item.role) : REVIEW_ROLES[index],
+      verdict: REVIEW_VERDICTS.includes(String(item.verdict)) ? String(item.verdict) : 'borderline',
+      comments: String(item.comments || '').slice(0, 400),
+    }));
+    if (mapped.some((r) => !r.role || !r.comments)) return null;
+    const report = {
+      id: store.id('rv'),
+      manuscript_id: ms.id,
+      decision,
+      created_at: store.now(),
+      scores,
+      roles: mapped,
+      conflicts: [],
+      priorities: Array.isArray(parsed.priorities)
+        ? parsed.priorities.slice(0, 6)
+          .map((p) => ({ level: ['P0', 'P1', 'P2'].includes(String(p.level)) ? String(p.level) : 'P1', item: String(p.item || '').slice(0, 120) }))
+          .filter((p) => p.item)
+        : [],
+      summary: String(parsed.summary || '').slice(0, 400),
+      mode: 'live',
+    };
+    store.reviewReports.unshift(report);
+    return { report_id: report.id, decision: report.decision, scores: report.scores, mode: 'live' };
+  };
+
+  const task = ai.createTask('review', ['论文全文解析', '理论 Agent 评审', '方法 Agent 评审', '实验 Agent 评审', '写作/伦理 Agent 评审', '主席 Agent 汇总'], async () => {
+    if (aiModule.config.hasKey()) {
+      try {
+        const live = await buildLiveReport();
+        if (live) return live;
+      } catch (error) {
+        console.warn('[ScienceX Council] 评审团真实模型调用失败，回退演示报告:', error.message);
+      }
+    }
+    return fallbackResult();
   }, req.user.id);
   ok(res, { task_id: task.id }, '评审团已组建，5 位 Agent 并行评审中');
-});
+}));
 
 router.get('/review/reports/:id', auth, (req, res) => {
   const report = store.reviewReports.find((r) => {
