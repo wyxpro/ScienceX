@@ -292,6 +292,46 @@ export default function Chat() {
               今日已用 <strong style={{ color: '#0f172a' }}>{dashboard?.today_usage?.tokens?.toLocaleString?.() ?? '38,400'}</strong> tokens · {dashboard?.today_usage?.calls ?? 26} 次调用
             </div>
 
+            {/* 课题记忆入口：置于历史对话按钮左侧 */}
+            <button
+              type="button"
+              onClick={() => setShowMemoryDrawer(true)}
+              title="管理课题组三层长短期记忆引擎"
+              aria-label="管理课题记忆"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: '1px solid #8b5cf6',
+                background: '#f5f3ff',
+                color: '#6d28d9',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#ede9fe'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#f5f3ff'; }}
+            >
+              <Icon name="spark" size={14} style={{ color: '#7c3aed' }} />
+              <span>课题记忆</span>
+              <span
+                style={{
+                  background: '#8b5cf6',
+                  color: '#ffffff',
+                  fontSize: 10.5,
+                  padding: '1px 6px',
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                }}
+              >
+                {memoryCount}
+              </span>
+            </button>
+
             {/* 右侧会话记录栏开关按钮：换个专属高亮颜色显示，点击才展开 */}
             <button
               type="button"
@@ -368,8 +408,6 @@ export default function Chat() {
               projectName={projectName}
               agentMode={agentMode}
               onSelectAgentMode={setAgentMode}
-              memoryCount={memoryCount}
-              onOpenMemoryDrawer={() => setShowMemoryDrawer(true)}
             />
 
             {/* 下方快捷推荐指令胶囊栏 */}
@@ -416,8 +454,6 @@ export default function Chat() {
                 projectName={projectName}
                 agentMode={agentMode}
                 onSelectAgentMode={setAgentMode}
-                memoryCount={memoryCount}
-                onOpenMemoryDrawer={() => setShowMemoryDrawer(true)}
               />
             </div>
           </>

@@ -19,8 +19,6 @@ interface ChatCommandDockProps {
   projectName?: string;
   agentMode: AgentMode;
   onSelectAgentMode: (mode: AgentMode) => void;
-  memoryCount: number;
-  onOpenMemoryDrawer: () => void;
 }
 
 const AGENT_MODES: Array<{ mode: AgentMode; label: string; icon: any; desc: string }> = [
@@ -51,8 +49,6 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
   projectName = '微表情识别（MER）研究',
   agentMode,
   onSelectAgentMode,
-  memoryCount,
-  onOpenMemoryDrawer,
 }) => {
   const currentModeMeta = AGENT_MODES.find((m) => m.mode === agentMode) || AGENT_MODES[0];
   const canSend = !streaming && input.trim().length > 0;
@@ -94,10 +90,10 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
           rows={2}
         />
 
-        {/* 输入框内置动作栏（左侧操作 + 右侧模型切换与发送） */}
+        {/* 输入框内置动作栏（左侧操作 + 模式/模型选择，右侧语音与发送） */}
         <div className="chat-dock-actions" style={{ position: 'relative' }}>
-          {/* 左侧：上传文件、技能抽屉、提示词增强 */}
-          <div className="chat-dock-left-tools">
+          {/* 左侧：上传文件、技能抽屉、提示词增强，随后紧靠 Agent 模式与模型选择 */}
+          <div className="chat-dock-left-tools" style={{ gap: 6, flexWrap: 'wrap' }}>
             <button
               type="button"
               className="chat-tool-btn"
@@ -181,11 +177,76 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
             >
               <Icon name="spark" size={16} />
             </button>
-          </div>
 
-          {/* 右侧：模型切换、语音输入、圆形发送按钮 */}
-          <div className="chat-dock-right-tools">
-            {/* 模型选择器 */}
+            {/* Agent 模式切换胶囊（紧靠提示词增强右侧，向上展开顶层菜单） */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="chat-tray-pill highlight"
+                aria-label="切换 Agent 模式"
+                onClick={() => setActiveMenu((m) => (m === 'mode' ? null : 'mode'))}
+                style={{
+                  background: activeMenu === 'mode' ? '#e2e8f0' : undefined,
+                }}
+              >
+                <Icon name={currentModeMeta.icon} size={12} />
+                <span>{currentModeMeta.label}</span>
+                <Icon name="chevronDown" size={10} style={{ opacity: 0.6 }} />
+              </button>
+
+              {activeMenu === 'mode' && (
+                <div
+                  className="anim-pop"
+                  style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 8px)',
+                    left: 0,
+                    zIndex: 1500,
+                    minWidth: 260,
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 14,
+                    boxShadow: '0 16px 40px -8px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08)',
+                    padding: 6,
+                    maxHeight: 320,
+                    overflowY: 'auto',
+                  }}
+                  onClick={() => setActiveMenu(null)}
+                >
+                  <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                    8 大科研智能体范式
+                  </div>
+                  {AGENT_MODES.map((am) => (
+                    <div
+                      key={am.mode}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 10,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        background: agentMode === am.mode ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => { if (agentMode !== am.mode) e.currentTarget.style.background = '#f1f5f9'; }}
+                      onMouseLeave={(e) => { if (agentMode !== am.mode) e.currentTarget.style.background = 'transparent'; }}
+                      onClick={() => onSelectAgentMode(am.mode)}
+                    >
+                      <Icon name={am.icon} size={15} style={{ marginTop: 2, color: agentMode === am.mode ? '#059669' : '#64748b' }} />
+                      <div>
+                        <div style={{ fontWeight: agentMode === am.mode ? 700 : 600, fontSize: 12.5, color: agentMode === am.mode ? '#059669' : '#1e293b' }}>
+                          {am.label}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{am.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 模型选择器（紧靠 Agent 模式右侧，向上展开顶层菜单） */}
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
@@ -207,8 +268,8 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                   className="anim-pop"
                   style={{
                     position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    right: 0,
+                    bottom: 'calc(100% + 8px)',
+                    left: 0,
                     zIndex: 1500,
                     minWidth: 230,
                     background: '#ffffff',
@@ -216,7 +277,8 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                     borderRadius: 14,
                     boxShadow: '0 16px 40px -8px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08)',
                     padding: 6,
-                    overflow: 'hidden',
+                    maxHeight: 320,
+                    overflowY: 'auto',
                   }}
                   onClick={() => setActiveMenu(null)}
                 >
@@ -272,7 +334,10 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                 </div>
               )}
             </div>
+          </div>
 
+          {/* 右侧：语音输入、圆形发送按钮 */}
+          <div className="chat-dock-right-tools">
             {/* 语音输入按钮 */}
             <button
               type="button"
@@ -303,7 +368,7 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
         </div>
       </div>
 
-      {/* 底部附着托盘：关联课题、Agent 范式模式、长效记忆 */}
+      {/* 底部附着托盘：关联课题 */}
       <div className="chat-dock-tray" style={{ overflow: 'visible', position: 'relative' }}>
         <div className="chat-tray-group">
           {/* 关联项目胶囊 */}
@@ -311,88 +376,6 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
             <Icon name="layers" size={12} style={{ color: '#0d9488' }} />
             <span>{projectName}</span>
           </div>
-
-          {/* Agent 模式切换胶囊（向上展开顶层菜单） */}
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              className="chat-tray-pill highlight"
-              aria-label="切换 Agent 模式"
-              onClick={() => setActiveMenu((m) => (m === 'mode' ? null : 'mode'))}
-              style={{
-                background: activeMenu === 'mode' ? '#e2e8f0' : undefined,
-              }}
-            >
-              <Icon name={currentModeMeta.icon} size={12} />
-              <span>{currentModeMeta.label}</span>
-              <Icon name="chevronDown" size={10} style={{ opacity: 0.6 }} />
-            </button>
-
-            {activeMenu === 'mode' && (
-              <div
-                className="anim-pop"
-                style={{
-                  position: 'absolute',
-                  bottom: 'calc(100% + 8px)',
-                  left: 0,
-                  zIndex: 1500,
-                  minWidth: 260,
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 14,
-                  boxShadow: '0 16px 40px -8px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08)',
-                  padding: 6,
-                  maxHeight: 320,
-                  overflowY: 'auto',
-                }}
-                onClick={() => setActiveMenu(null)}
-              >
-                <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>
-                  8 大科研智能体范式
-                </div>
-                {AGENT_MODES.map((am) => (
-                  <div
-                    key={am.mode}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 10,
-                      padding: '8px 10px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      background: agentMode === am.mode ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-                      transition: 'background 0.15s',
-                    }}
-                    onMouseEnter={(e) => { if (agentMode !== am.mode) e.currentTarget.style.background = '#f1f5f9'; }}
-                    onMouseLeave={(e) => { if (agentMode !== am.mode) e.currentTarget.style.background = 'transparent'; }}
-                    onClick={() => onSelectAgentMode(am.mode)}
-                  >
-                    <Icon name={am.icon} size={15} style={{ marginTop: 2, color: agentMode === am.mode ? '#059669' : '#64748b' }} />
-                    <div>
-                      <div style={{ fontWeight: agentMode === am.mode ? 700 : 600, fontSize: 12.5, color: agentMode === am.mode ? '#059669' : '#1e293b' }}>
-                        {am.label}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{am.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 右侧：长效记忆胶囊 */}
-        <div className="chat-tray-group">
-          <button
-            type="button"
-            className="chat-tray-pill highlight"
-            onClick={onOpenMemoryDrawer}
-            title="管理课题组三层长短期记忆引擎"
-            aria-label="管理课题记忆"
-          >
-            <Icon name="spark" size={12} style={{ color: '#10b981' }} />
-            <span>课题记忆 ({memoryCount})</span>
-          </button>
         </div>
       </div>
     </div>
