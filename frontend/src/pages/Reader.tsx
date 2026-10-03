@@ -184,6 +184,27 @@ export default function Reader() {
     [toast]
   );
 
+  /* 删除课题文献库中的文献（仅从列表移除；若删除的是当前研读文献则自动切换到剩余第一篇） */
+  const removeDoc = async (d: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`确定要从课题文献库删除《${d.title}》吗？删除后不可恢复。`)) return;
+    try {
+      await api(`/documents/${d.id}`, { method: 'DELETE' });
+      const rest = (docs || []).filter((x) => x.id !== d.id);
+      setDocs(rest);
+      if (docId === d.id) {
+        if (rest.length) await loadDoc(rest[0].id);
+        else {
+          setDocId(null);
+          setDoc(null);
+        }
+      }
+      toast(`已删除《${d.title}》`, 'ok');
+    } catch (error: any) {
+      toast(error?.message || '删除失败，请重试', 'err');
+    }
+  };
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -1695,6 +1716,22 @@ export default function Reader() {
                         ) : (
                           <span style={{ fontSize: 11, color: '#64748b' }}>切换 ➔</span>
                         )}
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          title={`删除《${d.title}》`}
+                          style={{
+                            padding: 4,
+                            borderColor: 'transparent',
+                            background: 'transparent',
+                            color: '#94a3b8',
+                            flexShrink: 0,
+                          }}
+                          onClick={(e) => removeDoc(d, e)}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#e5484d'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; }}
+                        >
+                          <Icon name="trash" size={14} />
+                        </button>
                       </div>
                     ))}
                   </div>

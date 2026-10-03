@@ -4,12 +4,12 @@
    LobsterAI 风格底盘与智能体能力胶囊、全视窗丝滑流动交互
    ============================================================ */
 
-/* 工作台外层容器：清爽明亮画布 */
+/* 工作台外层容器：清爽明亮画布（/chat 隐藏全局顶栏，故按整屏高度留对称呼吸边距，消除底部空白） */
 .chat-workbench {
   display: flex;
-  height: calc(100vh - var(--topbar-h, 60px) - 28px);
+  height: calc(100vh - 28px);
   max-width: 1560px;
-  margin: 0 auto;
+  margin: 14px auto;
   gap: 18px;
   position: relative;
   color: #0f172a;
@@ -319,6 +319,73 @@
   background: #f1f5f9;
   color: #0f172a;
   border-color: #e2e8f0;
+}
+
+/* 带文字标签的动作药丸（文件上传 / 提示词增强，紧靠模型列表右侧） */
+.chat-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.chat-action-pill:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+/* 附件展示条（选中文件后显示于输入框与动作栏之间） */
+.chat-attach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  max-width: 100%;
+  margin: 2px 0 4px;
+  padding: 5px 8px 5px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1fae5;
+  background: #f0fdf4;
+  color: #065f46;
+  font-size: 12px;
+}
+.chat-attach-name {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.chat-attach-size {
+  color: #059669;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.chat-attach-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #059669;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.chat-attach-remove:hover {
+  background: #d1fae5;
 }
 
 .chat-dock-right-tools {

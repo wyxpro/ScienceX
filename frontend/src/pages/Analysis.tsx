@@ -2,5 +2,9 @@
 import FigureStudio from './analysis/FigureStudio';
 
 export default function Analysis() {
-  return <FigureStudio />;
+  return (
+    <div className="page">
+      <FigureStudio />
+    </div>
+  );
 }

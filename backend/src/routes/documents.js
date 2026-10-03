@@ -87,6 +87,19 @@ router.get('/documents/:id', auth, (req, res) => {
   ok(res, doc);
 });
 
+router.delete('/documents/:id', auth, (req, res) => {
+  const idx = store.documents.findIndex((d) => d.id === req.params.id && canAccess(d, req.user.id));
+  if (idx < 0) return errors.notFound(res, '文档不存在');
+  const [removed] = store.documents.splice(idx, 1);
+  // 同步清理知识库中该文档的残留切片，避免检索命中已删除文献
+  store.knowledgeBases.forEach((kb) => {
+    const before = kb.chunks.length;
+    kb.chunks = kb.chunks.filter((c) => c.doc_id !== removed.id);
+    if (kb.chunks.length !== before) kb.chunk_count = kb.chunks.length;
+  });
+  ok(res, { doc_id: removed.id }, '文档已删除');
+});
+
 /* ---------- 结构化正文 REQ-READ-01 ---------- */
 router.get('/documents/:id/structured', auth, (req, res) => {
   const doc = store.documents.find((d) => d.id === req.params.id && canAccess(d, req.user.id));

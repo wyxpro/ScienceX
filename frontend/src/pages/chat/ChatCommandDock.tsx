@@ -9,7 +9,7 @@ interface ChatCommandDockProps {
   streaming: boolean;
   recording: boolean;
   onVoiceInput: () => void;
-  onUploadClick: () => void;
+  onUploadClick: (file?: File) => void;
   onEnhancePrompt: () => void;
   model: string;
   onSelectModel: (m: string) => void;
@@ -21,7 +21,7 @@ interface ChatCommandDockProps {
 }
 
 const AGENT_MODES: Array<{ mode: AgentMode; label: string; icon: any; desc: string }> = [
-  { mode: 'plan_execute', label: '灵寻规划执行', icon: 'layers', desc: '分步拆解 · 自动化全流程' },
+  { mode: 'plan_execute', label: '多智能体专家', icon: 'layers', desc: '分步拆解 · 自动化全流程' },
   { mode: 'general', label: '通用学术对话', icon: 'spark', desc: '记忆注入 · 学术全景分析' },
   { mode: 'react', label: 'ReAct 思维推演', icon: 'compass', desc: '思维链推导 · 工具闭环检验' },
   { mode: 'codeact', label: 'CodeAct 实验代码', icon: 'chart', desc: 'Python 沙箱 · 消融图表可视化' },
@@ -43,8 +43,6 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
   model,
   onSelectModel,
   models,
-  skills,
-  onInvokeSkill,
   agentMode,
   onSelectAgentMode,
 }) => {
@@ -52,8 +50,10 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
   const canSend = !streaming && input.trim().length > 0;
 
   /* 统一互斥菜单管理，确保每个按钮弹出的下拉菜单置于最顶层，且互不遮挡重叠 */
-  const [activeMenu, setActiveMenu] = useState<'skills' | 'model' | 'mode' | null>(null);
+  const [activeMenu, setActiveMenu] = useState<'model' | 'mode' | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -68,6 +68,16 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
       document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, [activeMenu]);
+
+  const openFilePicker = () => fileInputRef.current?.click();
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      setAttachedFile(f);
+      onUploadClick(f);
+    }
+    e.target.value = '';
+  };
 
   return (
     <div className="chat-command-dock" ref={dockRef} style={{ overflow: 'visible', position: 'relative' }}>
@@ -88,95 +98,28 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
           rows={2}
         />
 
-        {/* 输入框内置动作栏（左侧操作 + 模式/模型选择，右侧语音与发送） */}
+        {/* 附件展示条：选中文件后显示文件名与大小，可移除 */}
+        {attachedFile && (
+          <div className="chat-attach-chip">
+            <Icon name="file" size={13} style={{ color: '#059669' }} />
+            <span className="chat-attach-name" title={attachedFile.name}>{attachedFile.name}</span>
+            <span className="chat-attach-size">{(attachedFile.size / 1024).toFixed(0)} KB</span>
+            <button
+              type="button"
+              className="chat-attach-remove"
+              onClick={() => setAttachedFile(null)}
+              title="移除附件"
+              aria-label="移除附件"
+            >
+              <Icon name="x" size={12} />
+            </button>
+          </div>
+        )}
+
+        {/* 输入框内置动作栏（左侧模式/模型 + 上传/增强，右侧语音与发送） */}
         <div className="chat-dock-actions" style={{ position: 'relative' }}>
-          {/* 左侧：上传文件、技能抽屉、提示词增强，随后紧靠 Agent 模式与模型选择 */}
           <div className="chat-dock-left-tools" style={{ gap: 6, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="chat-tool-btn"
-              onClick={onUploadClick}
-              title="上传论文/实验数据附件"
-              aria-label="上传附件"
-            >
-              <Icon name="plus" size={17} />
-            </button>
-
-            {/* 智能体技能/插件面板 */}
-            <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                className="chat-tool-btn"
-                title="调用科研技能与 MCP 工具"
-                aria-label="科研技能"
-                onClick={() => setActiveMenu((m) => (m === 'skills' ? null : 'skills'))}
-                style={{
-                  background: activeMenu === 'skills' ? '#f1f5f9' : 'transparent',
-                  color: activeMenu === 'skills' ? '#0f172a' : '#64748b',
-                }}
-              >
-                <Icon name="grid" size={16} />
-              </button>
-
-              {activeMenu === 'skills' && (
-                <div
-                  className="anim-pop"
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    left: 0,
-                    zIndex: 1500,
-                    minWidth: 230,
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 14,
-                    boxShadow: '0 16px 40px -8px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08)',
-                    padding: 6,
-                    overflow: 'hidden',
-                  }}
-                  onClick={() => setActiveMenu(null)}
-                >
-                  <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>
-                    科研智能体技能库
-                  </div>
-                  {(skills || []).map((s) => (
-                    <div
-                      key={s.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      onClick={() => onInvokeSkill(s)}
-                    >
-                      <Icon name="spark" size={13} style={{ color: '#059669' }} />
-                      <span>{s.name}</span>
-                      <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 'auto' }}>({s.uses} 次)</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 提示词增强 */}
-            <button
-              type="button"
-              className="chat-tool-btn"
-              onClick={onEnhancePrompt}
-              title="学术提示词深度增强（角色+结构+背景）"
-              aria-label="提示词增强"
-            >
-              <Icon name="spark" size={16} />
-            </button>
-
-            {/* Agent 模式切换胶囊（紧靠提示词增强右侧，向上展开顶层菜单） */}
+            {/* Agent 模式切换胶囊（向上展开改为向下展开顶层菜单） */}
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
@@ -197,7 +140,7 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                   className="anim-pop"
                   style={{
                     position: 'absolute',
-                    bottom: 'calc(100% + 8px)',
+                    top: 'calc(100% + 8px)',
                     left: 0,
                     zIndex: 1500,
                     minWidth: 260,
@@ -244,7 +187,7 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
               )}
             </div>
 
-            {/* 模型选择器（紧靠 Agent 模式右侧，向上展开顶层菜单） */}
+            {/* 模型选择器（向下展开顶层菜单） */}
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
@@ -266,7 +209,7 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                   className="anim-pop"
                   style={{
                     position: 'absolute',
-                    bottom: 'calc(100% + 8px)',
+                    top: 'calc(100% + 8px)',
                     left: 0,
                     zIndex: 1500,
                     minWidth: 230,
@@ -332,6 +275,39 @@ export const ChatCommandDock: React.FC<ChatCommandDockProps> = ({
                 </div>
               )}
             </div>
+
+            {/* 文件上传（紧靠模型列表右侧，触发原生文件选择并展示附件） */}
+            <button
+              type="button"
+              className="chat-action-pill"
+              onClick={openFilePicker}
+              title="上传论文 / 实验数据附件"
+              aria-label="文件上传"
+            >
+              <Icon name="upload" size={14} />
+              <span>文件上传</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.md,.txt,.csv,.png,.jpg,.jpeg"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+
+            {/* 提示词增强（学术角色 + 结构 + 背景改写） */}
+            <button
+              type="button"
+              className="chat-action-pill"
+              onClick={onEnhancePrompt}
+              title="学术提示词深度增强（角色+结构+背景）"
+              aria-label="提示词增强"
+            >
+              <Icon name="spark" size={14} />
+              <span>提示词增强</span>
+            </button>
           </div>
 
           {/* 右侧：语音输入、圆形发送按钮 */}
