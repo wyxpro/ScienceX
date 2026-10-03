@@ -31,8 +31,37 @@ export default function Reader() {
   const [midTab, setMidTab] = useState<MidTab>('reproduce'); // 默认展示代码复现界面
   const [task, setTask] = useState<{ id: string; title: string } | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [leftMode, setLeftMode] = useState<LeftMode>('read');
+  const [leftMode, setLeftMode] = useState<LeftMode>('file'); // 默认展示「原文档」源文件预览（与导入后行为一致）
   const [fileMap, setFileMap] = useState<Record<string, { url: string; name: string }>>({});
+  /* 原文档兜底：无真实源文件（内置演示文献等）时，由结构化解析结果构造 Markdown 预览，保证「原文档」视图始终有内容 */
+  const [derivedSource, setDerivedSource] = useState<{ url: string; name: string } | null>(null);
+  useEffect(() => {
+    if (!doc) {
+      setDerivedSource(null);
+      return;
+    }
+    const sections = Array.isArray(doc.structured?.sections) ? doc.structured.sections : [];
+    let md = '';
+    if (sections.length) {
+      const header = [doc.authors, doc.venue, doc.year].filter(Boolean).join(' · ');
+      md = [
+        `# ${doc.title}`,
+        header,
+        ...sections.flatMap((s: any) => [`## ${s.title}`, ...(Array.isArray(s.paragraphs) ? s.paragraphs : []), '']),
+      ].join('\n\n');
+    } else if (doc.abstract) {
+      const header = [doc.authors, doc.venue, doc.year].filter(Boolean).join(' · ');
+      md = [`# ${doc.title}`, header ? `> ${header}` : '', doc.abstract].filter(Boolean).join('\n\n');
+    }
+    if (!md) {
+      setDerivedSource(null);
+      return;
+    }
+    const baseName = (doc.file_name || `${doc.title || 'document'}.md`).replace(/\.(pdf|docx?|caj)$/i, '.md');
+    const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+    setDerivedSource({ url, name: baseName.endsWith('.md') ? baseName : `${baseName}.md` });
+    return () => URL.revokeObjectURL(url);
+  }, [doc]);
 
   /* 三栏自由拖拽调整宽度 */
   const [splitA, setSplitA] = useState(32); // 左栏占总宽百分比，默认 32%
@@ -518,7 +547,7 @@ export default function Reader() {
                   setNotesOpen={setReaderNotesOpen}
                   onHighlightsCountChange={setReaderHighlightsCount}
                 />
-              ) : fileMap[doc.id] ? (
+              ) : (fileMap[doc.id] || derivedSource) ? (
                 <div
                   style={{
                     flex: 1,
@@ -530,8 +559,8 @@ export default function Reader() {
                   }}
                 >
                   <DocViewer
-                    url={fileMap[doc.id].url}
-                    name={fileMap[doc.id].name}
+                    url={(fileMap[doc.id] || derivedSource)!.url}
+                    name={(fileMap[doc.id] || derivedSource)!.name}
                     parseMeta={doc.parse_meta}
                     onBackToRead={() => setLeftMode('read')}
                   />
