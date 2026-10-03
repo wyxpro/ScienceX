@@ -10,6 +10,7 @@ import { useToast } from '../components/ui';
 import { TaskRunner } from '../components/TaskRunner';
 import ImmersiveReader from './reader/ImmersiveReader';
 import { CodeReproductionViewer } from './reader/CodeReproductionViewer';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 type MidTab = 'translate' | 'mindmap' | 'seven' | 'reproduce' | 'graph';
 type LeftMode = 'read' | 'file';
@@ -132,10 +133,11 @@ const DEFAULT_BILINGUAL_SECTIONS = [
 
 export default function Reader() {
   const toast = useToast();
+  const isMobile = useIsMobile();
   const [docs, setDocs] = useState<any[] | null>(null);
   const [docId, setDocId] = useState<string | null>(null);
   const [doc, setDoc] = useState<any>(null);
-  const [midTab, setMidTab] = useState<MidTab>('translate'); // 默认展示翻译界面
+  const [midTab, setMidTab] = useState<MidTab>('reproduce'); // 默认展示代码复现界面
   const [task, setTask] = useState<{ id: string; title: string } | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadName, setUploadName] = useState('');
@@ -608,28 +610,31 @@ export default function Reader() {
       ref={containerRef}
       className="page page-full"
       style={{
-        padding: '12px 16px',
-        maxHeight: 'calc(100vh - 60px)',
-        height: 'calc(100vh - 60px)',
+        padding: isMobile ? 8 : '12px 16px',
+        maxHeight: isMobile ? 'none' : 'calc(100vh - 60px)',
+        minHeight: isMobile ? 'calc(100vh - 60px)' : undefined,
+        height: isMobile ? 'auto' : 'calc(100vh - 60px)',
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: isMobile ? 'column' : 'row',
         alignItems: 'stretch',
-        gap: 0,
+        gap: isMobile ? 10 : 0,
         position: 'relative',
         userSelect: dragging ? 'none' : 'auto',
         cursor: dragging ? 'col-resize' : 'auto',
-        overflow: 'hidden',
+        overflowX: 'hidden',
+        overflowY: isMobile ? 'auto' : 'hidden',
         boxSizing: 'border-box',
       }}
     >
       {/* ===== 左栏：文档与阅读 (沉浸式阅读 / 源文件预览) ===== */}
       <section
         style={{
-          width: `${splitA}%`,
-          minWidth: 260,
+          width: isMobile ? '100%' : `${splitA}%`,
+          minWidth: isMobile ? 0 : 260,
+          height: isMobile ? 420 : undefined,
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '100%',
+          maxHeight: isMobile ? 'none' : '100%',
           overflow: 'hidden',
           transition: dragging ? 'none' : 'width 0.1s ease',
         }}
@@ -658,6 +663,7 @@ export default function Reader() {
                   borderBottom: '1px solid var(--line)',
                   background: 'var(--bg-deep)',
                   gap: 8,
+                  flexWrap: isMobile ? 'wrap' : undefined,
                 }}
               >
                 {/* 当前文献信息展示 */}
@@ -688,7 +694,7 @@ export default function Reader() {
                 </div>
 
                 {/* 文献导入与全文检索批注工具栏 */}
-                <div className="row g-1 items-center" style={{ flexShrink: 0 }}>
+                <div className="row g-1 items-center" style={{ flexShrink: 0, flexWrap: isMobile ? 'wrap' : undefined }}>
                   {/* 阅读 / 原文档 双模式切换 */}
                   <div
                     className="row g-0"
@@ -864,7 +870,7 @@ export default function Reader() {
         style={{
           width: 10,
           cursor: 'col-resize',
-          display: 'flex',
+          display: isMobile ? 'none' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
@@ -893,11 +899,11 @@ export default function Reader() {
       {/* ===== 中栏：核心分析（翻译 · 思维导图 · 七段总结 · 引用图谱 · 知识库） ===== */}
       <section
         style={{
-          width: `${splitB - splitA}%`,
-          minWidth: 280,
+          width: isMobile ? '100%' : `${splitB - splitA}%`,
+          minWidth: isMobile ? 0 : 280,
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '100%',
+          maxHeight: isMobile ? 'none' : '100%',
           overflow: 'hidden',
           transition: dragging ? 'none' : 'width 0.1s ease',
         }}
@@ -941,7 +947,7 @@ export default function Reader() {
           </div>
 
           {/* 选项卡内容渲染区 */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: isMobile ? 'auto' : undefined, padding: isMobile ? 12 : 16 }}>
             {/* 1. 翻译功能（默认展示） */}
             {midTab === 'translate' && (
               <div className="anim-in col g-3">
@@ -1081,7 +1087,7 @@ export default function Reader() {
 
             {/* 2. 思维导图功能（自动分析呈现） */}
             {midTab === 'mindmap' && (
-              <div className="anim-in col g-3" style={{ flex: 1, minHeight: 620, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div className="anim-in col g-3" style={{ flex: 1, minHeight: isMobile ? 420 : 620, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div className="row-between items-center wrap g-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                   <div>
                     <strong style={{ fontSize: 15, color: 'var(--ink)' }}>论文逻辑架构交互思维导图</strong>
@@ -1092,11 +1098,11 @@ export default function Reader() {
                   </button>
                 </div>
                 {doc?.mindmap ? (
-                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 12, border: '1px solid var(--line)', flex: 1, minHeight: 560, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 12, border: '1px solid var(--line)', flex: 1, minHeight: isMobile ? 360 : 560, display: 'flex', flexDirection: 'column' }}>
                     <Mindmap data={doc.mindmap} />
                   </div>
                 ) : (
-                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 16, border: '1px solid var(--line)', flex: 1, minHeight: 560, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ background: '#ffffff', borderRadius: 14, padding: 16, border: '1px solid var(--line)', flex: 1, minHeight: isMobile ? 360 : 560, display: 'flex', flexDirection: 'column' }}>
                     <div className="row g-2 items-center mb-2">
                       <span className="dot dot-green dot-pulse" />
                       <span className="text-small fw-bold">已自动基于左侧文献完成架构切片与思维导图生成</span>
@@ -1229,7 +1235,7 @@ export default function Reader() {
 
             {/* 4. 引用图谱功能（3D 可交互全景拓扑） */}
             {midTab === 'graph' && (
-              <div className="anim-in col g-3" style={{ flex: 1, minHeight: 620, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div className="anim-in col g-3" style={{ flex: 1, minHeight: isMobile ? 420 : 620, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div className="row-between items-center wrap g-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
                   <div>
                     <strong style={{ fontSize: 15, color: 'var(--ink)' }}>文献引用拓扑图谱 (3D 交互星系)</strong>
@@ -1239,7 +1245,7 @@ export default function Reader() {
                     <Icon name="link" size={13} /> 导出关系数据
                   </button>
                 </div>
-                <div style={{ flex: 1, minHeight: 560, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, minHeight: isMobile ? 360 : 560, display: 'flex', flexDirection: 'column' }}>
                   <CitationGraph3D currentTitle={doc?.title} />
                 </div>
               </div>
@@ -1254,7 +1260,7 @@ export default function Reader() {
         style={{
           width: 10,
           cursor: 'col-resize',
-          display: 'flex',
+          display: isMobile ? 'none' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
@@ -1283,11 +1289,12 @@ export default function Reader() {
       {/* ===== 右栏：论文 Agent 对话中枢（支持语音输入、文档上传、实时流式解析与引用溯源） ===== */}
       <section
         style={{
-          width: `${100 - splitB}%`,
-          minWidth: 260,
+          width: isMobile ? '100%' : `${100 - splitB}%`,
+          minWidth: isMobile ? 0 : 260,
+          height: isMobile ? 440 : undefined,
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '100%',
+          maxHeight: isMobile ? 'none' : '100%',
           overflow: 'hidden',
           transition: dragging ? 'none' : 'width 0.1s ease',
         }}
@@ -1302,6 +1309,8 @@ export default function Reader() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              flexWrap: isMobile ? 'wrap' : undefined,
+              gap: isMobile ? 6 : undefined,
               position: 'relative',
             }}
           >
@@ -1338,6 +1347,7 @@ export default function Reader() {
                     top: 'calc(100% + 6px)',
                     left: 0,
                     width: 250,
+                    maxWidth: isMobile ? 'calc(100vw - 24px)' : undefined,
                     background: '#ffffff',
                     borderRadius: 10,
                     boxShadow: '0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.06)',
@@ -1425,6 +1435,8 @@ export default function Reader() {
                         borderRadius: '14px 14px 2px 14px',
                         background: 'linear-gradient(135deg, var(--brand-deep), var(--brand))',
                         color: '#ffffff',
+                        maxWidth: isMobile ? '86%' : undefined,
+                        wordBreak: isMobile ? 'break-word' : undefined,
                       }}
                     >
                       {m.content}
@@ -1438,6 +1450,9 @@ export default function Reader() {
                         background: '#ffffff',
                         border: '1px solid var(--line)',
                         boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+                        maxWidth: isMobile ? '92%' : undefined,
+                        minWidth: 0,
+                        wordBreak: isMobile ? 'break-word' : undefined,
                       }}
                     >
                       {m.content ? (
@@ -1472,6 +1487,8 @@ export default function Reader() {
                   color: 'var(--brand-strong)',
                   fontSize: 12,
                   marginBottom: 8,
+                  maxWidth: isMobile ? '100%' : undefined,
+                  wordBreak: isMobile ? 'break-word' : undefined,
                 }}
               >
                 <Icon name="paperclip" size={12} />
@@ -1583,7 +1600,7 @@ export default function Reader() {
             className="modal anim-in"
             style={{
               maxWidth: 620,
-              width: '92%',
+              width: isMobile ? 'calc(100% - 16px)' : '92%',
               background: '#ffffff',
               borderRadius: 16,
               boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08)',
@@ -1594,9 +1611,10 @@ export default function Reader() {
             <div
               className="row-between items-center"
               style={{
-                padding: '18px 24px',
+                padding: isMobile ? '14px 14px' : '18px 24px',
                 borderBottom: '1px solid #e2e8f0',
                 background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+                gap: isMobile ? 8 : undefined,
               }}
             >
               <div className="row g-2 items-center">
@@ -1633,7 +1651,7 @@ export default function Reader() {
             </div>
 
             {/* 弹窗内容 */}
-            <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto', padding: '20px 24px' }}>
+            <div className="modal-body" style={{ maxHeight: isMobile ? '62vh' : '72vh', overflowY: 'auto', padding: isMobile ? '16px 14px' : '20px 24px' }}>
               {/* 文件上传拖拽区 */}
               <div
                 style={{
