@@ -11,7 +11,7 @@ import { TaskRunner } from '../components/TaskRunner';
 import ImmersiveReader from './reader/ImmersiveReader';
 import { CodeReproductionViewer } from './reader/CodeReproductionViewer';
 
-type MidTab = 'translate' | 'mindmap' | 'seven' | 'reproduce' | 'graph' | 'kb';
+type MidTab = 'translate' | 'mindmap' | 'seven' | 'reproduce' | 'graph';
 type LeftMode = 'read' | 'file';
 
 /* AI模型选项列表 */
@@ -101,31 +101,6 @@ const DEFAULT_BILINGUAL_SECTIONS = [
   },
 ];
 
-/* 知识库 Chunk 语义检索示范 */
-const DEFAULT_KB_CHUNKS = [
-  {
-    id: 'chunk-101',
-    page: 3,
-    score: 0.94,
-    content: '在统一 LOSO 协议下，融入 RAFT 光流时序注意力的 AUFormer 在 CASME II 上取得最优结果：UF1=0.829，UAR=0.812。消融实验显示移除 AU 分支性能骤降 6.8 点。',
-    tags: ['AUFormer', '消融实验', 'LOSO 协议'],
-  },
-  {
-    id: 'chunk-102',
-    page: 5,
-    score: 0.88,
-    content: '17 个面部动作单元（AU）节点由 OpenFace 强度参数初始化，经图卷积网络精炼后，与主干视觉 patch token 通过跨层交叉注意力（Cross-Attention）实现物理拓扑对齐。',
-    tags: ['图卷积', 'OpenFace', '跨层交叉注意力'],
-  },
-  {
-    id: 'chunk-103',
-    page: 12,
-    score: 0.81,
-    content: '微表情识别核心挑战在于样本长尾不均衡与微弱肌肉抽动（<500ms）。采用自监督对比时空预训练与扩散模型增广，可将 CASME II 上稀有类识别召回率提升 14.5%。',
-    tags: ['数据不均衡', '扩散模型', '自监督预训练'],
-  },
-];
-
 export default function Reader() {
   const toast = useToast();
   const [docs, setDocs] = useState<any[] | null>(null);
@@ -168,11 +143,6 @@ export default function Reader() {
   const [transLoading, setTransLoading] = useState(false);
   const [paraKey, setParaKey] = useState<string | null>(null);
   const [translation, setTranslation] = useState<any>(null);
-
-  /* 知识库检索状态 */
-  const [kbSearchQuery, setKbSearchQuery] = useState('');
-  const [kbChunks, setKbChunks] = useState(DEFAULT_KB_CHUNKS);
-  const [kbSaved, setKbSaved] = useState(true);
 
   /* 论文 Agent 对话与语音/文档附件状态 */
   const [chatMsgs, setChatMsgs] = useState<any[]>([
@@ -408,18 +378,6 @@ export default function Reader() {
     const r = await api(`/documents/${docId}/translate`, { method: 'POST', body: { text, direction: 'en2zh' } });
     setTranslation(r);
     setMidTab('translate');
-  };
-
-  /* 沉淀到知识库 */
-  const saveToKB = async () => {
-    try {
-      const r = await api<{ task_id: string }>(`/knowledge-bases/kb1/ingest`, { method: 'POST', body: { document_id: docId } });
-      setTask({ id: r.task_id, title: '沉淀到 RAG 知识库（MER 课题组文献库）' });
-      setKbSaved(true);
-    } catch {
-      toast('已同步切片至 MER 课题组文献库', 'ok');
-      setKbSaved(true);
-    }
   };
 
   /* 自定义句段翻译 */
@@ -1121,105 +1079,6 @@ export default function Reader() {
               </div>
             )}
 
-            {/* 5. 知识库功能 */}
-            {midTab === 'kb' && (
-              <div className="anim-in col g-3">
-                <div className="row-between items-center wrap g-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
-                  <div>
-                    <strong style={{ fontSize: 15, color: 'var(--ink)' }}>RAG 课题组知识库空间</strong>
-                    <div className="text-xs text-muted mt-1">向量切片入库、相似度检索与课题组协同共享</div>
-                  </div>
-                  <button className="btn btn-primary btn-sm" onClick={saveToKB}>
-                    <Icon name="db" size={13} /> 沉淀至知识库
-                  </button>
-                </div>
-
-                {/* 知识库状态看板 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                  <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--line)' }}>
-                    <div className="text-xs text-muted">目标库名</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--brand-deep)', marginTop: 4 }}>
-                      MER 课题组文献库
-                    </div>
-                  </div>
-                  <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--line)' }}>
-                    <div className="text-xs text-muted">入库状态</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: kbSaved ? 'var(--brand)' : 'var(--muted)', marginTop: 4 }}>
-                      {kbSaved ? '✅ 已建立向量索引' : '待同步'}
-                    </div>
-                  </div>
-                  <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--line)' }}>
-                    <div className="text-xs text-muted">切片规格</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)', marginTop: 4 }}>
-                      1536 维 (OpenAI)
-                    </div>
-                  </div>
-                </div>
-
-                {/* 知识切片检索 */}
-                <div style={{ background: 'var(--bg-deep)', padding: 12, borderRadius: 10 }}>
-                  <div className="row g-2 mb-2">
-                    <input
-                      className="input grow"
-                      placeholder="搜索本文已切片的知识语义块 (如: AUFormer / LOSO / 扩散模型)…"
-                      value={kbSearchQuery}
-                      onChange={(e) => setKbSearchQuery(e.target.value)}
-                      style={{ fontSize: 13 }}
-                    />
-                    <button
-                      className="btn btn-soft btn-sm"
-                      onClick={() => toast(`检索到 ${kbChunks.length} 个相关语义切片`, 'ok')}
-                    >
-                      <Icon name="search" size={13} /> 检索切片
-                    </button>
-                  </div>
-                </div>
-
-                {/* 切片列表展示 */}
-                <div className="col g-2">
-                  <div className="text-xs text-muted" style={{ fontWeight: 700 }}>
-                    📑 本篇论文核心知识向量切片 (Top Chunks)：
-                  </div>
-                  {kbChunks
-                    .filter(
-                      (c) =>
-                        !kbSearchQuery ||
-                        c.content.toLowerCase().includes(kbSearchQuery.toLowerCase()) ||
-                        c.tags.some((t) => t.toLowerCase().includes(kbSearchQuery.toLowerCase()))
-                    )
-                    .map((chunk) => (
-                      <div
-                        key={chunk.id}
-                        style={{
-                          borderRadius: 10,
-                          background: '#ffffff',
-                          border: '1px solid var(--line)',
-                          padding: '12px 14px',
-                        }}
-                      >
-                        <div className="row-between items-center mb-1">
-                          <span className="tag tag-green" style={{ fontSize: 11 }}>
-                            P.{chunk.page} 对应段落
-                          </span>
-                          <span style={{ fontSize: 11, color: 'var(--brand-deep)', fontWeight: 700 }}>
-                            相似度匹配: {(chunk.score * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                        <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, margin: '6px 0' }}>
-                          {chunk.content}
-                        </p>
-                        <div className="row g-1 wrap">
-                          {chunk.tags.map((t) => (
-                            <span key={t} className="tag tag-outline" style={{ fontSize: 11 }}>
-                              #{t}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </section>
