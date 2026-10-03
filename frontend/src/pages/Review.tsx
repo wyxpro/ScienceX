@@ -184,7 +184,7 @@ export default function Review() {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 1320, margin: '0 auto', gap: 16 }}>
+    <div className="page" style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* 顶部控制操作条 */}
       <div
         className="card row-between wrap items-center"

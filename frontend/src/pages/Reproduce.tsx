@@ -166,7 +166,7 @@ export default function Reproduce() {
   const diffColor = (d: number, tol: number) => (Math.abs(d) <= tol ? 'var(--brand)' : Math.abs(d) <= tol * 2 ? 'var(--accent)' : 'var(--red)');
 
   return (
-    <div className="page" style={{ gap: 16 }}>
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* ===== 页头 ===== */}
       <div className="card card-pad" style={{ flex: 'none', background: 'linear-gradient(135deg, var(--brand-softer), var(--surface) 55%)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--brand)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 6px 16px -6px rgba(27,122,94,.55)' }}>
