@@ -115,23 +115,50 @@ flowchart TB
 
 > 价格为 **2025 年公开牌价示意**（多为「每百万 tokens，输入/输出，USD」），仅用于成本规划，**接入前以官方定价为准**。`¥` 估算按 1 USD ≈ 7.2 CNY。
 
-### 3.1 模态 × 能力 × 推荐模型 × 价格总表
+### 3.1 按模态分类的 AI 能力 × 推荐模型 × 价格总表
 
-| 模态 | 能力点（ScienceX 场景） | 当前实现 | 推荐对接模型（主 / 备） | 参考调用价格 | 优先级 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **文本生成 / 推理** | 对话中枢、通用问答、综述大纲、选题推荐、可行性评估、润色、降重、审稿意见 | 模板回退 + 网关 | GPT-4o / Claude 3.7 Sonnet；经济档：DeepSeek-V3、Gemini 2.0 Flash、Qwen-Max | GPT-4o ≈ \$2.5/\$10；Claude 3.7 ≈ \$3/\$15；Gemini 2.0 Flash ≈ \$0.1/\$0.4；DeepSeek-V3 ≈ \$0.27/\$1.10；Qwen-Max ≈ \$1.6/\$6.4（每百万 token） | P0 |
-| **长上下文 / RAG 问答** | 论文全文问答、知识库溯源、多人讨论 | 拼接上下文回退 | Claude 3.7（200K）/ Gemini 2.0（1M）/ GPT-4o（128K）+ RAG | 同上；长上下文按 token 计费，建议配 RAG 降 token | P0 |
-| **视觉理解（Vision）** | 图表解读、上传图像分析、公式/版面识别辅助 | 无（预留） | GPT-4o Vision / Gemini 2.0 Flash / Claude 3.7 Vision | 图像按 tile 折算 token，约 \$2.5–\$3/百万 input；单图约 \$0.003–0.01 | P1 |
-| **图像生成（image2）** | 科研配图栅格渲染、封面/示意图生成 | 矢量 SVG spec 降级 | gpt-image-1 / DALL·E 3 / Stable Diffusion XL（自建）/ Ideogram | gpt-image-1 ≈ \$0.02–0.19/图；DALL·E 3 ≈ \$0.04/图（HD \$0.08）；自建仅算力 | P1 |
-| **文档版面解析** | PDF 两栏解析、公式/图表抽取、结构化正文 | 模拟任务流 | MinerU / GROBID / Nougat（自建）+ 商用 PDF API | 开源自建：算力成本；商用解析 API ≈ \$0.01–0.05/页 | P0 |
-| **语音识别（ASR）** | 语音输入转写、组会导师建议录音结构化 | Web Speech 模拟 | OpenAI Whisper API / 阿里云 ASR / 讯飞 | Whisper ≈ \$0.006/分钟；Web Speech API 免费（浏览器侧） | P1 |
-| **Embedding 向量化** | 文献去重、知识库检索、查重相似度、期刊匹配 | 规则/演示 | text-embedding-3-small / -large / bge-m3（自建） | 3-small ≈ \$0.02/百万 token；3-large ≈ \$0.13/百万；bge 自建免费 | P0 |
-| **Rerank 重排序** | 检索结果相关性精排 | 无（预留） | Cohere Rerank / bge-reranker-v2（自建） | Cohere ≈ \$2.0/1000 次查询；自建免费 | P1 |
-| **代码执行（CodeAct）** | 消融数据分析、绘图脚本沙箱 | 内置伪执行器（返回固定图） | 受控 Python 沙箱（Docker/Firecracker）+ 代码生成 LLM（DeepSeek-Coder / GPT-4o） | 沙箱：算力；代码生成按 LLM token 计费 | P1 |
-| **结构化输出 / Function Calling** | JSON spec、Text2SQL、LaTeX 三线表、审稿矩阵 | 模板 + JSON 解析回退 | 支持 JSON Mode / Tools 的模型（GPT-4o / Claude / DeepSeek） | 同 LLM 价；建议 temperature 0–0.2 | P0 |
-| **多智能体编排** | 专家评审团（5 角色）、Plan-Execute 规划流 | lingxiEngine 模拟 | 编排框架（LangGraph / 自研）+ 上述 LLM | 成本 ≈ N 个 Agent × 单 Agent token | P1 |
-| **翻译** | 段落级中英互译、术语对齐 | 网关 + 回退 | GPT-4o mini / Gemini Flash / Qwen（中文优） | 4o-mini ≈ \$0.15/\$0.60；Gemini Flash 极低 | P0 |
-| **提示词增强** | 一键优化用户 prompt | 规则模板（`/prompt/enhance`） | 小模型 / 规则 + 元提示（meta-prompt） | 用 mini 档，成本可忽略 | P1 |
+> 按 **文本 / 图片（视觉）/ 语音 / 视频** 四大模态拆分为独立表格。「当前实现」指本演示仓库现状；**视频模态 ScienceX 目前尚未涉及**，作为 AI 能力全景的规划补充。价格为 2025 公开牌价示意，接入前以官方为准。
+
+#### 3.1.1 文本模态（Text）
+
+| 能力点（ScienceX 场景） | 当前实现 | 推荐对接模型（主 / 备） | 参考调用价格（每百万 token，入/出） | 优先级 |
+| :--- | :--- | :--- | :--- | :--- |
+| **生成 / 推理**：对话中枢、综述大纲、选题推荐、可行性评估、润色、降重、审稿意见 | 模板回退 + 网关 | GPT-4o / Claude 3.7 Sonnet；经济档 DeepSeek-V3、Gemini 2.0 Flash、Qwen-Max | GPT-4o ≈ \$2.5/\$10；Claude 3.7 ≈ \$3/\$15；Gemini 2.0 Flash ≈ \$0.1/\$0.4；DeepSeek-V3 ≈ \$0.27/\$1.10；Qwen-Max ≈ \$1.6/\$6.4 | P0 |
+| **长上下文 / RAG 问答**：论文全文问答、知识库溯源、多人讨论 | 拼接上下文回退 | Claude 3.7（200K）/ Gemini 2.0（1M）/ GPT-4o（128K）+ RAG | 同上；配 RAG 检索可显著降 input token | P0 |
+| **Embedding 向量化**：文献去重、知识库检索、查重相似度、期刊匹配 | 规则 / 演示 | text-embedding-3-small / -large / bge-m3（自建） | 3-small ≈ \$0.02；3-large ≈ \$0.13；bge 自建免费 | P0 |
+| **Rerank 重排序**：检索结果相关性精排 | 无（预留） | Cohere Rerank / bge-reranker-v2（自建） | Cohere ≈ \$2.0/1000 次查询；自建免费 | P1 |
+| **代码生成与执行（CodeAct）**：消融数据分析、绘图脚本沙箱 | 内置伪执行器（返回固定图） | 代码 LLM（DeepSeek-Coder / GPT-4o）+ 受控 Python 沙箱（Docker/Firecracker） | 代码生成按 LLM token；沙箱仅算力 | P1 |
+| **结构化输出 / Function Calling**：JSON spec、Text2SQL、LaTeX 三线表、审稿矩阵 | 模板 + JSON 解析回退 | 支持 JSON Mode / Tools 的模型（GPT-4o / Claude / DeepSeek） | 同 LLM 价；建议 temperature 0–0.2 | P0 |
+| **多智能体编排**：专家评审团（5 角色）、Plan-Execute 规划流 | lingxiEngine 模拟 | 编排框架（LangGraph / 自研）+ 上述 LLM | ≈ N 个 Agent × 单 Agent token | P1 |
+| **翻译**：段落级中英互译、术语对齐 | 网关 + 回退 | GPT-4o mini / Gemini Flash / Qwen（中文优） | 4o-mini ≈ \$0.15/\$0.60；Gemini Flash 极低 | P0 |
+| **提示词增强**：一键优化用户 prompt | 规则模板（`/prompt/enhance`） | 小模型 / 规则 + 元提示（meta-prompt） | mini 档，成本可忽略 | P1 |
+
+#### 3.1.2 图片模态（视觉 / Vision）
+
+| 能力点（ScienceX 场景） | 当前实现 | 推荐对接模型（主 / 备） | 参考调用价格 | 优先级 |
+| :--- | :--- | :--- | :--- | :--- |
+| **视觉理解**：图表解读、上传图像分析、公式/版面识别辅助 | 无（预留） | GPT-4o Vision / Gemini 2.0 Flash / Claude 3.7 Vision | 图像折算 token，约 \$2.5–\$3/百万 input；单图 ≈ \$0.003–0.01 | P1 |
+| **图像生成（image2）**：科研配图栅格渲染、封面/示意图 | 矢量 SVG spec 降级 | gpt-image-1 / DALL·E 3 / Stable Diffusion XL（自建）/ Ideogram | gpt-image-1 ≈ \$0.02–0.19/图；DALL·E 3 ≈ \$0.04/图（HD \$0.08）；自建仅算力 | P1 |
+| **文档版面解析**：PDF 两栏解析、公式/图表抽取、结构化正文 | 模拟任务流 | MinerU / GROBID / Nougat（自建）+ 商用 PDF 解析 API | 自建：算力；商用 ≈ \$0.01–0.05/页 | P0 |
+| **OCR 文字识别**：扫描件 / 图片中文字与公式提取 | 无（预留） | PaddleOCR（自建）/ Azure Read / GPT-4o Vision | 自建免费；云 OCR ≈ \$1/千页 | P2 |
+
+#### 3.1.3 语音模态（Audio）
+
+| 能力点（ScienceX 场景） | 当前实现 | 推荐对接模型（主 / 备） | 参考调用价格 | 优先级 |
+| :--- | :--- | :--- | :--- | :--- |
+| **语音识别（ASR）**：语音输入转写、组会导师建议录音结构化 | Web Speech 模拟 | OpenAI Whisper / 阿里云 ASR / 讯飞 | Whisper ≈ \$0.006/分钟；Web Speech API 免费（浏览器侧） | P1 |
+| **说话人分离**：组会多人对话区分发言人 | 无（预留） | Whisper + pyannote / 阿里云录音识别 | ≈ ASR 价 + 分离算力 | P2 |
+| **语音合成（TTS）**：论文朗读、汇报播报、无障碍 | 无（预留） | OpenAI TTS / Azure TTS / Edge TTS | OpenAI TTS ≈ \$15/百万字符；Edge TTS 免费 | P2 |
+
+#### 3.1.4 视频模态（Video）
+
+> ScienceX 当前未涉及视频能力，作为 AI 能力全景的规划补充（面向实验录屏分析、组会纪要、成果演示等场景）。
+
+| 能力点（ScienceX 场景） | 当前实现 | 推荐对接模型（主 / 备） | 参考调用价格 | 优先级 |
+| :--- | :--- | :--- | :--- | :--- |
+| **视频理解**：实验录屏分析、组会录像自动摘要、图表动画解读 | 无（未涉及） | Gemini 2.0（原生视频输入）/ GPT-4o 抽帧 + VLM | Gemini 视频按 token（≈258 token/秒）计入 input 价；抽帧方案按图像计费 | P2 |
+| **视频生成**：成果演示动画、方法流程讲解视频 | 无（未涉及） | Veo 3 / Runway Gen-4 / 可灵 Kling / Sora | Veo 3 ≈ \$0.15–0.40/秒；Runway / 可灵按积分或订阅 | P2 |
+| **数字人讲解**：论文口头报告、组会汇报口播 | 无（未涉及） | HeyGen / Synthesia + TTS | 订阅制为主（≈\$24–99/月起）+ TTS 成本 | P2 |
 
 ### 3.2 内置可选模型清单（`store.builtinModels`）
 
